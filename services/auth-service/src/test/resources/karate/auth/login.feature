@@ -22,12 +22,13 @@ Feature: Login — POST /api/v1/auth/login and JWKS
       {
         accessToken: '#string',
         tokenType: 'Bearer',
-        expiresInSeconds: 900,
-        refreshToken: '#string'
+        expiresInSeconds: 900
       }
       """
     # RS256 JWT: three dot-separated base64url segments
     And match response.accessToken == '#regex [A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+'
+    # refresh token arrives only as an httpOnly cookie (ADR 003)
+    And match responseCookies['fintrack_refresh'].value == '#string'
 
   Scenario: the access token opens protected routes
     * def email = uniqueEmail()

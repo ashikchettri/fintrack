@@ -33,6 +33,8 @@ fintrack:
       access-token-ttl: 15m
       refresh-token-ttl: 7d
       # private-key: file:/etc/fintrack/jwt-signing.pem   # PKCS#8 PEM — required outside local (ADR 002)
+    refresh-cookie:
+      secure: true   # HTTPS-only; application-local.yml turns this off for plain-http dev (ADR 003)
 
 management:
   endpoints:
