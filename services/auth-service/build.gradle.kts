@@ -25,6 +25,8 @@ dependencies {
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
+    // JWT issue/verify (nimbus-jose-jwt via spring-security-oauth2-jose) + bearer-token auth
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     // Argon2PasswordEncoder delegates to BouncyCastle — optional in
     // spring-security-crypto, so it must be declared explicitly (not in the Boot BOM)
     implementation("org.bouncycastle:bcprov-jdk18on:1.84")

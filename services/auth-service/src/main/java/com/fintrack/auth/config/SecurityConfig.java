@@ -25,10 +25,13 @@ public class SecurityConfig {
                         // surface as misleading 401s on a real server
                         .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ERROR).permitAll()
                         .requestMatchers("/actuator/health/**").permitAll()
-                        .requestMatchers("/api/v1/auth/signup").permitAll()
-                        // login/refresh endpoints will be permitted here as they are built
+                        .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login").permitAll()
+                        .requestMatchers("/.well-known/jwks.json").permitAll()
+                        // refresh/logout endpoints will be permitted here as they are built
                         .anyRequest().authenticated())
-                .httpBasic(Customizer.withDefaults())
+                // bearer-JWT auth for everything not permitted above; the decoder
+                // verifies against our own public key (JwtKeyConfig)
+                .oauth2ResourceServer(rs -> rs.jwt(Customizer.withDefaults()))
                 .build();
     }
 
