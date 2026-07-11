@@ -1,0 +1,63 @@
+# Lightweight PR guardrails, separate from ci.yml (build + tests + coverage gate).
+# Each job is one rule; add new rules as new jobs so failures are self-explanatory.
+name: PR checks
+
+on:
+  pull_request:
+    # `edited` re-runs checks when the PR title is fixed
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  conventional-title:
+    name: PR title follows conventional commits
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check title
+        # Title goes through an env var, never inline in the script — a PR title
+        # is attacker-controlled input on public repos (script injection)
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "PR title: $TITLE"
+          if printf '%s' "$TITLE" | grep -qE '^(feat|fix|chore|docs|test|refactor|perf|ci|build)(\([a-z0-9./-]+\))?!?: .+'; then
+            echo "OK"
+          else
+            echo "::error::PR title must follow conventional commits, e.g. 'feat(auth): add login endpoint'. Allowed types: feat, fix, chore, docs, test, refactor, perf, ci, build."
+            exit 1
+          fi
+
+  immutable-migrations:
+    name: Flyway migrations are append-only
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fail if an applied migration is modified, renamed, or deleted
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # Convention (CLAUDE.md): schema changes ONLY via new migrations.
+          # Editing an already-merged migration breaks Flyway checksums everywhere.
+          changed=$(git diff --name-only --diff-filter=MDR "$BASE" "$HEAD" -- | grep -E 'src/main/resources/db/migration/.*\.sql$' || true)
+          if [ -n "$changed" ]; then
+            echo "::error::Existing Flyway migrations were modified/renamed/deleted. Add a new V<n>__description.sql instead:"
+            echo "$changed"
+            exit 1
+          fi
+          echo "OK — migrations only added, never changed"
+
+  secret-scan:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # scan the PR's full commit range, not just the merge commit
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
