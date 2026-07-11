@@ -10,7 +10,7 @@ Household personal-finance tracker; learning project for Spring Boot 4 microserv
 
 ## Current state
 
-Phase 1 in progress: auth-service skeleton exists; features (signup/login/JWT) being built one by one.
+Phase 1 **complete**: auth-service has signup, login (RS256 JWT + JWKS), refresh rotation with reuse detection, logout, /users/me, Swagger UI, login throttling. Refresh token is an httpOnly cookie (ADR 003). React auth UI (phase 3 pulled forward) verifies the API end-to-end — Vitest + Playwright (mocked & e2e). Next: phase 2 finance-service + gateway + Redis.
 
 ## Stack
 

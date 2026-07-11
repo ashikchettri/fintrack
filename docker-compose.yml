@@ -7,7 +7,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fintrack_local}
       POSTGRES_DB: ${POSTGRES_DB:-fintrack}
     ports:
-      - "5432:5432"
+      # host port configurable: a native Postgres on 5432 (e.g. macOS installer)
+      # would otherwise block compose — set POSTGRES_HOST_PORT=5433 in .env
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
