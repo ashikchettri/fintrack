@@ -62,16 +62,25 @@ class LoginIntegrationTest {
     }
 
     @Test
-    void loginReturnsBearerTokensWithExpiry() throws Exception {
+    void loginReturnsBearerTokenAndRefreshCookie() throws Exception {
         signup("login-ok@example.com");
 
-        mockMvc.perform(post(LOGIN).contentType(MediaType.APPLICATION_JSON)
+        MvcResult result = mockMvc.perform(post(LOGIN).contentType(MediaType.APPLICATION_JSON)
                         .content(body("Login-OK@example.com", PASSWORD)))  // case-insensitive
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").isNotEmpty())
+                // ADR 003: refresh token is cookie-only, never in the body
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
-                .andExpect(jsonPath("$.expiresInSeconds").value(900));
+                .andExpect(jsonPath("$.expiresInSeconds").value(900))
+                .andReturn();
+
+        String setCookie = result.getResponse().getHeader("Set-Cookie");
+        assertThat(setCookie)
+                .contains(RefreshTokenCookies.COOKIE_NAME + "=")
+                .contains("HttpOnly")
+                .contains("SameSite=Strict")
+                .contains("Path=/api/v1/auth");
     }
 
     @Test
@@ -91,7 +100,12 @@ class LoginIntegrationTest {
     @Test
     void refreshTokenIsPersistedHashedNotRaw() throws Exception {
         signup("hashed@example.com");
-        String rawRefresh = loginAndExtract("hashed@example.com", "$.refreshToken");
+        MvcResult result = mockMvc.perform(post(LOGIN).contentType(MediaType.APPLICATION_JSON)
+                        .content(body("hashed@example.com", PASSWORD)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String rawRefresh = result.getResponse()
+                .getCookie(RefreshTokenCookies.COOKIE_NAME).getValue();
 
         assertThat(refreshTokenRepository.findByTokenHash(rawRefresh)).isEmpty();
         assertThat(refreshTokenRepository.findByTokenHash(TokenService.sha256Hex(rawRefresh)))

@@ -1,0 +1,5 @@
+# Local-profile overrides (spring.profiles.default = local — see application.yml)
+fintrack:
+  auth:
+    refresh-cookie:
+      secure: false   # local dev runs plain http; browsers drop Secure cookies over http (ADR 003)
