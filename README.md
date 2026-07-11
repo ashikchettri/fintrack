@@ -24,14 +24,9 @@ sdk install gradle
 # Docker Desktop must be installed and running
 ```
 
-## Bootstrap (one-time, after clone)
+## Bootstrap
 
-The Gradle wrapper jar is not committed by scaffolding; generate it once:
-
-```bash
-cd services/auth-service
-gradle wrapper
-```
+Nothing to do — the Gradle wrapper is committed, so `./gradlew` works from a fresh clone (CI depends on this too).
 
 ## Run locally
 

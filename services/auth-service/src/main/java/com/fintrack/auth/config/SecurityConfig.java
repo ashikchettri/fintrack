@@ -15,14 +15,18 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http) {
         return http
                 // Stateless JSON API: CSRF protection targets browser session cookies, not bearer tokens
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // error dispatch must be reachable, or unhandled 500s
+                        // surface as misleading 401s on a real server
+                        .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ERROR).permitAll()
                         .requestMatchers("/actuator/health/**").permitAll()
-                        // signup/login endpoints will be permitted here as they are built
+                        .requestMatchers("/api/v1/auth/signup").permitAll()
+                        // login/refresh endpoints will be permitted here as they are built
                         .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
                 .build();
