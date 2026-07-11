@@ -24,5 +24,28 @@ services:
   #   ports:
   #     - "6379:6379"
 
+  # Code quality — opt-in profile so `docker compose up -d postgres` stays lean.
+  # Start:  docker compose --profile quality up -d sonarqube
+  # UI:     http://localhost:9000 (first login admin/admin → change password,
+  #         then create a project token and export SONAR_TOKEN for Gradle)
+  sonarqube:
+    image: sonarqube:community
+    container_name: fintrack-sonarqube
+    profiles: ["quality"]
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"   # dev-only: skip prod ES checks
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9000/api/system/status | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
 volumes:
   pgdata:
+  sonarqube_data:
+  sonarqube_extensions:

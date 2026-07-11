@@ -16,6 +16,10 @@ spring:
     default-schema: auth
     locations: classpath:db/migration
 
+  mvc:
+    problemdetails:
+      enabled: true    # framework errors (404, 405, bad JSON…) as RFC 9457 too
+
 server:
   port: 8081
 
