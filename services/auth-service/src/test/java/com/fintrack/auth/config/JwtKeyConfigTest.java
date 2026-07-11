@@ -71,6 +71,8 @@ class JwtKeyConfigTest {
     }
 
     private static String toPkcs8Pem(KeyPair keyPair) {
+        // gitleaks:allow — PEM *template* around a key generated at test runtime;
+        // no key material exists in this file
         return "-----BEGIN PRIVATE KEY-----\n"
                 + Base64.getMimeEncoder().encodeToString(keyPair.getPrivate().getEncoded())
                 + "\n-----END PRIVATE KEY-----\n";
