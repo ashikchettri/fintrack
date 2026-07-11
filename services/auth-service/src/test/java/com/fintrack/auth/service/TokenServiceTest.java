@@ -84,7 +84,7 @@ class TokenServiceTest {
 
     @Test
     void refreshTokenIsStoredOnlyAsSha256Hash() {
-        String raw = tokenService.issueRefreshToken(member.getUser());
+        String raw = tokenService.issueRefreshToken(member.getUser()).rawToken();
 
         ArgumentCaptor<RefreshToken> saved = ArgumentCaptor.forClass(RefreshToken.class);
         verify(refreshTokenRepository).save(saved.capture());
@@ -102,8 +102,8 @@ class TokenServiceTest {
 
     @Test
     void refreshTokensAreUnique() {
-        String first = tokenService.issueRefreshToken(member.getUser());
-        String second = tokenService.issueRefreshToken(member.getUser());
+        String first = tokenService.issueRefreshToken(member.getUser()).rawToken();
+        String second = tokenService.issueRefreshToken(member.getUser()).rawToken();
 
         assertThat(first).isNotEqualTo(second);
     }

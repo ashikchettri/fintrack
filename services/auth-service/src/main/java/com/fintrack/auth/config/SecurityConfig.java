@@ -25,9 +25,11 @@ public class SecurityConfig {
                         // surface as misleading 401s on a real server
                         .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ERROR).permitAll()
                         .requestMatchers("/actuator/health/**").permitAll()
-                        .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login").permitAll()
+                        // refresh/logout are public: their credential IS the refresh
+                        // token in the body (the access token may already be expired)
+                        .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login",
+                                "/api/v1/auth/refresh", "/api/v1/auth/logout").permitAll()
                         .requestMatchers("/.well-known/jwks.json").permitAll()
-                        // refresh/logout endpoints will be permitted here as they are built
                         .anyRequest().authenticated())
                 // bearer-JWT auth for everything not permitted above; the decoder
                 // verifies against our own public key (JwtKeyConfig)

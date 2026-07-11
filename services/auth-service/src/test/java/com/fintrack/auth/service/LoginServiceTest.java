@@ -57,13 +57,18 @@ class LoginServiceTest {
         member = new HouseholdMember(new Household("jane's household"), user, HouseholdRole.OWNER);
     }
 
+    private TokenService.IssuedRefreshToken issuedRefreshToken(String raw) {
+        return new TokenService.IssuedRefreshToken(
+                raw, new com.fintrack.auth.domain.RefreshToken(user, "<hash>", java.time.Instant.now()));
+    }
+
     @Test
     void successfulLoginIssuesBothTokens() {
         when(userRepository.findByEmail("jane@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("correct horse battery staple", "<stored-hash>")).thenReturn(true);
         when(householdMemberRepository.findByUserId(user.getId())).thenReturn(Optional.of(member));
         when(tokenService.issueAccessToken(member)).thenReturn("<access-jwt>");
-        when(tokenService.issueRefreshToken(user)).thenReturn("<refresh-token>");
+        when(tokenService.issueRefreshToken(user)).thenReturn(issuedRefreshToken("<refresh-token>"));
 
         LoginResult result = loginService.login("jane@example.com", "correct horse battery staple");
 
@@ -76,6 +81,7 @@ class LoginServiceTest {
         when(userRepository.findByEmail("jane@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
         when(householdMemberRepository.findByUserId(user.getId())).thenReturn(Optional.of(member));
+        when(tokenService.issueRefreshToken(user)).thenReturn(issuedRefreshToken("<refresh-token>"));
 
         loginService.login("  Jane@Example.COM ", "correct horse battery staple");
 
