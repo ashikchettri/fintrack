@@ -3,6 +3,7 @@ package com.fintrack.auth.web;
 import com.fintrack.auth.service.EmailAlreadyInUseException;
 import com.fintrack.auth.service.InvalidCredentialsException;
 import com.fintrack.auth.service.InvalidRefreshTokenException;
+import com.fintrack.auth.service.TooManyLoginAttemptsException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -33,6 +34,15 @@ public class GlobalExceptionHandler {
     private static final URI EMAIL_IN_USE_TYPE = URI.create("https://fintrack.example/problems/email-already-in-use");
     private static final URI VALIDATION_TYPE = URI.create("https://fintrack.example/problems/validation-error");
     private static final URI INVALID_CREDENTIALS_TYPE = URI.create("https://fintrack.example/problems/invalid-credentials");
+
+    @ExceptionHandler(TooManyLoginAttemptsException.class)
+    ProblemDetail handleTooManyAttempts(TooManyLoginAttemptsException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
+        problem.setType(URI.create("https://fintrack.example/problems/too-many-attempts"));
+        problem.setTitle("Too many attempts");
+        return problem;
+    }
 
     @ExceptionHandler(InvalidRefreshTokenException.class)
     ProblemDetail handleInvalidRefreshToken(InvalidRefreshTokenException ex) {

@@ -34,6 +34,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 
+    // springdoc 3.x is the Spring Boot 4 line (2.x targets Boot 3)
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
+
     // Boot 4: Flyway auto-configuration lives in its own starter — flyway-core
     // alone on the classpath no longer triggers migrations at startup
     implementation("org.springframework.boot:spring-boot-starter-flyway")

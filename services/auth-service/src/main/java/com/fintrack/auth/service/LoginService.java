@@ -19,6 +19,7 @@ public class LoginService {
     private final HouseholdMemberRepository householdMemberRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
+    private final LoginAttemptService loginAttemptService;
 
     /**
      * Hash of a random value nobody knows. Verified against on unknown-email
@@ -30,26 +31,34 @@ public class LoginService {
     public LoginService(UserRepository userRepository,
                         HouseholdMemberRepository householdMemberRepository,
                         PasswordEncoder passwordEncoder,
-                        TokenService tokenService) {
+                        TokenService tokenService,
+                        LoginAttemptService loginAttemptService) {
         this.userRepository = userRepository;
         this.householdMemberRepository = householdMemberRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
+        this.loginAttemptService = loginAttemptService;
         this.timingEqualizerHash = passwordEncoder.encode(UUID.randomUUID().toString());
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = InvalidCredentialsException.class)
     public LoginResult login(String email, String rawPassword) {
         String normalizedEmail = email.strip().toLowerCase(Locale.ROOT);
+
+        // throttle check first: a locked-out attacker never gets an Argon2 run
+        loginAttemptService.checkNotThrottled(normalizedEmail);
 
         Optional<User> user = userRepository.findByEmail(normalizedEmail);
         if (user.isEmpty()) {
             passwordEncoder.matches(rawPassword, timingEqualizerHash);
+            loginAttemptService.recordFailure(normalizedEmail);
             throw new InvalidCredentialsException();
         }
         if (!passwordEncoder.matches(rawPassword, user.get().getPasswordHash())) {
+            loginAttemptService.recordFailure(normalizedEmail);
             throw new InvalidCredentialsException();
         }
+        loginAttemptService.recordSuccess(normalizedEmail);
 
         // signup guarantees a membership; its absence is data corruption, not a 401
         HouseholdMember member = householdMemberRepository.findByUserId(user.get().getId())
