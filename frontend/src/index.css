@@ -1,0 +1,107 @@
+:root {
+  font-family: system-ui, -apple-system, sans-serif;
+  color-scheme: light dark;
+  --accent: #2563eb;
+  --error: #dc2626;
+  --success: #16a34a;
+  --muted: #6b7280;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+.topbar {
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.card {
+  max-width: 24rem;
+  margin: 3rem auto;
+  padding: 2rem;
+  border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+  border-radius: 12px;
+}
+
+h1 {
+  font-size: 1.4rem;
+  margin-top: 0;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+}
+
+input {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: transparent;
+  color: inherit;
+}
+
+button {
+  margin-top: 1.25rem;
+  padding: 0.6rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.field-error,
+.form-error {
+  color: var(--error);
+  font-size: 0.85rem;
+  margin: 0.15rem 0 0;
+}
+
+.success {
+  color: var(--success);
+  font-size: 0.9rem;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.profile dt {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-top: 0.75rem;
+}
+
+.profile dd {
+  margin: 0.1rem 0 0;
+  font-size: 1rem;
+}

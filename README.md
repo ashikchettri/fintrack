@@ -31,10 +31,15 @@ Nothing to do — the Gradle wrapper is committed, so `./gradlew` works from a f
 ## Run locally
 
 ```bash
-cp .env.example .env                 # adjust if needed
+cp .env.example .env                 # adjust if needed (e.g. POSTGRES_HOST_PORT if 5432 is taken)
 docker compose up -d postgres        # database
 cd services/auth-service
-./gradlew bootRun                    # http://localhost:8081
+./gradlew bootRun                    # http://localhost:8081 (Swagger: /swagger-ui.html)
+
+# UI (separate terminal)
+cd frontend
+nvm use && npm install
+npm run dev                          # http://localhost:5173 (proxies /api to :8081)
 ```
 
 Verify: `curl http://localhost:8081/actuator/health` → `{"status":"UP"}`
@@ -44,6 +49,11 @@ Verify: `curl http://localhost:8081/actuator/health` → `{"status":"UP"}`
 ```bash
 cd services/auth-service
 ./gradlew test          # integration tests use Testcontainers (needs Docker running)
+
+cd frontend
+npm run test:coverage   # Vitest + RTL with coverage gate
+npm run test:ui         # Playwright, mocked API
+npm run test:e2e        # Playwright, real stack (postgres + bootRun must be up)
 ```
 
 ## Working with Claude
