@@ -57,16 +57,20 @@ public class TokenService {
 
     /**
      * Opaque 256-bit refresh token. The raw value goes to the client exactly
-     * once; only its SHA-256 lands in the DB.
+     * once; only its SHA-256 lands in the DB. The persisted entity is returned
+     * alongside so rotation can link {@code replaced_by}.
      */
-    public String issueRefreshToken(User user) {
+    public IssuedRefreshToken issueRefreshToken(User user) {
         byte[] bytes = new byte[32];
         secureRandom.nextBytes(bytes);
         String rawToken = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 
-        refreshTokenRepository.save(new RefreshToken(
+        RefreshToken persisted = refreshTokenRepository.save(new RefreshToken(
                 user, sha256Hex(rawToken), Instant.now().plus(properties.refreshTokenTtl())));
-        return rawToken;
+        return new IssuedRefreshToken(rawToken, persisted);
+    }
+
+    public record IssuedRefreshToken(String rawToken, RefreshToken token) {
     }
 
     public static String sha256Hex(String value) {

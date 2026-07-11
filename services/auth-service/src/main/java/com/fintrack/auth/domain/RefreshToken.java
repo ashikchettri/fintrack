@@ -82,4 +82,23 @@ public class RefreshToken {
     public UUID getReplacedBy() {
         return replacedBy;
     }
+
+    public boolean isRevoked() {
+        return revokedAt != null;
+    }
+
+    public boolean isExpired(Instant now) {
+        return now.isAfter(expiresAt);
+    }
+
+    /** Rotation: this token dies and records which token superseded it. */
+    public void revokeAndReplace(UUID successorId, Instant now) {
+        this.revokedAt = now;
+        this.replacedBy = successorId;
+    }
+
+    /** Plain revocation (logout) — no successor. */
+    public void revoke(Instant now) {
+        this.revokedAt = now;
+    }
 }

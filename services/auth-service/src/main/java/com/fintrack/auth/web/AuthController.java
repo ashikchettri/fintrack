@@ -3,10 +3,12 @@ package com.fintrack.auth.web;
 import com.fintrack.auth.config.JwtProperties;
 import com.fintrack.auth.service.LoginResult;
 import com.fintrack.auth.service.LoginService;
+import com.fintrack.auth.service.RefreshService;
 import com.fintrack.auth.service.SignupResult;
 import com.fintrack.auth.service.SignupService;
 import com.fintrack.auth.web.dto.LoginRequest;
 import com.fintrack.auth.web.dto.LoginResponse;
+import com.fintrack.auth.web.dto.RefreshRequest;
 import com.fintrack.auth.web.dto.SignupRequest;
 import com.fintrack.auth.web.dto.SignupResponse;
 import jakarta.validation.Valid;
@@ -23,13 +25,16 @@ public class AuthController {
 
     private final SignupService signupService;
     private final LoginService loginService;
+    private final RefreshService refreshService;
     private final JwtProperties jwtProperties;
 
     public AuthController(SignupService signupService,
                           LoginService loginService,
+                          RefreshService refreshService,
                           JwtProperties jwtProperties) {
         this.signupService = signupService;
         this.loginService = loginService;
+        this.refreshService = refreshService;
         this.jwtProperties = jwtProperties;
     }
 
@@ -44,5 +49,18 @@ public class AuthController {
     public LoginResponse login(@Valid @RequestBody LoginRequest request) {
         LoginResult result = loginService.login(request.email(), request.password());
         return LoginResponse.from(result, jwtProperties.accessTokenTtl().toSeconds());
+    }
+
+    // same response shape as login: a rotated pair of tokens
+    @PostMapping("/refresh")
+    public LoginResponse refresh(@Valid @RequestBody RefreshRequest request) {
+        LoginResult result = refreshService.refresh(request.refreshToken());
+        return LoginResponse.from(result, jwtProperties.accessTokenTtl().toSeconds());
+    }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(@Valid @RequestBody RefreshRequest request) {
+        refreshService.logout(request.refreshToken());
     }
 }

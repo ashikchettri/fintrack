@@ -58,6 +58,6 @@ public class LoginService {
 
         return new LoginResult(
                 tokenService.issueAccessToken(member),
-                tokenService.issueRefreshToken(user.get()));
+                tokenService.issueRefreshToken(user.get()).rawToken());
     }
 }
