@@ -41,6 +41,9 @@ class LoginServiceTest {
     @Mock
     private TokenService tokenService;
 
+    @Mock
+    private LoginAttemptService loginAttemptService;
+
     private LoginService loginService;
 
     private User user;
@@ -51,7 +54,8 @@ class LoginServiceTest {
         // the constructor pre-computes the timing-equalizer hash
         when(passwordEncoder.encode(anyString())).thenReturn(EQUALIZER_HASH);
         loginService = new LoginService(
-                userRepository, householdMemberRepository, passwordEncoder, tokenService);
+                userRepository, householdMemberRepository, passwordEncoder, tokenService,
+                loginAttemptService);
 
         user = new User("jane@example.com", "<stored-hash>");
         member = new HouseholdMember(new Household("jane's household"), user, HouseholdRole.OWNER);
@@ -110,6 +114,35 @@ class LoginServiceTest {
                 .isThrownBy(() -> loginService.login("jane@example.com", "wrong-password-here"));
 
         verifyNoInteractions(tokenService);
+    }
+
+    @Test
+    void throttledEmailIsRejectedBeforeAnyCredentialWork() {
+        org.mockito.Mockito.doThrow(new TooManyLoginAttemptsException())
+                .when(loginAttemptService).checkNotThrottled("jane@example.com");
+
+        assertThatExceptionOfType(TooManyLoginAttemptsException.class)
+                .isThrownBy(() -> loginService.login("jane@example.com", "any-password-at-all"));
+
+        // no lookup, no Argon2 run — the throttle is the cheap outer gate
+        verifyNoInteractions(userRepository, tokenService);
+    }
+
+    @Test
+    void failuresAreRecordedAndSuccessClearsThem() {
+        when(userRepository.findByEmail("jane@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("wrong-password-here", "<stored-hash>")).thenReturn(false);
+
+        assertThatExceptionOfType(InvalidCredentialsException.class)
+                .isThrownBy(() -> loginService.login("jane@example.com", "wrong-password-here"));
+        verify(loginAttemptService).recordFailure("jane@example.com");
+
+        when(passwordEncoder.matches("correct horse battery staple", "<stored-hash>")).thenReturn(true);
+        when(householdMemberRepository.findByUserId(user.getId())).thenReturn(Optional.of(member));
+        when(tokenService.issueRefreshToken(user)).thenReturn(issuedRefreshToken("<refresh-token>"));
+
+        loginService.login("jane@example.com", "correct horse battery staple");
+        verify(loginAttemptService).recordSuccess("jane@example.com");
     }
 
     @Test

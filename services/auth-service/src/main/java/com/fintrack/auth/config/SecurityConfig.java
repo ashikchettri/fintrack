@@ -30,6 +30,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login",
                                 "/api/v1/auth/refresh", "/api/v1/auth/logout").permitAll()
                         .requestMatchers("/.well-known/jwks.json").permitAll()
+                        // API docs are public for now; the gateway will gate them in phase 2
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated())
                 // bearer-JWT auth for everything not permitted above; the decoder
                 // verifies against our own public key (JwtKeyConfig)
