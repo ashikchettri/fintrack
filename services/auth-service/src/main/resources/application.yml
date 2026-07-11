@@ -2,6 +2,9 @@ spring:
   application:
     name: auth-service
 
+  profiles:
+    default: local   # bare bootRun/tests behave like local dev; deployments set SPRING_PROFILES_ACTIVE (ADR 002)
+
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${POSTGRES_DB:fintrack}?currentSchema=auth
     username: ${POSTGRES_USER:fintrack}
@@ -22,6 +25,14 @@ spring:
 
 server:
   port: 8081
+
+fintrack:
+  auth:
+    jwt:
+      issuer: fintrack-auth
+      access-token-ttl: 15m
+      refresh-token-ttl: 7d
+      # private-key: file:/etc/fintrack/jwt-signing.pem   # PKCS#8 PEM — required outside local (ADR 002)
 
 management:
   endpoints:

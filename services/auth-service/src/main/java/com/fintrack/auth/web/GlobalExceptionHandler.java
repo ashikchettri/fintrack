@@ -1,6 +1,7 @@
 package com.fintrack.auth.web;
 
 import com.fintrack.auth.service.EmailAlreadyInUseException;
+import com.fintrack.auth.service.InvalidCredentialsException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -30,6 +31,16 @@ public class GlobalExceptionHandler {
 
     private static final URI EMAIL_IN_USE_TYPE = URI.create("https://fintrack.example/problems/email-already-in-use");
     private static final URI VALIDATION_TYPE = URI.create("https://fintrack.example/problems/validation-error");
+    private static final URI INVALID_CREDENTIALS_TYPE = URI.create("https://fintrack.example/problems/invalid-credentials");
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    ProblemDetail handleInvalidCredentials(InvalidCredentialsException ex) {
+        // one generic body for wrong-email AND wrong-password — no enumeration
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        problem.setType(INVALID_CREDENTIALS_TYPE);
+        problem.setTitle("Invalid credentials");
+        return problem;
+    }
 
     @ExceptionHandler(EmailAlreadyInUseException.class)
     ProblemDetail handleEmailAlreadyInUse(EmailAlreadyInUseException ex) {
