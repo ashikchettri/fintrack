@@ -50,6 +50,12 @@ fintrack:
       # private-key: file:/etc/fintrack/jwt-signing.pem   # PKCS#8 PEM — required outside local (ADR 002)
     refresh-cookie:
       secure: true   # HTTPS-only; application-local.yml turns this off for plain-http dev (ADR 003)
+    resend:
+      # Resend transactional email (provider chain in EmailSenderConfig).
+      # Until a domain is verified in Resend, the test sender below delivers
+      # only to the Resend account owner's address.
+      api-key: ${RESEND_API_KEY:}
+      from: ${RESEND_FROM:FinTrack <onboarding@resend.dev>}
     verification:
       code-length: 4     # ADR 004 — compensated by ttl + attempt cap; bump to 6 when stakes rise
       code-ttl: 15m
