@@ -4,6 +4,7 @@ import com.fintrack.auth.service.EmailAlreadyInUseException;
 import com.fintrack.auth.service.EmailNotVerifiedException;
 import com.fintrack.auth.service.InvalidCredentialsException;
 import com.fintrack.auth.service.InvalidRefreshTokenException;
+import com.fintrack.auth.service.InvalidResetCodeException;
 import com.fintrack.auth.service.InvalidVerificationCodeException;
 import com.fintrack.auth.service.TooManyLoginAttemptsException;
 import org.springframework.core.Ordered;
@@ -43,6 +44,14 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
         problem.setType(URI.create("https://fintrack.example/problems/email-not-verified"));
         problem.setTitle("Email not verified");
+        return problem;
+    }
+
+    @ExceptionHandler(InvalidResetCodeException.class)
+    ProblemDetail handleInvalidResetCode(InvalidResetCodeException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setType(URI.create("https://fintrack.example/problems/invalid-reset-code"));
+        problem.setTitle("Invalid reset code");
         return problem;
     }
 

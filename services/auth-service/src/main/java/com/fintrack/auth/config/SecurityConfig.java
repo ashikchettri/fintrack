@@ -29,7 +29,8 @@ public class SecurityConfig {
                         // token in the body (the access token may already be expired)
                         .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login",
                                 "/api/v1/auth/refresh", "/api/v1/auth/logout",
-                                "/api/v1/auth/verify-email", "/api/v1/auth/resend-verification").permitAll()
+                                "/api/v1/auth/verify-email", "/api/v1/auth/resend-verification",
+                                "/api/v1/auth/forgot-password", "/api/v1/auth/reset-password").permitAll()
                         .requestMatchers("/.well-known/jwks.json").permitAll()
                         // API docs are public for now; the gateway will gate them in phase 2
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()

@@ -8,4 +8,6 @@ package com.fintrack.auth.service;
 public interface EmailSender {
 
     void sendVerificationCode(String toEmail, String code);
+
+    void sendPasswordResetCode(String toEmail, String code);
 }

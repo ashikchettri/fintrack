@@ -18,15 +18,29 @@ public class SmtpEmailSender implements EmailSender {
 
     @Override
     public void sendVerificationCode(String toEmail, String code) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(properties.fromAddress());
-        message.setTo(toEmail);
-        message.setSubject("Your FinTrack verification code");
-        message.setText("""
+        send(toEmail, "Your FinTrack verification code", """
                 Your FinTrack verification code is: %s
 
                 It expires in %d minutes. If you didn't sign up, ignore this email.
                 """.formatted(code, properties.codeTtl().toMinutes()));
+    }
+
+    @Override
+    public void sendPasswordResetCode(String toEmail, String code) {
+        send(toEmail, "Your FinTrack password reset code", """
+                Your FinTrack password reset code is: %s
+
+                It expires in %d minutes. If you didn't request a reset, you can
+                ignore this email — your password is unchanged.
+                """.formatted(code, properties.codeTtl().toMinutes()));
+    }
+
+    private void send(String toEmail, String subject, String text) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(properties.fromAddress());
+        message.setTo(toEmail);
+        message.setSubject(subject);
+        message.setText(text);
         mailSender.send(message);
     }
 }

@@ -60,6 +60,20 @@ export const api = {
     });
   },
 
+  forgotPassword(email: string): Promise<void> {
+    return request<void>('/api/v1/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  resetPassword(email: string, code: string, newPassword: string): Promise<void> {
+    return request<void>('/api/v1/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, code, newPassword }),
+    });
+  },
+
   async login(email: string, password: string): Promise<LoginResponse> {
     const res = await request<LoginResponse>('/api/v1/auth/login', {
       method: 'POST',
