@@ -196,6 +196,9 @@ test.describe('password reset', () => {
     await page.goto('/login');
     await page.getByRole('link', { name: 'Forgot password?' }).click();
 
+    // sync on the route change: both pages have an "Email" field, and on slow
+    // machines the fill can land on the login page's field mid-navigation
+    await expect(page.getByText('Forgot your password?')).toBeVisible();
     await page.getByLabel('Email').fill('jane@example.com');
     await page.getByRole('button', { name: 'Send reset code' }).click();
 

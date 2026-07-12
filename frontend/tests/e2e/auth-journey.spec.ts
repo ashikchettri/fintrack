@@ -99,8 +99,10 @@ test.describe('full auth journey against the real API', () => {
     const newPassword = 'completely different secret';
     await signupAndVerify(page, request, email);
 
-    // request the reset from the login screen
+    // request the reset from the login screen — wait out the route change
+    // before filling (both pages have an "Email" field)
     await page.getByRole('link', { name: 'Forgot password?' }).click();
+    await expect(page.getByText('Forgot your password?')).toBeVisible();
     await page.getByLabel('Email').fill(email);
     await page.getByRole('button', { name: 'Send reset code' }).click();
     await expect(page.getByText('Reset your password')).toBeVisible();
