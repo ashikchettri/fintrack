@@ -7,10 +7,11 @@ Docs: [architecture](docs/ARCHITECTURE.md) · [roadmap](docs/ROADMAP.md) · [dec
 ## Layout
 
 ```
-services/auth-service/   Spring Boot 4.1 · Java 25 — identity, JWT, households
-frontend/                React 19 + Vite + TS (phase 3)
-infra/                   Docker Compose now, K8s manifests + Helm later
-docs/                    Architecture, roadmap, ADRs
+services/auth-service/     Spring Boot 4.1 · Java 25 — identity, JWT, households (port 8081)
+services/finance-service/  Spring Boot 4.1 · Java 25 — accounts, transactions, budgets (port 8082)
+frontend/                  React 19 + Vite + TS + Tailwind/shadcn
+infra/                     Docker Compose now, K8s manifests + Helm later
+docs/                      Architecture, roadmap, ADRs
 ```
 
 ## Prerequisites (one-time)
