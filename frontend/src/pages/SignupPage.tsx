@@ -2,6 +2,12 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ApiError, api } from '../api/client';
+import { AuthLayout } from '@/components/AuthLayout';
+import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 // Client-side rules mirror the backend Bean Validation (SignupRequest):
 // server remains the authority, this is just faster feedback.
@@ -52,39 +58,60 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="card">
-      <h1>Create your account</h1>
-      <p className="muted">A household is created for you automatically.</p>
-      <form onSubmit={onSubmit} noValidate>
-        <label htmlFor="email">Email</label>
-        <input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
-        />
-        {fieldErrors.email && <p className="field-error" role="alert">{fieldErrors.email}</p>}
+    <AuthLayout>
+      <Card>
+        <CardHeader>
+          <CardTitle>Create your account</CardTitle>
+          <CardDescription>A household is created for you automatically.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                aria-invalid={fieldErrors.email ? true : undefined}
+                placeholder="you@example.com"
+              />
+              {fieldErrors.email && (
+                <p className="text-sm text-destructive" role="alert">{fieldErrors.email}</p>
+              )}
+            </div>
 
-        <label htmlFor="password">Password</label>
-        <input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="new-password"
-        />
-        {fieldErrors.password && <p className="field-error" role="alert">{fieldErrors.password}</p>}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+                aria-invalid={fieldErrors.password ? true : undefined}
+                placeholder="At least 12 characters"
+              />
+              {fieldErrors.password && (
+                <p className="text-sm text-destructive" role="alert">{fieldErrors.password}</p>
+              )}
+            </div>
 
-        {formError && <p className="form-error" role="alert">{formError}</p>}
+            {formError && <Alert role="alert">{formError}</Alert>}
 
-        <button type="submit" disabled={submitting}>
-          {submitting ? 'Creating…' : 'Sign up'}
-        </button>
-      </form>
-      <p className="muted">
-        Already have an account? <Link to="/login">Log in</Link>
-      </p>
-    </main>
+            <Button type="submit" disabled={submitting} className="mt-1 w-full">
+              {submitting ? 'Creating…' : 'Sign up'}
+            </Button>
+          </form>
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            Already have an account?{' '}
+            <Link to="/login" className="font-medium text-primary hover:underline">
+              Log in
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
+    </AuthLayout>
   );
 }
