@@ -31,18 +31,48 @@ async function mockNoSession(page: Page) {
 test.describe('signup', () => {
   test.beforeEach(async ({ page }) => mockNoSession(page));
 
-  test('successful signup lands on login with a confirmation', async ({ page }) => {
+  test('successful signup lands on verification, code unlocks login', async ({ page }) => {
     await page.route('**/api/v1/auth/signup', (route) =>
       route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify(PROFILE) }),
     );
+    await page.route('**/api/v1/auth/verify-email', (route) => route.fulfill({ status: 204 }));
+
     await page.goto('/signup');
     await page.getByLabel('Email').fill('jane@example.com');
     await page.getByLabel('Password').fill('correct horse battery staple');
     await page.getByRole('button', { name: 'Sign up' }).click();
 
-    await expect(page.getByText('Account created — log in to continue.')).toBeVisible();
-    // email carried over to the login form
+    // verification step (ADR 004)
+    await expect(page.getByText('Check your email')).toBeVisible();
+    await page.getByLabel('Verification code').fill('1234');
+    await page.getByRole('button', { name: 'Verify email' }).click();
+
+    await expect(page.getByText('Email verified — log in to continue.')).toBeVisible();
     await expect(page.getByLabel('Email')).toHaveValue('jane@example.com');
+  });
+
+  test('a wrong code shows the problem detail and resend starts a cooldown', async ({ page }) => {
+    await page.route('**/api/v1/auth/verify-email', (route) =>
+      route.fulfill(
+        problem(400, {
+          title: 'Invalid verification code',
+          detail: 'Invalid or expired verification code',
+        }),
+      ),
+    );
+    await page.route('**/api/v1/auth/resend-verification', (route) =>
+      route.fulfill({ status: 204 }),
+    );
+
+    await page.goto('/verify-email');
+    await page.getByLabel('Email').fill('jane@example.com');
+    await page.getByLabel('Verification code').fill('0000');
+    await page.getByRole('button', { name: 'Verify email' }).click();
+    await expect(page.getByText('Invalid or expired verification code')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Resend code' }).click();
+    await expect(page.getByText(/a new code is on its way/)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Resend code \(\d+s\)/ })).toBeDisabled();
   });
 
   test('server validation errors render under the fields', async ({ page }) => {
@@ -93,6 +123,24 @@ test.describe('login', () => {
     await page.getByRole('button', { name: 'Log in' }).click();
 
     await expect(page.getByText('Invalid email or password')).toBeVisible();
+  });
+
+  test('unverified account is routed to the verification screen', async ({ page }) => {
+    await page.route('**/api/v1/auth/login', (route) =>
+      route.fulfill(
+        problem(403, {
+          type: 'https://fintrack.example/problems/email-not-verified',
+          title: 'Email not verified',
+          detail: 'Email address has not been verified',
+        }),
+      ),
+    );
+    await page.goto('/login');
+    await page.getByLabel('Email').fill('jane@example.com');
+    await page.getByLabel('Password').fill('correct horse battery staple');
+    await page.getByRole('button', { name: 'Log in' }).click();
+
+    await expect(page.getByText('Check your email')).toBeVisible();
   });
 
   test('throttled login shows the 429 message', async ({ page }) => {

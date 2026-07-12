@@ -1,8 +1,11 @@
 package com.fintrack.auth;
 
+import com.fintrack.auth.service.EmailSender;
+import com.fintrack.auth.testsupport.RecordingEmailSender;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 /**
@@ -17,5 +20,12 @@ public class TestcontainersConfiguration {
     @ServiceConnection
     PostgreSQLContainer<?> postgresContainer() {
         return new PostgreSQLContainer<>("postgres:17-alpine");
+    }
+
+    // no SMTP in tests: codes are captured, and Karate reads them via Java interop
+    @Bean
+    @Primary
+    EmailSender recordingEmailSender() {
+        return new RecordingEmailSender();
     }
 }

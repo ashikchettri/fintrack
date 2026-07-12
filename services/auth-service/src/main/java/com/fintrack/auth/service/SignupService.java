@@ -21,15 +21,18 @@ public class SignupService {
     private final HouseholdRepository householdRepository;
     private final HouseholdMemberRepository householdMemberRepository;
     private final PasswordEncoder passwordEncoder;
+    private final VerificationService verificationService;
 
     public SignupService(UserRepository userRepository,
                          HouseholdRepository householdRepository,
                          HouseholdMemberRepository householdMemberRepository,
-                         PasswordEncoder passwordEncoder) {
+                         PasswordEncoder passwordEncoder,
+                         VerificationService verificationService) {
         this.userRepository = userRepository;
         this.householdRepository = householdRepository;
         this.householdMemberRepository = householdMemberRepository;
         this.passwordEncoder = passwordEncoder;
+        this.verificationService = verificationService;
     }
 
     /**
@@ -63,6 +66,9 @@ public class SignupService {
         } catch (DataIntegrityViolationException _) {
             throw new EmailAlreadyInUseException();
         }
+
+        // same transaction: no user row without a pending code + sent email (ADR 004)
+        verificationService.issueFor(user);
 
         return new SignupResult(user, household, member);
     }

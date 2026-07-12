@@ -27,7 +27,10 @@ beforeEach(() => {
 });
 
 function renderLogin() {
-  return renderPageWithDestinations(<LoginPage />, '/login', { '/profile': 'PROFILE_DEST' });
+  return renderPageWithDestinations(<LoginPage />, '/login', {
+    '/profile': 'PROFILE_DEST',
+    '/verify-email': 'VERIFY_DEST',
+  });
 }
 
 async function fillAndSubmit(email: string, password: string) {
@@ -58,6 +61,22 @@ describe('LoginPage', () => {
     await fillAndSubmit('jane@example.com', 'wrong-password-here');
 
     await waitFor(() => expect(screen.getByText('Invalid email or password')).toBeInTheDocument());
+  });
+
+  it('routes unverified accounts to the verification screen on the 403 problem', async () => {
+    mockedApi.login.mockRejectedValue(
+      new ApiError(403, {
+        type: 'https://fintrack.example/problems/email-not-verified',
+        title: 'Email not verified',
+        status: 403,
+        detail: 'Email address has not been verified',
+      }),
+    );
+    renderLogin();
+
+    await fillAndSubmit('jane@example.com', 'correct horse battery staple');
+
+    await waitFor(() => expect(screen.getByText('VERIFY_DEST')).toBeInTheDocument());
   });
 
   it('shows the throttle message on 429', async () => {

@@ -26,6 +26,15 @@ services:
   #   ports:
   #     - "6379:6379"
 
+  # Local mail sink (ADR 004): signup verification emails land here.
+  # Web inbox: http://localhost:8025 · SMTP: localhost:1025 (auth-service default)
+  mailpit:
+    image: axllent/mailpit
+    container_name: fintrack-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
   # Code quality — opt-in profile so `docker compose up -d postgres` stays lean.
   # Start:  docker compose --profile quality up -d sonarqube
   # UI:     http://localhost:9000 (first login admin/admin → change password,

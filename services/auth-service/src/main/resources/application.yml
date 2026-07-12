@@ -23,6 +23,21 @@ spring:
     problemdetails:
       enabled: true    # framework errors (404, 405, bad JSON…) as RFC 9457 too
 
+  # Defaults target the local Mailpit sink (docker compose). For Gmail set:
+  # MAIL_HOST=smtp.gmail.com MAIL_PORT=587 MAIL_SMTP_AUTH=true MAIL_SMTP_STARTTLS=true
+  # MAIL_USERNAME=<gmail address> MAIL_PASSWORD=<App Password — never the account password>
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:false}
+
 server:
   port: 8081
 
@@ -35,6 +50,12 @@ fintrack:
       # private-key: file:/etc/fintrack/jwt-signing.pem   # PKCS#8 PEM — required outside local (ADR 002)
     refresh-cookie:
       secure: true   # HTTPS-only; application-local.yml turns this off for plain-http dev (ADR 003)
+    verification:
+      code-length: 4     # ADR 004 — compensated by ttl + attempt cap; bump to 6 when stakes rise
+      code-ttl: 15m
+      max-attempts: 5
+      resend-cooldown: 60s
+      from-address: ${MAIL_FROM:no-reply@fintrack.local}
 
 management:
   endpoints:

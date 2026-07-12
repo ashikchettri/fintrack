@@ -32,6 +32,11 @@ class Phase1FinishIntegrationTest {
                         .content("""
                                 {"email": "%s", "password": "%s"}""".formatted(email, PASSWORD)))
                 .andExpect(status().isCreated());
+        mockMvc.perform(post("/api/v1/auth/verify-email").contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email": "%s", "code": "%s"}"""
+                                .formatted(email, com.fintrack.auth.testsupport.RecordingEmailSender.lastCodeFor(email))))
+                .andExpect(status().isNoContent());
         String body = mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email": "%s", "password": "%s"}""".formatted(email, PASSWORD)))

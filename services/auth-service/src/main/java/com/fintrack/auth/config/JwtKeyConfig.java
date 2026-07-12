@@ -38,7 +38,7 @@ import java.util.Base64;
  * multi-replica deployment breaks verification randomly.
  */
 @Configuration
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties({JwtProperties.class, VerificationProperties.class})
 public class JwtKeyConfig {
 
     private static final Logger log = LoggerFactory.getLogger(JwtKeyConfig.class);

@@ -46,6 +46,20 @@ export const api = {
     });
   },
 
+  verifyEmail(email: string, code: string): Promise<void> {
+    return request<void>('/api/v1/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ email, code }),
+    });
+  },
+
+  resendVerification(email: string): Promise<void> {
+    return request<void>('/api/v1/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
   async login(email: string, password: string): Promise<LoginResponse> {
     const res = await request<LoginResponse>('/api/v1/auth/login', {
       method: 'POST',

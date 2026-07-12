@@ -7,10 +7,13 @@ import com.fintrack.auth.service.LoginService;
 import com.fintrack.auth.service.RefreshService;
 import com.fintrack.auth.service.SignupResult;
 import com.fintrack.auth.service.SignupService;
+import com.fintrack.auth.service.VerificationService;
 import com.fintrack.auth.web.dto.LoginRequest;
 import com.fintrack.auth.web.dto.LoginResponse;
+import com.fintrack.auth.web.dto.ResendVerificationRequest;
 import com.fintrack.auth.web.dto.SignupRequest;
 import com.fintrack.auth.web.dto.SignupResponse;
+import com.fintrack.auth.web.dto.VerifyEmailRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -29,17 +32,20 @@ public class AuthController {
     private final SignupService signupService;
     private final LoginService loginService;
     private final RefreshService refreshService;
+    private final VerificationService verificationService;
     private final JwtProperties jwtProperties;
     private final RefreshTokenCookies refreshTokenCookies;
 
     public AuthController(SignupService signupService,
                           LoginService loginService,
                           RefreshService refreshService,
+                          VerificationService verificationService,
                           JwtProperties jwtProperties,
                           RefreshTokenCookies refreshTokenCookies) {
         this.signupService = signupService;
         this.loginService = loginService;
         this.refreshService = refreshService;
+        this.verificationService = verificationService;
         this.jwtProperties = jwtProperties;
         this.refreshTokenCookies = refreshTokenCookies;
     }
@@ -49,6 +55,19 @@ public class AuthController {
     public SignupResponse signup(@Valid @RequestBody SignupRequest request) {
         SignupResult result = signupService.signup(request.email(), request.password());
         return SignupResponse.from(result);
+    }
+
+    @PostMapping("/verify-email")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        verificationService.verify(request.email(), request.code());
+    }
+
+    // always 204 — reveals nothing about whether the email has an account
+    @PostMapping("/resend-verification")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
+        verificationService.resend(request.email());
     }
 
     @PostMapping("/login")

@@ -58,6 +58,7 @@ class LoginServiceTest {
                 loginAttemptService);
 
         user = new User("jane@example.com", "<stored-hash>");
+        user.markEmailVerified(java.time.Instant.now());  // login requires it (ADR 004)
         member = new HouseholdMember(new Household("jane's household"), user, HouseholdRole.OWNER);
     }
 

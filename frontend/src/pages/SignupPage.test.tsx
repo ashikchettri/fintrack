@@ -28,7 +28,7 @@ beforeEach(() => {
 });
 
 function renderSignup() {
-  return renderPageWithDestinations(<SignupPage />, '/signup', { '/login': 'LOGIN_DEST' });
+  return renderPageWithDestinations(<SignupPage />, '/signup', { '/verify-email': 'VERIFY_DEST' });
 }
 
 async function fillAndSubmit(email: string, password: string) {
@@ -55,7 +55,7 @@ describe('SignupPage', () => {
     expect(mockedApi.signup).not.toHaveBeenCalled();
   });
 
-  it('navigates to login after successful signup', async () => {
+  it('navigates to the verification screen after successful signup', async () => {
     mockedApi.signup.mockResolvedValue({
       userId: 'u1', email: 'jane@example.com', householdId: 'h1',
       householdName: "jane's household", role: 'OWNER', createdAt: '2026-07-12T00:00:00Z',
@@ -63,7 +63,7 @@ describe('SignupPage', () => {
     renderSignup();
     await fillAndSubmit('jane@example.com', VALID_PASSWORD);
 
-    await waitFor(() => expect(screen.getByText('LOGIN_DEST')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('VERIFY_DEST')).toBeInTheDocument());
     expect(mockedApi.signup).toHaveBeenCalledWith('jane@example.com', VALID_PASSWORD);
   });
 

@@ -4,6 +4,7 @@ import { useAuth } from './auth/AuthContext';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import SignupPage from './pages/SignupPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, initializing } = useAuth();
@@ -25,6 +26,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Navigate to="/profile" replace />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route
         path="/profile"

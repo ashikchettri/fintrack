@@ -58,6 +58,10 @@ public class LoginService {
             loginAttemptService.recordFailure(normalizedEmail);
             throw new InvalidCredentialsException();
         }
+        // credentials are correct — safe to reveal the unverified state (ADR 004)
+        if (!user.get().isEmailVerified()) {
+            throw new EmailNotVerifiedException();
+        }
         loginAttemptService.recordSuccess(normalizedEmail);
 
         // signup guarantees a membership; its absence is data corruption, not a 401

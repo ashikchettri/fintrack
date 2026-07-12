@@ -6,6 +6,7 @@ Feature: Refresh rotation, reuse detection, logout — cookie transport (ADR 003
     * url baseUrl
     * def uniqueEmail = function(){ return 'karate.refresh.' + java.lang.System.nanoTime() + '@example.com' }
     * def validPassword = 'correct horse battery staple'
+    * def EmailStore = Java.type('com.fintrack.auth.testsupport.RecordingEmailSender')
 
   Scenario: full lifecycle — login, rotate, replay is rejected, family is dead
     # signup + login
@@ -14,6 +15,12 @@ Feature: Refresh rotation, reuse detection, logout — cookie transport (ADR 003
     And request { email: '#(email)', password: '#(validPassword)' }
     When method post
     Then status 201
+
+    # verify the mailbox (ADR 004) — code captured by the test-seam email sender
+    Given path 'api/v1/auth/verify-email'
+    And request { email: '#(email)', code: '#(EmailStore.lastCodeFor(email))' }
+    When method post
+    Then status 204
 
     Given path 'api/v1/auth/login'
     And request { email: '#(email)', password: '#(validPassword)' }
@@ -49,6 +56,12 @@ Feature: Refresh rotation, reuse detection, logout — cookie transport (ADR 003
     And request { email: '#(email)', password: '#(validPassword)' }
     When method post
     Then status 201
+
+    # verify the mailbox (ADR 004) — code captured by the test-seam email sender
+    Given path 'api/v1/auth/verify-email'
+    And request { email: '#(email)', code: '#(EmailStore.lastCodeFor(email))' }
+    When method post
+    Then status 204
 
     Given path 'api/v1/auth/login'
     And request { email: '#(email)', password: '#(validPassword)' }
