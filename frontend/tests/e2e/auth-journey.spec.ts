@@ -51,16 +51,14 @@ test.describe('full auth journey against the real API', () => {
     await expect(page.getByText('Invalid email or password')).toBeVisible();
   });
 
-  test('backend field validation reaches the form', async ({ page }) => {
-    // client-side check is bypassed-proof: even a "valid looking" email the
-    // backend rejects must render its server message (here: whitespace trick
-    // passes the simple client regex but the server normalizes + validates)
+  test('minimal edge-case email passes the real 201 path', async ({ page }) => {
+    // proves short/edge emails survive both client regex and server validation
+    // (unique per run — a static email 409s on the second execution)
+    const edgeEmail = `e${Date.now()}@b.co`;
     await page.goto('/signup');
-    await page.getByLabel('Email').fill('a@b.c');
+    await page.getByLabel('Email').fill(edgeEmail);
     await page.getByLabel('Password').fill(PASSWORD);
     await page.getByRole('button', { name: 'Sign up' }).click();
-    // a@b.c passes both client and server email checks — expect success here;
-    // this scenario simply proves the real 201 path end-to-end for edge emails
     await expect(page.getByText('Account created — log in to continue.')).toBeVisible();
   });
 });

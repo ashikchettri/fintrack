@@ -3,6 +3,12 @@ import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
+import { AuthLayout } from '@/components/AuthLayout';
+import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -36,41 +42,56 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="card">
-      <h1>Log in</h1>
-      {signedUpEmail && (
-        <p className="success" role="status">
-          Account created — log in to continue.
-        </p>
-      )}
-      <form onSubmit={onSubmit} noValidate>
-        <label htmlFor="email">Email</label>
-        <input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
-        />
+    <AuthLayout>
+      <Card>
+        <CardHeader>
+          <CardTitle>Log in</CardTitle>
+          <CardDescription>Welcome back — your household is waiting.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {signedUpEmail && (
+            <Alert variant="success" role="status" className="mb-4">
+              Account created — log in to continue.
+            </Alert>
+          )}
+          <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                placeholder="you@example.com"
+              />
+            </div>
 
-        <label htmlFor="password">Password</label>
-        <input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="current-password"
-        />
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+            </div>
 
-        {error && <p className="form-error" role="alert">{error}</p>}
+            {error && <Alert role="alert">{error}</Alert>}
 
-        <button type="submit" disabled={submitting}>
-          {submitting ? 'Logging in…' : 'Log in'}
-        </button>
-      </form>
-      <p className="muted">
-        New here? <Link to="/signup">Create an account</Link>
-      </p>
-    </main>
+            <Button type="submit" disabled={submitting} className="mt-1 w-full">
+              {submitting ? 'Logging in…' : 'Log in'}
+            </Button>
+          </form>
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            New here?{' '}
+            <Link to="/signup" className="font-medium text-primary hover:underline">
+              Create an account
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
+    </AuthLayout>
   );
 }

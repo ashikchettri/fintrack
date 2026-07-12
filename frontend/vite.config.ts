@@ -1,9 +1,16 @@
 /// <reference types="vitest/config" />
+import path from 'node:path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
   server: {
     // Dev-time CORS non-issue: the browser only ever talks to this origin;
     // Vite forwards /api to auth-service. The phase-2 gateway owns this later.
