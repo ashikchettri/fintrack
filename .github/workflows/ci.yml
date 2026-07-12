@@ -6,11 +6,16 @@ on:
   pull_request:
 
 jobs:
-  auth-service:
+  backend:
+    name: ${{ matrix.service }}
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [auth-service, finance-service]
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: services/auth-service
+        working-directory: services/${{ matrix.service }}
     steps:
       - uses: actions/checkout@v4
 
@@ -29,8 +34,8 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-reports
-          path: services/auth-service/build/reports/tests/
+          name: test-reports-${{ matrix.service }}
+          path: services/${{ matrix.service }}/build/reports/tests/
 
   frontend:
     runs-on: ubuntu-latest

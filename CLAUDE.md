@@ -31,9 +31,11 @@ Java 25 · Spring Boot 4.1 · Gradle (Kotlin DSL) · Postgres 17 (Docker Compose
 ## Commands
 
 ```bash
-docker compose up -d postgres                  # from repo root
-cd services/auth-service && ./gradlew bootRun  # run (port 8081)
-cd services/auth-service && ./gradlew test     # tests (needs Docker)
+docker compose up -d postgres                     # from repo root
+cd services/auth-service && ./gradlew bootRun     # run (port 8081)
+cd services/finance-service && ./gradlew bootRun  # run (port 8082; needs auth-service JWKS)
+cd services/<service> && ./gradlew test           # tests (needs Docker)
+cd frontend && npm run dev                        # UI (port 5173)
 ```
 
 ## Learning mode
