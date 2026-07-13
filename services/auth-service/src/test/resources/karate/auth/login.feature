@@ -85,14 +85,15 @@ Feature: Login — POST /api/v1/auth/login and JWKS
     When method post
     Then status 401
     And match header Content-Type contains 'application/problem+json'
-    * def wrongPasswordBody = response
+    # traceId is per-request (random for both cases) — compare the rest
+    * def wrongPasswordBody = karate.filterKeys(response, ['type','title','status','detail'])
 
     * def ghostEmail = 'ghost.' + java.lang.System.nanoTime() + '@example.com'
     Given path 'api/v1/auth/login'
     And request { email: '#(ghostEmail)', password: 'wrong-password-entirely' }
     When method post
     Then status 401
-    And match response == wrongPasswordBody
+    And match karate.filterKeys(response, ['type','title','status','detail']) == wrongPasswordBody
 
   Scenario: JWKS is public and never leaks private key material
     Given path '.well-known/jwks.json'

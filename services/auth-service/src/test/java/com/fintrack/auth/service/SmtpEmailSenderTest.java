@@ -66,11 +66,12 @@ class SmtpEmailSenderTest {
 
         MimeMessage sent = captureSent();
         assertThat(sent.getSubject()).isEqualTo("Your FinTrack verification code");
-        assertThat(sent.getAllRecipients()[0].toString()).isEqualTo("jane@example.com");
-        String bodies = allBodies(sent);
+        assertThat(sent.getAllRecipients()[0]).hasToString("jane@example.com");
         // both alternatives present: plain text and the styled HTML block
-        assertThat(bodies).contains("Your FinTrack verification code is: 123456");
-        assertThat(bodies).contains("Verify your email").contains("letter-spacing");
+        assertThat(allBodies(sent))
+                .contains("Your FinTrack verification code is: 123456")
+                .contains("Verify your email")
+                .contains("letter-spacing");
     }
 
     @Test
