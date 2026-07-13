@@ -7,10 +7,13 @@ import com.fintrack.auth.service.LoginService;
 import com.fintrack.auth.service.RefreshService;
 import com.fintrack.auth.service.SignupResult;
 import com.fintrack.auth.service.SignupService;
+import com.fintrack.auth.service.PasswordResetService;
 import com.fintrack.auth.service.VerificationService;
+import com.fintrack.auth.web.dto.ForgotPasswordRequest;
 import com.fintrack.auth.web.dto.LoginRequest;
 import com.fintrack.auth.web.dto.LoginResponse;
 import com.fintrack.auth.web.dto.ResendVerificationRequest;
+import com.fintrack.auth.web.dto.ResetPasswordRequest;
 import com.fintrack.auth.web.dto.SignupRequest;
 import com.fintrack.auth.web.dto.SignupResponse;
 import com.fintrack.auth.web.dto.VerifyEmailRequest;
@@ -33,6 +36,7 @@ public class AuthController {
     private final LoginService loginService;
     private final RefreshService refreshService;
     private final VerificationService verificationService;
+    private final PasswordResetService passwordResetService;
     private final JwtProperties jwtProperties;
     private final RefreshTokenCookies refreshTokenCookies;
 
@@ -40,12 +44,14 @@ public class AuthController {
                           LoginService loginService,
                           RefreshService refreshService,
                           VerificationService verificationService,
+                          PasswordResetService passwordResetService,
                           JwtProperties jwtProperties,
                           RefreshTokenCookies refreshTokenCookies) {
         this.signupService = signupService;
         this.loginService = loginService;
         this.refreshService = refreshService;
         this.verificationService = verificationService;
+        this.passwordResetService = passwordResetService;
         this.jwtProperties = jwtProperties;
         this.refreshTokenCookies = refreshTokenCookies;
     }
@@ -68,6 +74,19 @@ public class AuthController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
         verificationService.resend(request.email());
+    }
+
+    // always 204 — reveals nothing about whether the email has an account
+    @PostMapping("/forgot-password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestReset(request.email());
+    }
+
+    @PostMapping("/reset-password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.reset(request.email(), request.code(), request.newPassword());
     }
 
     @PostMapping("/login")

@@ -186,6 +186,47 @@ test.describe('login', () => {
   });
 });
 
+test.describe('password reset', () => {
+  test.beforeEach(async ({ page }) => mockNoSession(page));
+
+  test('forgot → code + new password → login with confirmation', async ({ page }) => {
+    await page.route('**/api/v1/auth/forgot-password', (route) => route.fulfill({ status: 204 }));
+    await page.route('**/api/v1/auth/reset-password', (route) => route.fulfill({ status: 204 }));
+
+    await page.goto('/login');
+    await page.getByRole('link', { name: 'Forgot password?' }).click();
+
+    // sync on the route change: both pages have an "Email" field, and on slow
+    // machines the fill can land on the login page's field mid-navigation
+    await expect(page.getByText('Forgot your password?')).toBeVisible();
+    await page.getByLabel('Email').fill('jane@example.com');
+    await page.getByRole('button', { name: 'Send reset code' }).click();
+
+    await expect(page.getByText('Reset your password')).toBeVisible();
+    await page.getByLabel('Reset code').fill('123456');
+    await page.getByLabel('New password').fill('completely different secret');
+    await page.getByRole('button', { name: 'Reset password' }).click();
+
+    await expect(page.getByText('Password reset — log in with your new password.')).toBeVisible();
+    await expect(page.getByLabel('Email')).toHaveValue('jane@example.com');
+  });
+
+  test('wrong reset code shows the problem detail', async ({ page }) => {
+    await page.route('**/api/v1/auth/reset-password', (route) =>
+      route.fulfill(
+        problem(400, { title: 'Invalid reset code', detail: 'Invalid or expired reset code' }),
+      ),
+    );
+    await page.goto('/reset-password');
+    await page.getByLabel('Email').fill('jane@example.com');
+    await page.getByLabel('Reset code').fill('000000');
+    await page.getByLabel('New password').fill('completely different secret');
+    await page.getByRole('button', { name: 'Reset password' }).click();
+
+    await expect(page.getByText('Invalid or expired reset code')).toBeVisible();
+  });
+});
+
 test.describe('route guarding', () => {
   test('visiting /profile without a session redirects to /login', async ({ page }) => {
     await mockNoSession(page);

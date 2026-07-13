@@ -71,4 +71,9 @@ public class User {
     public void markEmailVerified(Instant when) {
         this.emailVerifiedAt = when;
     }
+
+    /** Only the reset flow may rotate the hash (ADR 005). */
+    public void changePassword(String newPasswordHash) {
+        this.passwordHash = newPasswordHash;
+    }
 }
