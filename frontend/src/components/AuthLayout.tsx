@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Logo } from '@/components/Logo';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 /** Split-screen shell for signup/login: brand panel left, form right. */
 export function AuthLayout({ children }: { children: ReactNode }) {
@@ -27,8 +28,9 @@ export function AuthLayout({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex flex-col">
-        <header className="flex items-center p-6 lg:hidden">
-          <Logo />
+        <header className="flex items-center p-6">
+          <Logo className="lg:hidden" />
+          <ThemeToggle className="ml-auto" />
         </header>
         <div className="flex flex-1 items-center justify-center px-4 pb-16">
           <div className="w-full max-w-sm">{children}</div>

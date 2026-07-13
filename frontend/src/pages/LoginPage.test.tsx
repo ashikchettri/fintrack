@@ -1,4 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { toast } from 'sonner';
+
+vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import LoginPage from './LoginPage';
@@ -96,14 +99,14 @@ describe('LoginPage', () => {
     );
   });
 
-  it('shows a network hint when the API is unreachable', async () => {
+  it('toasts a network hint when the API is unreachable', async () => {
     mockedApi.login.mockRejectedValue(new TypeError('fetch failed'));
     renderLogin();
 
     await fillAndSubmit('jane@example.com', 'whatever-password');
 
     await waitFor(() =>
-      expect(screen.getByText(/Network error/)).toBeInTheDocument(),
+      expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/Network error/)),
     );
   });
 });

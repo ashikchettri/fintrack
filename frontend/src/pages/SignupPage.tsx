@@ -1,7 +1,10 @@
-import { useState } from 'react';
-import type { FormEvent } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { ApiError, api } from '../api/client';
+import { signupSchema } from '@/validators/auth';
+import type { SignupValues } from '@/validators/auth';
 import { AuthLayout } from '@/components/AuthLayout';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -9,51 +12,35 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-// Client-side rules mirror the backend Bean Validation (SignupRequest):
-// server remains the authority, this is just faster feedback.
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD_MIN = 12;
-const PASSWORD_MAX = 128;
-
 export default function SignupPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [formError, setFormError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<SignupValues>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: { email: '', password: '' },
+  });
 
-  function validate(): Record<string, string> {
-    const errors: Record<string, string> = {};
-    if (!EMAIL_PATTERN.test(email)) errors.email = 'Enter a valid email address';
-    if (password.length < PASSWORD_MIN || password.length > PASSWORD_MAX) {
-      errors.password = `Password must be between ${PASSWORD_MIN} and ${PASSWORD_MAX} characters`;
-    }
-    return errors;
-  }
-
-  async function onSubmit(event: FormEvent) {
-    event.preventDefault();
-    setFormError(null);
-
-    const clientErrors = validate();
-    setFieldErrors(clientErrors);
-    if (Object.keys(clientErrors).length > 0) return;
-
-    setSubmitting(true);
+  async function onSubmit(values: SignupValues) {
     try {
-      await api.signup(email, password);
-      navigate('/verify-email', { state: { email } });
+      await api.signup(values.email, values.password);
+      navigate('/verify-email', { state: { email: values.email } });
     } catch (error) {
       if (error instanceof ApiError) {
         // 400 carries our field→message extension; 409 = email taken
-        if (error.problem.errors) setFieldErrors(error.problem.errors);
-        else setFormError(error.problem.detail ?? 'Signup failed');
+        if (error.problem.errors) {
+          for (const [field, message] of Object.entries(error.problem.errors)) {
+            setError(field as keyof SignupValues, { message });
+          }
+        } else {
+          setError('root', { message: error.problem.detail ?? 'Signup failed' });
+        }
       } else {
-        setFormError('Network error — is the API running?');
+        toast.error('Network error — is the API running?');
       }
-    } finally {
-      setSubmitting(false);
     }
   }
 
@@ -65,20 +52,19 @@ export default function SignupPage() {
           <CardDescription>A household is created for you automatically.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
-                aria-invalid={fieldErrors.email ? true : undefined}
+                aria-invalid={errors.email ? true : undefined}
                 placeholder="you@example.com"
+                {...register('email')}
               />
-              {fieldErrors.email && (
-                <p className="text-sm text-destructive" role="alert">{fieldErrors.email}</p>
+              {errors.email && (
+                <p className="text-sm text-destructive" role="alert">{errors.email.message}</p>
               )}
             </div>
 
@@ -87,21 +73,20 @@ export default function SignupPage() {
               <Input
                 id="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 autoComplete="new-password"
-                aria-invalid={fieldErrors.password ? true : undefined}
+                aria-invalid={errors.password ? true : undefined}
                 placeholder="At least 12 characters"
+                {...register('password')}
               />
-              {fieldErrors.password && (
-                <p className="text-sm text-destructive" role="alert">{fieldErrors.password}</p>
+              {errors.password && (
+                <p className="text-sm text-destructive" role="alert">{errors.password.message}</p>
               )}
             </div>
 
-            {formError && <Alert role="alert">{formError}</Alert>}
+            {errors.root && <Alert role="alert">{errors.root.message}</Alert>}
 
-            <Button type="submit" disabled={submitting} className="mt-1 w-full">
-              {submitting ? 'Creating…' : 'Sign up'}
+            <Button type="submit" disabled={isSubmitting} className="mt-1 w-full">
+              {isSubmitting ? 'Creating…' : 'Sign up'}
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
