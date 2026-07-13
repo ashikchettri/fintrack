@@ -76,4 +76,9 @@ public class User {
     public void changePassword(String newPasswordHash) {
         this.passwordHash = newPasswordHash;
     }
+
+    /** Email change, after the new address is proven by code (already verified). */
+    public void changeEmail(String newEmail) {
+        this.email = newEmail;
+    }
 }

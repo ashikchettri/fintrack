@@ -133,9 +133,14 @@ class LoginIntegrationTest {
                 .andExpect(status().isUnauthorized())
                 .andReturn();
 
-        // identical bodies — the response must not reveal which factor failed
-        assertThat(unknownEmail.getResponse().getContentAsString())
-                .isEqualTo(wrongPassword.getResponse().getContentAsString());
+        // identical bodies apart from the per-request traceId — which is random
+        // in both cases and so reveals nothing about which factor failed
+        assertThat(stripTraceId(unknownEmail.getResponse().getContentAsString()))
+                .isEqualTo(stripTraceId(wrongPassword.getResponse().getContentAsString()));
+    }
+
+    private static String stripTraceId(String problemJson) {
+        return problemJson.replaceAll(",?\"traceId\":\"[^\"]*\"", "");
     }
 
     @Test

@@ -118,8 +118,12 @@ public class PasswordResetService {
     }
 
     private String randomNumericCode() {
-        int bound = (int) Math.pow(10, properties.codeLength());
-        return String.format("%0" + properties.codeLength() + "d", secureRandom.nextInt(bound));
+        // digit-by-digit: uniform, and no dynamic format strings (Sonar S3457)
+        StringBuilder code = new StringBuilder(properties.codeLength());
+        for (int i = 0; i < properties.codeLength(); i++) {
+            code.append(secureRandom.nextInt(10));
+        }
+        return code.toString();
     }
 
     private static String normalize(String email) {

@@ -36,6 +36,20 @@ public record EmailContent(String subject, String text, String html) {
                         code, ttl));
     }
 
+    public static EmailContent emailChangeCode(String code, Duration ttl) {
+        return new EmailContent(
+                "Confirm your new FinTrack email",
+                """
+                Your FinTrack email-change code is: %s
+
+                Enter it in FinTrack to confirm this address. It expires in %d
+                minutes. If you didn't request this, ignore this email.
+                """.formatted(code, ttl.toMinutes()),
+                html("Confirm your new email",
+                        "Enter this code in FinTrack to confirm your new email address.",
+                        code, ttl));
+    }
+
     private static String html(String title, String intro, String code, Duration ttl) {
         return """
                 <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:420px;margin:0 auto;padding:24px">
