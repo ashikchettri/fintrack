@@ -110,9 +110,11 @@ class ChangePasswordIntegrationTest {
 
     @Test
     void inboundRequestIdIsEchoedBack() throws Exception {
-        MvcResult result = mockMvc.perform(get("/actuator/health")
+        // any normal API endpoint flows through the servlet filter chain;
+        // a no-cookie refresh (401) is endpoint-behavior-independent and stable
+        MvcResult result = mockMvc.perform(post("/api/v1/auth/refresh")
                         .header("X-Request-Id", "client-supplied-trace-1234"))
-                .andExpect(status().isOk())
+                .andExpect(status().isUnauthorized())
                 .andReturn();
         assertThat(result.getResponse().getHeader("X-Request-Id"))
                 .isEqualTo("client-supplied-trace-1234");
