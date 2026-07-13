@@ -38,6 +38,8 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
     // verification emails: Mailpit locally, Gmail SMTP via env in deployed envs (ADR 004)
     implementation("org.springframework.boot:spring-boot-starter-mail")
+    // official Resend SDK (replaces the hand-rolled RestClient integration)
+    implementation("com.resend:resend-java:4.13.0")
 
     // Boot 4: Flyway auto-configuration lives in its own starter — flyway-core
     // alone on the classpath no longer triggers migrations at startup
