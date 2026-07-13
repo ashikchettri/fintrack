@@ -1,0 +1,20 @@
+# Shared version catalog for all services. Symlinked into each service's
+# gradle/ dir so `libs.*` and `libs.plugins.*` resolve there.
+[versions]
+springBoot = "4.1.0"
+sonarqube = "6.2.0.5505"
+bouncycastle = "1.84"
+springdoc = "3.0.3"
+karate = "1.5.2"
+resend = "4.13.0"
+
+[libraries]
+spring-boot-dependencies = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "springBoot" }
+bouncycastle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+springdoc-openapi = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+resend = { module = "com.resend:resend-java", version.ref = "resend" }
+karate-junit5 = { module = "io.karatelabs:karate-junit5", version.ref = "karate" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
+sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
