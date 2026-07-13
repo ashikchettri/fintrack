@@ -1,4 +1,4 @@
-# FinTrack — Claude context
+# FinTrack — Codex context
 
 Household personal-finance tracker; learning project for Spring Boot 4 microservices → Docker → K8s → GCP. Owner: ashik (senior engineer, finance industry).
 
@@ -14,7 +14,7 @@ Phase 1 **complete + hardened**: auth-service has signup with 6-digit email veri
 
 ## Stack
 
-Java 25 · Spring Boot 4.1 · Gradle (Kotlin DSL) · Postgres 17 (Docker Compose) · Flyway · Testcontainers. Later: Spring Cloud Gateway, Redis, React 19, Spring AI + Claude, Minikube/GKE.
+Java 25 · Spring Boot 4.1 · Gradle (Kotlin DSL) · Postgres 17 (Docker Compose) · Flyway · Testcontainers. Later: Spring Cloud Gateway, Redis, React 19, Spring AI + Codex, Minikube/GKE.
 
 ## Conventions — enforce these in every change
 

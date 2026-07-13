@@ -1,0 +1,31 @@
+# Automated dependency PRs — weekly, grouped to keep review load sane.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /services/auth-service
+    schedule:
+      interval: weekly
+    groups:
+      backend-deps:
+        patterns: ["*"]
+
+  - package-ecosystem: gradle
+    directory: /services/finance-service
+    schedule:
+      interval: weekly
+    groups:
+      backend-deps:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    groups:
+      frontend-deps:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

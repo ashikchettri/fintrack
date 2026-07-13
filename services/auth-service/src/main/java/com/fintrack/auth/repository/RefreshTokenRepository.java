@@ -26,4 +26,10 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
     @Query("update RefreshToken rt set rt.revokedAt = :now "
             + "where rt.user.id = :userId and rt.revokedAt is null")
     int revokeAllActiveForUser(@Param("userId") UUID userId, @Param("now") Instant now);
+
+    /** Housekeeping: purge tokens that have been dead longer than the audit window. */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from RefreshToken rt "
+            + "where rt.expiresAt < :cutoff or rt.revokedAt < :cutoff")
+    int deleteDeadTokensOlderThan(@Param("cutoff") Instant cutoff);
 }
