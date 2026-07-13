@@ -1,94 +1,78 @@
 package com.fintrack.auth.service;
 
-import com.sun.net.httpserver.HttpServer;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import com.resend.Resend;
+import com.resend.core.exception.ResendException;
+import com.resend.services.emails.Emails;
+import com.resend.services.emails.model.CreateEmailOptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-/** Drives the real HTTP path against a stub Resend API (JDK HttpServer). */
+/** Asserts the exact request handed to the official Resend SDK. */
+@ExtendWith(MockitoExtension.class)
 class ResendEmailSenderTest {
 
-    private record CapturedRequest(String path, String authorization, String body) {
-    }
+    @Mock
+    private Resend resend;
 
-    private static HttpServer server;
-    private static final AtomicReference<CapturedRequest> captured = new AtomicReference<>();
-    private static volatile int responseStatus = 200;
+    @Mock
+    private Emails emails;
 
     private ResendEmailSender sender;
 
-    @BeforeAll
-    static void startStub() throws IOException {
-        server = HttpServer.create(new InetSocketAddress(0), 0);
-        server.createContext("/", exchange -> {
-            captured.set(new CapturedRequest(
-                    exchange.getRequestURI().getPath(),
-                    exchange.getRequestHeaders().getFirst("Authorization"),
-                    new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8)));
-            byte[] response = "{\"id\":\"stub\"}".getBytes(StandardCharsets.UTF_8);
-            exchange.getResponseHeaders().set("Content-Type", "application/json");
-            exchange.sendResponseHeaders(responseStatus, response.length);
-            try (var out = exchange.getResponseBody()) {
-                out.write(response);
-            }
-        });
-        server.start();
-    }
-
-    @AfterAll
-    static void stopStub() {
-        server.stop(0);
-    }
-
     @BeforeEach
     void setUp() {
-        responseStatus = 200;
-        captured.set(null);
-        sender = new ResendEmailSender("test-api-key", "FinTrack <onboarding@resend.dev>",
-                Duration.ofMinutes(15),
-                "http://localhost:" + server.getAddress().getPort());
+        when(resend.emails()).thenReturn(emails);
+        sender = new ResendEmailSender(resend, "FinTrack <onboarding@resend.dev>",
+                Duration.ofMinutes(15));
+    }
+
+    private CreateEmailOptions captureSent() throws ResendException {
+        ArgumentCaptor<CreateEmailOptions> captor = ArgumentCaptor.forClass(CreateEmailOptions.class);
+        verify(emails).send(captor.capture());
+        return captor.getValue();
     }
 
     @Test
-    void postsTheVerificationEmailWithBearerAuth() {
+    void sendsTheVerificationEmailWithTextAndHtml() throws ResendException {
         sender.sendVerificationCode("jane@example.com", "1234");
 
-        CapturedRequest request = captured.get();
-        assertThat(request.path()).isEqualTo("/emails");
-        assertThat(request.authorization()).isEqualTo("Bearer test-api-key");
-        assertThat(request.body())
-                .contains("\"jane@example.com\"")
-                .contains("Your FinTrack verification code")
-                .contains("1234")
-                .contains("onboarding@resend.dev");
+        CreateEmailOptions sent = captureSent();
+        assertThat(sent.getFrom()).isEqualTo("FinTrack <onboarding@resend.dev>");
+        assertThat(sent.getTo()).containsExactly("jane@example.com");
+        assertThat(sent.getSubject()).isEqualTo("Your FinTrack verification code");
+        assertThat(sent.getText()).contains("1234").contains("15 minutes");
+        assertThat(sent.getHtml()).contains("1234").contains("Verify your email");
     }
 
     @Test
-    void postsTheResetEmailWithTheResetCopy() {
+    void sendsTheResetEmailWithTheResetCopy() throws ResendException {
         sender.sendPasswordResetCode("jane@example.com", "123456");
 
-        assertThat(captured.get().body())
-                .contains("Your FinTrack password reset code")
-                .contains("123456")
-                .contains("your password is unchanged");
+        CreateEmailOptions sent = captureSent();
+        assertThat(sent.getSubject()).isEqualTo("Your FinTrack password reset code");
+        assertThat(sent.getText()).contains("123456").contains("your password is unchanged");
+        assertThat(sent.getHtml()).contains("123456").contains("Reset your password");
     }
 
     @Test
-    void apiErrorsSurfaceAsExceptions() {
-        responseStatus = 422;
+    void sdkFailuresSurfaceAsExceptions() throws ResendException {
+        // a failed send must fail the signup/reset transaction, not vanish silently
+        when(emails.send(any())).thenThrow(new ResendException("boom"));
 
-        // a failed send must fail the signup transaction, not vanish silently
-        assertThatExceptionOfType(Exception.class)
-                .isThrownBy(() -> sender.sendVerificationCode("jane@example.com", "1234"));
+        assertThatIllegalStateException()
+                .isThrownBy(() -> sender.sendVerificationCode("jane@example.com", "1234"))
+                .withMessageContaining("Resend send failed");
     }
 }
