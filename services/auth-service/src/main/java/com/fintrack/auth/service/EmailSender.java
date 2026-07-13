@@ -10,4 +10,6 @@ public interface EmailSender {
     void sendVerificationCode(String toEmail, String code);
 
     void sendPasswordResetCode(String toEmail, String code);
+
+    void sendEmailChangeCode(String toEmail, String code);
 }

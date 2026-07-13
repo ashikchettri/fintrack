@@ -32,6 +32,11 @@ public class SmtpEmailSender implements EmailSender {
         send(toEmail, EmailContent.passwordResetCode(code, properties.codeTtl()));
     }
 
+    @Override
+    public void sendEmailChangeCode(String toEmail, String code) {
+        send(toEmail, EmailContent.emailChangeCode(code, properties.codeTtl()));
+    }
+
     private void send(String toEmail, EmailContent content) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
