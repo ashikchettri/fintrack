@@ -2,7 +2,7 @@ plugins {
     java
     jacoco
     id("org.springframework.boot") version "4.1.0"
-    id("org.sonarqube") version "6.2.0.5505"
+    id("org.sonarqube") version "7.3.1.8318"
 }
 
 group = "com.fintrack"
@@ -29,7 +29,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     // Argon2PasswordEncoder delegates to BouncyCastle — optional in
     // spring-security-crypto, so it must be declared explicitly (not in the Boot BOM)
-    implementation("org.bouncycastle:bcprov-jdk18on:1.84")
+    implementation("org.bouncycastle:bcprov-jdk18on:1.85")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
