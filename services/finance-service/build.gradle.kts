@@ -2,7 +2,7 @@ plugins {
     java
     jacoco
     id("org.springframework.boot") version "4.1.0"
-    id("org.sonarqube") version "6.2.0.5505"
+    id("org.sonarqube") version "7.3.1.8318"
 }
 
 group = "com.fintrack"
