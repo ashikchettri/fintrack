@@ -65,7 +65,7 @@ export default function VerifyEmailPage() {
         <CardHeader>
           <CardTitle>Check your email</CardTitle>
           <CardDescription>
-            We sent a 4-digit code{stateEmail ? ` to ${stateEmail}` : ''}. It expires in 15 minutes.
+            We sent a 6-digit code{stateEmail ? ` to ${stateEmail}` : ''}. It expires in 15 minutes.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -90,18 +90,18 @@ export default function VerifyEmailPage() {
                 id="code"
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                maxLength={4}
+                maxLength={6}
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                placeholder="0000"
-                className="text-center text-2xl tracking-[0.5em] font-semibold"
+                placeholder="000000"
+                className="text-center text-2xl tracking-[0.4em] font-semibold"
               />
             </div>
 
             {error && <Alert role="alert">{error}</Alert>}
             {resendNotice && <Alert variant="success" role="status">{resendNotice}</Alert>}
 
-            <Button type="submit" disabled={submitting || code.length !== 4} className="mt-1 w-full">
+            <Button type="submit" disabled={submitting || code.length !== 6} className="mt-1 w-full">
               {submitting ? 'Verifying…' : 'Verify email'}
             </Button>
             <Button

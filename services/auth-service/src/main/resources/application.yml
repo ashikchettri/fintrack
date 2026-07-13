@@ -59,7 +59,7 @@ fintrack:
       api-key: ${RESEND_API_KEY:}
       from: ${RESEND_FROM:FinTrack <onboarding@resend.dev>}
     verification:
-      code-length: 4     # ADR 004 — compensated by ttl + attempt cap; bump to 6 when stakes rise
+      code-length: 6     # ADR 004 (updated 2026-07-13): one length for signup + reset codes
       code-ttl: 15m
       max-attempts: 5
       resend-cooldown: 60s

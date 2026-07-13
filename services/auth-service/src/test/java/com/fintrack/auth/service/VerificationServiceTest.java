@@ -31,7 +31,7 @@ class VerificationServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-07-12T10:00:00Z");
     private static final VerificationProperties PROPS = new VerificationProperties(
-            4, Duration.ofMinutes(15), 5, Duration.ofSeconds(60), "no-reply@test");
+            6, Duration.ofMinutes(15), 5, Duration.ofSeconds(60), "no-reply@test");
 
     @Mock
     private EmailVerificationCodeRepository codeRepository;
@@ -67,10 +67,10 @@ class VerificationServiceTest {
     private String lastRawCode;
 
     @Test
-    void issuesAHashedFourDigitCodeAndEmailsTheRawOne() {
+    void issuesAHashedSixDigitCodeAndEmailsTheRawOne() {
         EmailVerificationCode code = issueAndCapture();
 
-        assertThat(lastRawCode).matches("\\d{4}");
+        assertThat(lastRawCode).matches("\\d{6}");
         assertThat(code.getCodeHash())
                 .isEqualTo(TokenService.sha256Hex(lastRawCode))
                 .isNotEqualTo(lastRawCode);
@@ -97,7 +97,7 @@ class VerificationServiceTest {
         when(codeRepository.findByUserId(user.getId())).thenReturn(Optional.of(code));
 
         assertThatExceptionOfType(InvalidVerificationCodeException.class)
-                .isThrownBy(() -> service.verify("jane@example.com", "0000".equals(lastRawCode) ? "1111" : "0000"));
+                .isThrownBy(() -> service.verify("jane@example.com", "000000".equals(lastRawCode) ? "111111" : "000000"));
 
         assertThat(code.getAttempts()).isEqualTo(1);
         assertThat(user.isEmailVerified()).isFalse();
@@ -108,7 +108,7 @@ class VerificationServiceTest {
         EmailVerificationCode code = issueAndCapture();
         when(userRepository.findByEmail("jane@example.com")).thenReturn(Optional.of(user));
         when(codeRepository.findByUserId(user.getId())).thenReturn(Optional.of(code));
-        String wrong = "0000".equals(lastRawCode) ? "1111" : "0000";
+        String wrong = "000000".equals(lastRawCode) ? "111111" : "000000";
 
         for (int i = 0; i < PROPS.maxAttempts(); i++) {
             assertThatExceptionOfType(InvalidVerificationCodeException.class)
@@ -124,12 +124,12 @@ class VerificationServiceTest {
     @Test
     void expiredCodeIsRejected() {
         EmailVerificationCode expired = new EmailVerificationCode(
-                user, TokenService.sha256Hex("1234"), NOW.minusSeconds(1800), NOW.minusSeconds(900));
+                user, TokenService.sha256Hex("123456"), NOW.minusSeconds(1800), NOW.minusSeconds(900));
         when(userRepository.findByEmail("jane@example.com")).thenReturn(Optional.of(user));
         when(codeRepository.findByUserId(user.getId())).thenReturn(Optional.of(expired));
 
         assertThatExceptionOfType(InvalidVerificationCodeException.class)
-                .isThrownBy(() -> service.verify("jane@example.com", "1234"));
+                .isThrownBy(() -> service.verify("jane@example.com", "123456"));
     }
 
     @Test
@@ -137,7 +137,7 @@ class VerificationServiceTest {
         when(userRepository.findByEmail("ghost@example.com")).thenReturn(Optional.empty());
 
         assertThatExceptionOfType(InvalidVerificationCodeException.class)
-                .isThrownBy(() -> service.verify("ghost@example.com", "1234"));
+                .isThrownBy(() -> service.verify("ghost@example.com", "123456"));
     }
 
     @Test

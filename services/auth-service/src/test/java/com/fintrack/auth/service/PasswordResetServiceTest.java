@@ -33,7 +33,7 @@ class PasswordResetServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-07-12T10:00:00Z");
     private static final VerificationProperties PROPS = new VerificationProperties(
-            4, Duration.ofMinutes(15), 5, Duration.ofSeconds(60), "no-reply@test");
+            6, Duration.ofMinutes(15), 5, Duration.ofSeconds(60), "no-reply@test");
 
     @Mock
     private PasswordResetCodeRepository codeRepository;
