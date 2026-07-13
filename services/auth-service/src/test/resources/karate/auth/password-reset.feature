@@ -42,6 +42,41 @@ Feature: Password reset — ADR 005 contract
     When method post
     Then status 200
 
+  Scenario: a password reset kills every pre-reset session (stolen-session eviction)
+    * def email = uniqueEmail()
+    Given path 'api/v1/auth/signup'
+    And request { email: '#(email)', password: '#(validPassword)' }
+    When method post
+    Then status 201
+
+    Given path 'api/v1/auth/verify-email'
+    And request { email: '#(email)', code: '#(EmailStore.lastCodeFor(email))' }
+    When method post
+    Then status 204
+
+    # establish a session — the refresh cookie a thief might hold
+    Given path 'api/v1/auth/login'
+    And request { email: '#(email)', password: '#(validPassword)' }
+    When method post
+    Then status 200
+    * def stolenSession = responseCookies['fintrack_refresh'].value
+
+    Given path 'api/v1/auth/forgot-password'
+    And request { email: '#(email)' }
+    When method post
+    Then status 204
+
+    Given path 'api/v1/auth/reset-password'
+    And request { email: '#(email)', code: '#(EmailStore.lastResetCodeFor(email))', newPassword: '#(newPassword)' }
+    When method post
+    Then status 204
+
+    # the pre-reset session is dead (ADR 005) — the thief is evicted
+    * cookie fintrack_refresh = stolenSession
+    Given path 'api/v1/auth/refresh'
+    When method post
+    Then status 401
+
   Scenario: forgot-password reveals nothing about unknown emails
     * def ghost = 'ghost.reset.' + java.lang.System.nanoTime() + '@example.com'
     Given path 'api/v1/auth/forgot-password'

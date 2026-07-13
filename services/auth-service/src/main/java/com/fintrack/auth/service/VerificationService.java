@@ -39,6 +39,13 @@ public class VerificationService {
     /** Generates, stores (hashed), and emails a fresh code — replacing any prior one. */
     @Transactional
     public void issueFor(User user) {
+        doIssue(user);
+    }
+
+    // shared by issueFor and resend WITHOUT self-invoking a @Transactional
+    // method (the proxy would be bypassed — Sonar S6809); both public entry
+    // points carry the annotation instead
+    private void doIssue(User user) {
         codeRepository.deleteByUserId(user.getId());
 
         String code = randomNumericCode();
@@ -92,12 +99,16 @@ public class VerificationService {
         if (inCooldown) {
             return;
         }
-        issueFor(user.get());
+        doIssue(user.get());
     }
 
     private String randomNumericCode() {
-        int bound = (int) Math.pow(10, properties.codeLength());
-        return String.format("%0" + properties.codeLength() + "d", secureRandom.nextInt(bound));
+        // digit-by-digit: uniform, and no dynamic format strings (Sonar S3457)
+        StringBuilder code = new StringBuilder(properties.codeLength());
+        for (int i = 0; i < properties.codeLength(); i++) {
+            code.append(secureRandom.nextInt(10));
+        }
+        return code.toString();
     }
 
     private static String normalize(String email) {
