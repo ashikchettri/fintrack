@@ -89,8 +89,8 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Start Postgres
-        run: docker compose up -d postgres
+      - name: Start Postgres and Mailpit
+        run: docker compose up -d postgres mailpit
 
       - name: Start auth-service
         working-directory: services/auth-service

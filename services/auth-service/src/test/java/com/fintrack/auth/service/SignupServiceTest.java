@@ -40,6 +40,9 @@ class SignupServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private VerificationService verificationService;
+
     @InjectMocks
     private SignupService signupService;
 
@@ -60,6 +63,8 @@ class SignupServiceTest {
         verify(userRepository).save(result.user());
         verify(householdRepository).save(result.household());
         verify(householdMemberRepository).save(result.member());
+        // a verification code must be issued for every new account (ADR 004)
+        verify(verificationService).issueFor(result.user());
     }
 
     @Test

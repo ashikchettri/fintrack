@@ -5,6 +5,7 @@ Feature: Login — POST /api/v1/auth/login and JWKS
     * url baseUrl
     * def uniqueEmail = function(){ return 'karate.login.' + java.lang.System.nanoTime() + '@example.com' }
     * def validPassword = 'correct horse battery staple'
+    * def EmailStore = Java.type('com.fintrack.auth.testsupport.RecordingEmailSender')
 
   Scenario: signup then login returns bearer tokens
     * def email = uniqueEmail()
@@ -12,6 +13,12 @@ Feature: Login — POST /api/v1/auth/login and JWKS
     And request { email: '#(email)', password: '#(validPassword)' }
     When method post
     Then status 201
+
+    # verify the mailbox (ADR 004) — code captured by the test-seam email sender
+    Given path 'api/v1/auth/verify-email'
+    And request { email: '#(email)', code: '#(EmailStore.lastCodeFor(email))' }
+    When method post
+    Then status 204
 
     Given path 'api/v1/auth/login'
     And request { email: '#(email)', password: '#(validPassword)' }
@@ -37,6 +44,12 @@ Feature: Login — POST /api/v1/auth/login and JWKS
     When method post
     Then status 201
 
+    # verify the mailbox (ADR 004) — code captured by the test-seam email sender
+    Given path 'api/v1/auth/verify-email'
+    And request { email: '#(email)', code: '#(EmailStore.lastCodeFor(email))' }
+    When method post
+    Then status 204
+
     Given path 'api/v1/auth/login'
     And request { email: '#(email)', password: '#(validPassword)' }
     When method post
@@ -60,6 +73,12 @@ Feature: Login — POST /api/v1/auth/login and JWKS
     And request { email: '#(email)', password: '#(validPassword)' }
     When method post
     Then status 201
+
+    # verify the mailbox (ADR 004) — code captured by the test-seam email sender
+    Given path 'api/v1/auth/verify-email'
+    And request { email: '#(email)', code: '#(EmailStore.lastCodeFor(email))' }
+    When method post
+    Then status 204
 
     Given path 'api/v1/auth/login'
     And request { email: '#(email)', password: 'wrong-password-entirely' }

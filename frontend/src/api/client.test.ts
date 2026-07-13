@@ -104,6 +104,27 @@ describe('silent refresh', () => {
   });
 });
 
+describe('verification endpoints', () => {
+  it('verifyEmail posts email and code', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await api.verifyEmail('jane@example.com', '1234');
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/v1/auth/verify-email');
+    expect(init.body).toBe(JSON.stringify({ email: 'jane@example.com', code: '1234' }));
+  });
+
+  it('resendVerification posts the email', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await api.resendVerification('jane@example.com');
+
+    const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/v1/auth/resend-verification');
+  });
+});
+
 describe('logout', () => {
   it('handles the 204 and clears the token', async () => {
     tokenStore.set('jwt-live');

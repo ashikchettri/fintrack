@@ -51,6 +51,12 @@ class LoginIntegrationTest {
         mockMvc.perform(post(SIGNUP).contentType(MediaType.APPLICATION_JSON)
                         .content(body(email, PASSWORD)))
                 .andExpect(status().isCreated());
+        // login requires a verified mailbox (ADR 004) — code via the recording sender
+        mockMvc.perform(post("/api/v1/auth/verify-email").contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email": "%s", "code": "%s"}"""
+                                .formatted(email, com.fintrack.auth.testsupport.RecordingEmailSender.lastCodeFor(email))))
+                .andExpect(status().isNoContent());
     }
 
     private String loginAndExtract(String email, String jsonPath) throws Exception {

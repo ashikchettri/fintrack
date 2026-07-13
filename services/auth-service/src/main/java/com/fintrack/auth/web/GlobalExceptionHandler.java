@@ -1,8 +1,10 @@
 package com.fintrack.auth.web;
 
 import com.fintrack.auth.service.EmailAlreadyInUseException;
+import com.fintrack.auth.service.EmailNotVerifiedException;
 import com.fintrack.auth.service.InvalidCredentialsException;
 import com.fintrack.auth.service.InvalidRefreshTokenException;
+import com.fintrack.auth.service.InvalidVerificationCodeException;
 import com.fintrack.auth.service.TooManyLoginAttemptsException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -34,6 +36,24 @@ public class GlobalExceptionHandler {
     private static final URI EMAIL_IN_USE_TYPE = URI.create("https://fintrack.example/problems/email-already-in-use");
     private static final URI VALIDATION_TYPE = URI.create("https://fintrack.example/problems/validation-error");
     private static final URI INVALID_CREDENTIALS_TYPE = URI.create("https://fintrack.example/problems/invalid-credentials");
+
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    ProblemDetail handleEmailNotVerified(EmailNotVerifiedException ex) {
+        // distinct type: the UI routes to the verification screen on this
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setType(URI.create("https://fintrack.example/problems/email-not-verified"));
+        problem.setTitle("Email not verified");
+        return problem;
+    }
+
+    @ExceptionHandler(InvalidVerificationCodeException.class)
+    ProblemDetail handleInvalidVerificationCode(InvalidVerificationCodeException ex) {
+        // wrong, expired, over-attempted, unknown email — all identical
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setType(URI.create("https://fintrack.example/problems/invalid-verification-code"));
+        problem.setTitle("Invalid verification code");
+        return problem;
+    }
 
     @ExceptionHandler(TooManyLoginAttemptsException.class)
     ProblemDetail handleTooManyAttempts(TooManyLoginAttemptsException ex) {

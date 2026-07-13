@@ -29,6 +29,10 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    // null until the mailbox is proven (ADR 004); login requires a value
+    @Column(name = "email_verified_at")
+    private Instant emailVerifiedAt;
+
     protected User() {
         // JPA only
     }
@@ -54,5 +58,17 @@ public class User {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public Instant getEmailVerifiedAt() {
+        return emailVerifiedAt;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerifiedAt != null;
+    }
+
+    public void markEmailVerified(Instant when) {
+        this.emailVerifiedAt = when;
     }
 }

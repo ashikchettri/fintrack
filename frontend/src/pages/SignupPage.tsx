@@ -43,7 +43,7 @@ export default function SignupPage() {
     setSubmitting(true);
     try {
       await api.signup(email, password);
-      navigate('/login', { state: { signedUpEmail: email } });
+      navigate('/verify-email', { state: { email } });
     } catch (error) {
       if (error instanceof ApiError) {
         // 400 carries our field→message extension; 409 = email taken

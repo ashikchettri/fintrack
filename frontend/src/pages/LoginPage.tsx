@@ -14,9 +14,9 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
-  const signedUpEmail = (location.state as { signedUpEmail?: string } | null)?.signedUpEmail;
+  const routedState = location.state as { email?: string; flash?: string } | null;
 
-  const [email, setEmail] = useState(signedUpEmail ?? '');
+  const [email, setEmail] = useState(routedState?.email ?? '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -30,6 +30,11 @@ export default function LoginPage() {
       navigate('/profile');
     } catch (err) {
       if (err instanceof ApiError) {
+        // distinct 403 problem type → straight to the verification screen
+        if (err.problem.type?.endsWith('email-not-verified')) {
+          navigate('/verify-email', { state: { email } });
+          return;
+        }
         // 401 → generic invalid credentials; 429 → throttle message.
         // Both bodies come from the API's RFC 9457 problem details.
         setError(err.problem.detail ?? 'Login failed');
@@ -49,9 +54,9 @@ export default function LoginPage() {
           <CardDescription>Welcome back — your household is waiting.</CardDescription>
         </CardHeader>
         <CardContent>
-          {signedUpEmail && (
+          {routedState?.flash && (
             <Alert variant="success" role="status" className="mb-4">
-              Account created — log in to continue.
+              {routedState.flash}
             </Alert>
           )}
           <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">

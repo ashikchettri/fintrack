@@ -4,6 +4,7 @@ Feature: /users/me and API docs
     * url baseUrl
     * def uniqueEmail = function(){ return 'karate.me.' + java.lang.System.nanoTime() + '@example.com' }
     * def validPassword = 'correct horse battery staple'
+    * def EmailStore = Java.type('com.fintrack.auth.testsupport.RecordingEmailSender')
 
   Scenario: authenticated profile round-trip
     * def email = uniqueEmail()
@@ -11,6 +12,12 @@ Feature: /users/me and API docs
     And request { email: '#(email)', password: '#(validPassword)' }
     When method post
     Then status 201
+
+    # verify the mailbox (ADR 004) — code captured by the test-seam email sender
+    Given path 'api/v1/auth/verify-email'
+    And request { email: '#(email)', code: '#(EmailStore.lastCodeFor(email))' }
+    When method post
+    Then status 204
 
     Given path 'api/v1/auth/login'
     And request { email: '#(email)', password: '#(validPassword)' }
