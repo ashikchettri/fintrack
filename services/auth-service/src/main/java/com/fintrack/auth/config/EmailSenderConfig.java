@@ -46,7 +46,10 @@ public class EmailSenderConfig {
                 }
                 yield resend(resendApiKey, resendFrom, properties);
             }
-            case "smtp", "mailpit" -> smtp(mailSender, properties, provider);
+            case "smtp" -> smtp(mailSender, properties, "explicit SMTP via spring.mail settings");
+            // hard-wired local sink: mailpit mode must stay local even if Gmail
+            // credentials happen to be present in the environment
+            case "mailpit" -> smtp(localSink(), properties, "local Mailpit sink");
             case "auto" -> {
                 if (!smtpUsername.isBlank()) {
                     yield smtp(mailSender, properties, "authenticated SMTP as " + smtpUsername);
@@ -69,5 +72,12 @@ public class EmailSenderConfig {
     private EmailSender smtp(JavaMailSender mailSender, VerificationProperties properties, String label) {
         log.info("Email transport: SMTP ({})", label);
         return new SmtpEmailSender(mailSender, properties);
+    }
+
+    private JavaMailSender localSink() {
+        var sender = new org.springframework.mail.javamail.JavaMailSenderImpl();
+        sender.setHost("localhost");
+        sender.setPort(1025);   // Mailpit's fixed compose port
+        return sender;
     }
 }

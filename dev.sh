@@ -5,7 +5,10 @@
 #   ./dev.sh status   report what's up without starting anything
 #   ./dev.sh stop     stop app processes and pause the containers
 #   ./dev.sh resend   restart the backend sending REAL email via Resend
+#   ./dev.sh gmail    restart the backend sending REAL email via Gmail SMTP
 #   ./dev.sh mailpit  restart the backend sending to the local Mailpit inbox
+#
+# Plain start always uses Mailpit (safe default); real-email modes are explicit.
 #
 # Services: Postgres + Mailpit (docker compose), auth-service (:8081),
 # frontend dev server (:5173). Logs land in .dev-logs/.
@@ -86,16 +89,32 @@ switch_mail() {
     fail "RESEND_API_KEY missing in .env — required for the resend transport"
     exit 1
   fi
+  if [ "$provider" = "gmail" ]; then
+    if ! grep -qE "^MAIL_PASSWORD=.+" "$ROOT/.env" 2>/dev/null; then
+      fail "MAIL_PASSWORD missing in .env — Gmail needs a Google App Password:"
+      echo "     1. Google Account → Security → enable 2-Step Verification"
+      echo "     2. Security → App passwords → create one for 'Mail'"
+      echo "     3. Put the 16-char value in .env as MAIL_PASSWORD=..."
+      exit 1
+    fi
+    # Gmail SMTP settings (username/password come from .env)
+    export MAIL_HOST=smtp.gmail.com MAIL_PORT=587 MAIL_SMTP_AUTH=true MAIL_SMTP_STARTTLS=true
+    provider=smtp
+  fi
   backend_up && { warn "restarting auth-service with MAIL_PROVIDER=${provider}..."; stop_backend; }
   start_backend "$provider"
-  if [ "$provider" = "resend" ]; then
-    echo ""
-    echo "  Real email mode: until a domain is verified in Resend, delivery only"
-    echo "  works to the Resend account owner's address. Everything else 500s."
-  else
-    echo ""
-    echo "  Local inbox mode: all email lands at http://localhost:8025"
-  fi
+  case "$1" in
+    resend)
+      echo ""
+      echo "  Real email via Resend: until a domain is verified, delivery only"
+      echo "  works to the Resend account owner's address. Everything else 500s." ;;
+    gmail)
+      echo ""
+      echo "  Real email via Gmail: delivers to ANY address (≈500/day limit)." ;;
+    *)
+      echo ""
+      echo "  Local inbox mode: all email lands at http://localhost:8025" ;;
+  esac
 }
 
 # ---------- start -----------------------------------------------------------
@@ -129,7 +148,9 @@ start() {
   if backend_up; then
     ok "auth-service already running on :8081"
   else
-    start_backend ""
+    # explicit mailpit: even with Gmail/Resend credentials in .env, a plain
+    # start must never send real email
+    start_backend mailpit
   fi
 
   if frontend_up; then
@@ -178,6 +199,7 @@ case "${1:-start}" in
   status)  status ;;
   stop)    stop ;;
   resend)  switch_mail resend ;;
+  gmail)   switch_mail gmail ;;
   mailpit) switch_mail mailpit ;;
-  *) echo "usage: ./dev.sh [start|status|stop|resend|mailpit]"; exit 1 ;;
+  *) echo "usage: ./dev.sh [start|status|stop|resend|gmail|mailpit]"; exit 1 ;;
 esac
