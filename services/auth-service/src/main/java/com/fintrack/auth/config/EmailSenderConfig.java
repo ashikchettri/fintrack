@@ -10,13 +10,19 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSender;
 
+import java.util.Locale;
+
 /**
- * Provider chain mirroring the Attune project (ADR 004 transport):
- *   1. authenticated SMTP if MAIL_USERNAME/MAIL_PASSWORD are set
- *      (e.g. Gmail App Password — reaches any recipient, no domain needed);
+ * Email transport selection (ADR 004).
+ *
+ * Explicit override first: MAIL_PROVIDER = smtp | resend | mailpit
+ * (e.g. `./dev.sh resend` for real delivery from local dev).
+ *
+ * Otherwise "auto", the Attune-style chain:
+ *   1. authenticated SMTP if MAIL_USERNAME is set (e.g. Gmail App Password);
  *   2. Resend if RESEND_API_KEY is set (test sender delivers only to the
  *      account owner until a domain is verified);
- *   3. otherwise plain SMTP to the local Mailpit sink (dev default).
+ *   3. plain SMTP to the local Mailpit sink (dev default).
  */
 @Configuration
 public class EmailSenderConfig {
@@ -26,18 +32,42 @@ public class EmailSenderConfig {
     @Bean
     EmailSender emailSender(JavaMailSender mailSender,
                             VerificationProperties properties,
+                            @Value("${fintrack.auth.mail-provider:auto}") String provider,
                             @Value("${spring.mail.username:}") String smtpUsername,
                             @Value("${fintrack.auth.resend.api-key:}") String resendApiKey,
                             @Value("${fintrack.auth.resend.from:FinTrack <onboarding@resend.dev>}") String resendFrom) {
-        if (!smtpUsername.isBlank()) {
-            log.info("Email transport: authenticated SMTP as {}", smtpUsername);
-            return new SmtpEmailSender(mailSender, properties);
-        }
-        if (!resendApiKey.isBlank()) {
-            log.info("Email transport: Resend (from {})", resendFrom);
-            return new ResendEmailSender(resendApiKey, resendFrom, properties.codeTtl());
-        }
-        log.info("Email transport: unauthenticated SMTP (local Mailpit sink)");
+        return switch (provider.toLowerCase(Locale.ROOT)) {
+            case "resend" -> {
+                if (resendApiKey.isBlank()) {
+                    // fail fast: an explicit choice with missing credentials is a
+                    // misconfiguration, not something to silently fall back from
+                    throw new IllegalStateException(
+                            "MAIL_PROVIDER=resend requires RESEND_API_KEY to be set");
+                }
+                yield resend(resendApiKey, resendFrom, properties);
+            }
+            case "smtp", "mailpit" -> smtp(mailSender, properties, provider);
+            case "auto" -> {
+                if (!smtpUsername.isBlank()) {
+                    yield smtp(mailSender, properties, "authenticated SMTP as " + smtpUsername);
+                }
+                if (!resendApiKey.isBlank()) {
+                    yield resend(resendApiKey, resendFrom, properties);
+                }
+                yield smtp(mailSender, properties, "local Mailpit sink");
+            }
+            default -> throw new IllegalStateException(
+                    "Unknown MAIL_PROVIDER '" + provider + "' — use smtp, resend, mailpit, or auto");
+        };
+    }
+
+    private EmailSender resend(String apiKey, String from, VerificationProperties properties) {
+        log.info("Email transport: Resend (from {})", from);
+        return new ResendEmailSender(apiKey, from, properties.codeTtl());
+    }
+
+    private EmailSender smtp(JavaMailSender mailSender, VerificationProperties properties, String label) {
+        log.info("Email transport: SMTP ({})", label);
         return new SmtpEmailSender(mailSender, properties);
     }
 }

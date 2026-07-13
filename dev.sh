@@ -4,6 +4,8 @@
 #   ./dev.sh          start whatever isn't running (idempotent)
 #   ./dev.sh status   report what's up without starting anything
 #   ./dev.sh stop     stop app processes and pause the containers
+#   ./dev.sh resend   restart the backend sending REAL email via Resend
+#   ./dev.sh mailpit  restart the backend sending to the local Mailpit inbox
 #
 # Services: Postgres + Mailpit (docker compose), auth-service (:8081),
 # frontend dev server (:5173). Logs land in .dev-logs/.
@@ -49,6 +51,51 @@ status() {
   mailpit_up  && ok "Mailpit       :1025 / UI :8025" || fail "Mailpit"
   backend_up  && ok "auth-service  :8081 (Swagger: /swagger-ui.html)" || fail "auth-service"
   frontend_up && ok "frontend      :5173"        || fail "frontend"
+  if backend_up && [ -f "$LOG_DIR/auth-service.log" ]; then
+    transport=$(grep "Email transport" "$LOG_DIR/auth-service.log" | tail -1 | sed 's/.*Email transport: //')
+    [ -n "$transport" ] && echo "  ↳ email transport: $transport"
+  fi
+}
+
+start_backend() {
+  # $1: optional MAIL_PROVIDER override (empty = auto chain → Mailpit locally)
+  local provider="${1:-${MAIL_PROVIDER:-}}"
+  warn "starting auth-service${provider:+ (MAIL_PROVIDER=$provider)} — first compile can take a minute…"
+  (cd "$ROOT/services/auth-service" \
+    && DB_PORT="$PG_PORT" MAIL_PROVIDER="$provider" nohup ./gradlew bootRun --console=plain -q \
+       > "$LOG_DIR/auth-service.log" 2>&1 & echo $! > "$LOG_DIR/auth-service.pid")
+  for _ in $(seq 1 60); do backend_up && break; sleep 3; done
+  backend_up && ok "auth-service up on :8081" \
+    || { fail "auth-service failed — see .dev-logs/auth-service.log"; exit 1; }
+}
+
+stop_backend() {
+  if [ -f "$LOG_DIR/auth-service.pid" ]; then
+    pkill -P "$(cat "$LOG_DIR/auth-service.pid")" 2>/dev/null || true
+    kill "$(cat "$LOG_DIR/auth-service.pid")" 2>/dev/null || true
+    rm -f "$LOG_DIR/auth-service.pid"
+  fi
+  port_in_use 8081 && lsof -nP -iTCP:8081 -sTCP:LISTEN -t | xargs kill 2>/dev/null || true
+  for _ in $(seq 1 10); do port_in_use 8081 || break; sleep 1; done
+}
+
+# restart just the backend with an explicit email transport
+switch_mail() {
+  local provider="$1"
+  if [ "$provider" = "resend" ] && ! grep -qE "^RESEND_API_KEY=.+" "$ROOT/.env" 2>/dev/null; then
+    fail "RESEND_API_KEY missing in .env — required for the resend transport"
+    exit 1
+  fi
+  backend_up && { warn "restarting auth-service with MAIL_PROVIDER=${provider}..."; stop_backend; }
+  start_backend "$provider"
+  if [ "$provider" = "resend" ]; then
+    echo ""
+    echo "  Real email mode: until a domain is verified in Resend, delivery only"
+    echo "  works to the Resend account owner's address. Everything else 500s."
+  else
+    echo ""
+    echo "  Local inbox mode: all email lands at http://localhost:8025"
+  fi
 }
 
 # ---------- start -----------------------------------------------------------
@@ -82,13 +129,7 @@ start() {
   if backend_up; then
     ok "auth-service already running on :8081"
   else
-    warn "starting auth-service (first compile can take a minute)…"
-    (cd "$ROOT/services/auth-service" \
-      && DB_PORT="$PG_PORT" nohup ./gradlew bootRun --console=plain -q \
-         > "$LOG_DIR/auth-service.log" 2>&1 & echo $! > "$LOG_DIR/auth-service.pid")
-    for _ in $(seq 1 60); do backend_up && break; sleep 3; done
-    backend_up && ok "auth-service up on :8081" \
-      || { fail "auth-service failed — see .dev-logs/auth-service.log"; exit 1; }
+    start_backend ""
   fi
 
   if frontend_up; then
@@ -120,23 +161,23 @@ start() {
 # ---------- stop ------------------------------------------------------------
 stop() {
   echo "Stopping FinTrack dev stack…"
-  for app in auth-service frontend; do
-    if [ -f "$LOG_DIR/$app.pid" ]; then
-      pkill -P "$(cat "$LOG_DIR/$app.pid")" 2>/dev/null || true
-      kill "$(cat "$LOG_DIR/$app.pid")" 2>/dev/null || true
-      rm -f "$LOG_DIR/$app.pid"
-    fi
-  done
-  # catch processes not started by this script (e.g. manual bootRun / npm run dev)
-  port_in_use 8081 && lsof -nP -iTCP:8081 -sTCP:LISTEN -t | xargs kill 2>/dev/null || true
+  stop_backend
+  if [ -f "$LOG_DIR/frontend.pid" ]; then
+    pkill -P "$(cat "$LOG_DIR/frontend.pid")" 2>/dev/null || true
+    kill "$(cat "$LOG_DIR/frontend.pid")" 2>/dev/null || true
+    rm -f "$LOG_DIR/frontend.pid"
+  fi
+  # catch processes not started by this script (e.g. manual npm run dev)
   port_in_use 5173 && lsof -nP -iTCP:5173 -sTCP:LISTEN -t | xargs kill 2>/dev/null || true
   (cd "$ROOT" && docker compose stop postgres mailpit >/dev/null 2>&1) || true
   ok "stopped (containers paused, not removed — data kept)"
 }
 
 case "${1:-start}" in
-  start)  start ;;
-  status) status ;;
-  stop)   stop ;;
-  *) echo "usage: ./dev.sh [start|status|stop]"; exit 1 ;;
+  start)   start ;;
+  status)  status ;;
+  stop)    stop ;;
+  resend)  switch_mail resend ;;
+  mailpit) switch_mail mailpit ;;
+  *) echo "usage: ./dev.sh [start|status|stop|resend|mailpit]"; exit 1 ;;
 esac
