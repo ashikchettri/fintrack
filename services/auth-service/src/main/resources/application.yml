@@ -50,6 +50,8 @@ fintrack:
       # private-key: file:/etc/fintrack/jwt-signing.pem   # PKCS#8 PEM — required outside local (ADR 002)
     refresh-cookie:
       secure: true   # HTTPS-only; application-local.yml turns this off for plain-http dev (ADR 003)
+    # smtp | resend | mailpit | auto (auto = SMTP creds > Resend key > Mailpit)
+    mail-provider: ${MAIL_PROVIDER:auto}
     resend:
       # Resend transactional email (provider chain in EmailSenderConfig).
       # Until a domain is verified in Resend, the test sender below delivers

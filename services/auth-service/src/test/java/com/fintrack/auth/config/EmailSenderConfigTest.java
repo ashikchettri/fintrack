@@ -8,8 +8,9 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
-/** The Attune-style provider chain: SMTP creds > Resend key > local SMTP sink. */
+/** Transport selection: explicit MAIL_PROVIDER wins; auto = SMTP creds > Resend key > Mailpit. */
 class EmailSenderConfigTest {
 
     private static final VerificationProperties PROPS = new VerificationProperties(
@@ -17,24 +18,52 @@ class EmailSenderConfigTest {
 
     private final EmailSenderConfig config = new EmailSenderConfig();
 
-    private Object choose(String smtpUsername, String resendKey) {
+    private Object choose(String provider, String smtpUsername, String resendKey) {
         return config.emailSender(new JavaMailSenderImpl(), PROPS,
-                smtpUsername, resendKey, "FinTrack <onboarding@resend.dev>");
+                provider, smtpUsername, resendKey, "FinTrack <onboarding@resend.dev>");
     }
 
     @Test
-    void smtpCredentialsWinOverEverything() {
-        assertThat(choose("attunemindbodymeal@gmail.com", "some-resend-key"))
+    void autoPrefersSmtpCredentialsOverEverything() {
+        assertThat(choose("auto", "someone@gmail.com", "some-resend-key"))
                 .isInstanceOf(SmtpEmailSender.class);
     }
 
     @Test
-    void resendIsUsedWhenOnlyTheKeyIsPresent() {
-        assertThat(choose("", "some-resend-key")).isInstanceOf(ResendEmailSender.class);
+    void autoUsesResendWhenOnlyTheKeyIsPresent() {
+        assertThat(choose("auto", "", "some-resend-key")).isInstanceOf(ResendEmailSender.class);
     }
 
     @Test
-    void localSinkIsTheDefaultWhenNothingIsConfigured() {
-        assertThat(choose("", "")).isInstanceOf(SmtpEmailSender.class);
+    void autoFallsBackToTheLocalSink() {
+        assertThat(choose("auto", "", "")).isInstanceOf(SmtpEmailSender.class);
+    }
+
+    @Test
+    void explicitResendOverridesSmtpCredentials() {
+        // the ./dev.sh resend case: .env has MAIL_USERNAME set, but the
+        // explicit provider must win over the auto chain
+        assertThat(choose("resend", "someone@gmail.com", "some-resend-key"))
+                .isInstanceOf(ResendEmailSender.class);
+    }
+
+    @Test
+    void explicitMailpitIgnoresAllCredentials() {
+        assertThat(choose("mailpit", "someone@gmail.com", "some-resend-key"))
+                .isInstanceOf(SmtpEmailSender.class);
+    }
+
+    @Test
+    void explicitResendWithoutAKeyFailsFast() {
+        assertThatIllegalStateException()
+                .isThrownBy(() -> choose("resend", "", ""))
+                .withMessageContaining("RESEND_API_KEY");
+    }
+
+    @Test
+    void unknownProviderFailsFast() {
+        assertThatIllegalStateException()
+                .isThrownBy(() -> choose("carrier-pigeon", "", ""))
+                .withMessageContaining("carrier-pigeon");
     }
 }
