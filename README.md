@@ -31,6 +31,18 @@ Nothing to do — the Gradle wrapper is committed, so `./gradlew` works from a f
 
 ## Run locally
 
+**One command:**
+
+```bash
+./dev.sh            # checks & starts Postgres, Mailpit, auth-service, frontend
+./dev.sh status     # what's running
+./dev.sh stop       # stop everything (containers paused, data kept)
+```
+
+Then open http://localhost:5173 (app), http://localhost:8081/swagger-ui.html (API), http://localhost:8025 (local mail inbox). App logs: `.dev-logs/`.
+
+**Or manually:**
+
 ```bash
 cp .env.example .env                 # adjust if needed (e.g. POSTGRES_HOST_PORT if 5432 is taken)
 docker compose up -d postgres        # database
