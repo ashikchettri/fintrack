@@ -95,9 +95,10 @@ class VerificationServiceTest {
         EmailVerificationCode code = issueAndCapture();
         when(userRepository.findByEmail("jane@example.com")).thenReturn(Optional.of(user));
         when(codeRepository.findByUserId(user.getId())).thenReturn(Optional.of(code));
+        String wrong = "0000".equals(lastRawCode) ? "1111" : "0000";
 
         assertThatExceptionOfType(InvalidVerificationCodeException.class)
-                .isThrownBy(() -> service.verify("jane@example.com", "0000".equals(lastRawCode) ? "1111" : "0000"));
+                .isThrownBy(() -> service.verify("jane@example.com", wrong));
 
         assertThat(code.getAttempts()).isEqualTo(1);
         assertThat(user.isEmailVerified()).isFalse();

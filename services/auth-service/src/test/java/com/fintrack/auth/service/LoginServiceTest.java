@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -119,7 +120,7 @@ class LoginServiceTest {
 
     @Test
     void throttledEmailIsRejectedBeforeAnyCredentialWork() {
-        org.mockito.Mockito.doThrow(new TooManyLoginAttemptsException())
+        doThrow(new TooManyLoginAttemptsException())
                 .when(loginAttemptService).checkNotThrottled("jane@example.com");
 
         assertThatExceptionOfType(TooManyLoginAttemptsException.class)
