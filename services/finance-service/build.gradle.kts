@@ -1,8 +1,8 @@
 plugins {
     java
     jacoco
-    id("org.springframework.boot") version "4.1.0"
-    id("org.sonarqube") version "6.2.0.5505"
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.sonarqube)
 }
 
 group = "com.fintrack"
@@ -20,7 +20,7 @@ repositories {
 
 dependencies {
     // BOM imported explicitly — one place controls every Spring version
-    implementation(platform("org.springframework.boot:spring-boot-dependencies:4.1.0"))
+    implementation(platform(libs.spring.boot.dependencies))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
@@ -35,7 +35,7 @@ dependencies {
     implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
 
-    testImplementation(platform("org.springframework.boot:spring-boot-dependencies:4.1.0"))
+    testImplementation(platform(libs.spring.boot.dependencies))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     // Boot 4: MockMvc auto-config lives in the per-technology webmvc-test module
     testImplementation("org.springframework.boot:spring-boot-webmvc-test")
