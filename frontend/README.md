@@ -25,6 +25,6 @@ npm run dev             # http://localhost:5173 — needs auth-service on :8081
 | `npm test` | Vitest + React Testing Library unit/component tests |
 | `npm run test:coverage` | same, with v8 coverage gate (90% lines/statements) |
 | `npm run test:ui` | Playwright against a **mocked** API (no backend needed) |
-| `npm run test:e2e` | Playwright against the **real** stack — start it first: `docker compose up -d postgres` and `./gradlew bootRun` in `services/auth-service` |
+| `npm run test:e2e` | Playwright against the **real** stack — run `./dev.sh mailpit` first (e2e reads codes from the Mailpit inbox; the everyday Gmail transport would send real email) |
 
 Playwright starts the Vite dev server itself (`webServer` in `playwright.config.ts`).

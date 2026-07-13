@@ -4,11 +4,13 @@
 #   ./dev.sh          start whatever isn't running (idempotent)
 #   ./dev.sh status   report what's up without starting anything
 #   ./dev.sh stop     stop app processes and pause the containers
-#   ./dev.sh resend   restart the backend sending REAL email via Resend
-#   ./dev.sh gmail    restart the backend sending REAL email via Gmail SMTP
+#   ./dev.sh resend   restart the backend sending via Resend instead
 #   ./dev.sh mailpit  restart the backend sending to the local Mailpit inbox
 #
-# Plain start always uses Mailpit (safe default); real-email modes are explicit.
+# Plain start sends REAL email via Gmail when MAIL_USERNAME+MAIL_PASSWORD are
+# set in .env (every user interaction gets a real code); it falls back to
+# Mailpit when they aren't. Playwright e2e needs Mailpit: run `./dev.sh mailpit`
+# before `npm run test:e2e`, then `./dev.sh` to go back to real email.
 #
 # Services: Postgres + Mailpit (docker compose), auth-service (:8081),
 # frontend dev server (:5173). Logs land in .dev-logs/.
@@ -60,9 +62,24 @@ status() {
   fi
 }
 
+gmail_creds_present() {
+  grep -qE "^MAIL_USERNAME=.+" "$ROOT/.env" 2>/dev/null \
+    && grep -qE "^MAIL_PASSWORD=.+" "$ROOT/.env" 2>/dev/null
+}
+
+export_gmail_env() {
+  export MAIL_HOST=smtp.gmail.com MAIL_PORT=587 MAIL_SMTP_AUTH=true MAIL_SMTP_STARTTLS=true
+}
+
+# default transport: real email via Gmail when creds exist, else the local sink
+default_provider() {
+  if gmail_creds_present; then echo smtp; else echo mailpit; fi
+}
+
 start_backend() {
   # $1: optional MAIL_PROVIDER override (empty = auto chain → Mailpit locally)
   local provider="${1:-${MAIL_PROVIDER:-}}"
+  [ "$provider" = "smtp" ] && export_gmail_env
   warn "starting auth-service${provider:+ (MAIL_PROVIDER=$provider)} — first compile can take a minute…"
   (cd "$ROOT/services/auth-service" \
     && DB_PORT="$PG_PORT" MAIL_PROVIDER="$provider" nohup ./gradlew bootRun --console=plain -q \
@@ -89,18 +106,6 @@ switch_mail() {
     fail "RESEND_API_KEY missing in .env — required for the resend transport"
     exit 1
   fi
-  if [ "$provider" = "gmail" ]; then
-    if ! grep -qE "^MAIL_PASSWORD=.+" "$ROOT/.env" 2>/dev/null; then
-      fail "MAIL_PASSWORD missing in .env — Gmail needs a Google App Password:"
-      echo "     1. Google Account → Security → enable 2-Step Verification"
-      echo "     2. Security → App passwords → create one for 'Mail'"
-      echo "     3. Put the 16-char value in .env as MAIL_PASSWORD=..."
-      exit 1
-    fi
-    # Gmail SMTP settings (username/password come from .env)
-    export MAIL_HOST=smtp.gmail.com MAIL_PORT=587 MAIL_SMTP_AUTH=true MAIL_SMTP_STARTTLS=true
-    provider=smtp
-  fi
   backend_up && { warn "restarting auth-service with MAIL_PROVIDER=${provider}..."; stop_backend; }
   start_backend "$provider"
   case "$1" in
@@ -108,12 +113,10 @@ switch_mail() {
       echo ""
       echo "  Real email via Resend: until a domain is verified, delivery only"
       echo "  works to the Resend account owner's address. Everything else 500s." ;;
-    gmail)
-      echo ""
-      echo "  Real email via Gmail: delivers to ANY address (≈500/day limit)." ;;
     *)
       echo ""
-      echo "  Local inbox mode: all email lands at http://localhost:8025" ;;
+      echo "  Local inbox mode: all email lands at http://localhost:8025"
+      echo "  (run ./dev.sh again to return to real Gmail email)" ;;
   esac
 }
 
@@ -148,9 +151,13 @@ start() {
   if backend_up; then
     ok "auth-service already running on :8081"
   else
-    # explicit mailpit: even with Gmail/Resend credentials in .env, a plain
-    # start must never send real email
-    start_backend mailpit
+    provider=$(default_provider)
+    if [ "$provider" = "smtp" ]; then
+      warn "Gmail credentials found — user-facing email will be REAL (via $(grep '^MAIL_USERNAME=' "$ROOT/.env" | cut -d= -f2))"
+    else
+      warn "no Gmail credentials in .env — email goes to the local Mailpit inbox"
+    fi
+    start_backend "$provider"
   fi
 
   if frontend_up; then
@@ -199,7 +206,6 @@ case "${1:-start}" in
   status)  status ;;
   stop)    stop ;;
   resend)  switch_mail resend ;;
-  gmail)   switch_mail gmail ;;
   mailpit) switch_mail mailpit ;;
-  *) echo "usage: ./dev.sh [start|status|stop|resend|gmail|mailpit]"; exit 1 ;;
+  *) echo "usage: ./dev.sh [start|status|stop|resend|mailpit]"; exit 1 ;;
 esac
