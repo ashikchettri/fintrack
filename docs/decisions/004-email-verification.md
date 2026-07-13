@@ -35,3 +35,8 @@ a custom domain (and likely a transactional provider) comes later.
 - Negative: signup gains a step (industry-standard friction); Gmail sending
   limits (~500/day) are fine now but a real provider is needed before any
   public use; login gate means abandoned signups can't log in (resend exists).
+
+## Update — 2026-07-13
+
+Code length raised to **6 digits**, matching the password-reset flow — one
+keyspace, one property (`fintrack.auth.verification.code-length`), consistent UX.

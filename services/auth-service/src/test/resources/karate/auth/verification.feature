@@ -37,7 +37,7 @@ Feature: Email verification — ADR 004 contract
     When method post
     Then status 201
 
-    * def wrongCode = EmailStore.lastCodeFor(email) == '0000' ? '1111' : '0000'
+    * def wrongCode = EmailStore.lastCodeFor(email) == '000000' ? '111111' : '000000'
     Given path 'api/v1/auth/verify-email'
     And request { email: '#(email)', code: '#(wrongCode)' }
     When method post

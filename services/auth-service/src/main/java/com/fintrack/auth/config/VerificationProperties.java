@@ -6,13 +6,13 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 import java.time.Duration;
 
 /**
- * Email-verification knobs (ADR 004). 4-digit default per product decision;
- * the small keyspace is compensated by codeTtl + maxAttempts. Bump
- * codeLength to 6 when the stakes rise — one property, no code change.
+ * One-time-code knobs shared by signup verification and password reset
+ * (ADR 004/005, unified to 6 digits on 2026-07-13). The keyspace is
+ * compensated by codeTtl + maxAttempts either way.
  */
 @ConfigurationProperties(prefix = "fintrack.auth.verification")
 public record VerificationProperties(
-        @DefaultValue("4") int codeLength,
+        @DefaultValue("6") int codeLength,
         @DefaultValue("15m") Duration codeTtl,
         @DefaultValue("5") int maxAttempts,
         @DefaultValue("60s") Duration resendCooldown,

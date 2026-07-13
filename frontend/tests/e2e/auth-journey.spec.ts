@@ -37,7 +37,7 @@ async function signupAndVerify(page: Page, request: APIRequestContext, email: st
   await page.getByRole('button', { name: 'Sign up' }).click();
 
   await expect(page.getByText('Check your email')).toBeVisible();
-  const code = await fetchCodeFromMailpit(request, email, { subject: 'verification', digits: 4 });
+  const code = await fetchCodeFromMailpit(request, email, { subject: 'verification', digits: 6 });
   await page.getByLabel('Verification code').fill(code);
   await page.getByRole('button', { name: 'Verify email' }).click();
   await expect(page.getByText('Email verified — log in to continue.')).toBeVisible();

@@ -44,7 +44,7 @@ test.describe('signup', () => {
 
     // verification step (ADR 004)
     await expect(page.getByText('Check your email')).toBeVisible();
-    await page.getByLabel('Verification code').fill('1234');
+    await page.getByLabel('Verification code').fill('123456');
     await page.getByRole('button', { name: 'Verify email' }).click();
 
     await expect(page.getByText('Email verified — log in to continue.')).toBeVisible();
@@ -66,7 +66,7 @@ test.describe('signup', () => {
 
     await page.goto('/verify-email');
     await page.getByLabel('Email').fill('jane@example.com');
-    await page.getByLabel('Verification code').fill('0000');
+    await page.getByLabel('Verification code').fill('000000');
     await page.getByRole('button', { name: 'Verify email' }).click();
     await expect(page.getByText('Invalid or expired verification code')).toBeVisible();
 

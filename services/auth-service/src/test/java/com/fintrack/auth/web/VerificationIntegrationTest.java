@@ -53,7 +53,7 @@ class VerificationIntegrationTest {
         signup(email);
 
         String code = RecordingEmailSender.lastCodeFor(email);
-        assertThat(code).matches("\\d{4}");
+        assertThat(code).matches("\\d{6}");
 
         // correct password, unverified mailbox → distinct 403 problem
         mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
@@ -71,7 +71,7 @@ class VerificationIntegrationTest {
         String email = "cap@example.com";
         signup(email);
         String code = RecordingEmailSender.lastCodeFor(email);
-        String wrong = code.equals("0000") ? "1111" : "0000";
+        String wrong = code.equals("000000") ? "111111" : "000000";
 
         for (int i = 0; i < 5; i++) {
             verify(email, wrong, 400);
@@ -121,7 +121,7 @@ class VerificationIntegrationTest {
 
         mockMvc.perform(post("/api/v1/auth/verify-email").contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"email": "format@example.com", "code": "abcd"}"""))
+                                {"email": "format@example.com", "code": "abc123"}"""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors.code").isNotEmpty());
     }

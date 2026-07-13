@@ -41,14 +41,14 @@ describe('VerifyEmailPage', () => {
     const user = userEvent.setup();
 
     await user.type(screen.getByLabelText('Email'), 'jane@example.com');
-    await user.type(screen.getByLabelText('Verification code'), '1234');
+    await user.type(screen.getByLabelText('Verification code'), '123456');
     await user.click(screen.getByRole('button', { name: 'Verify email' }));
 
     await waitFor(() => expect(screen.getByText('LOGIN_DEST')).toBeInTheDocument());
-    expect(mockedApi.verifyEmail).toHaveBeenCalledWith('jane@example.com', '1234');
+    expect(mockedApi.verifyEmail).toHaveBeenCalledWith('jane@example.com', '123456');
   });
 
-  it('keeps the button disabled until 4 digits are entered and strips non-digits', async () => {
+  it('keeps the button disabled until 6 digits are entered and strips non-digits', async () => {
     renderVerify();
     const user = userEvent.setup();
 
@@ -57,7 +57,7 @@ describe('VerifyEmailPage', () => {
     expect(codeInput).toHaveValue('12');
     expect(screen.getByRole('button', { name: 'Verify email' })).toBeDisabled();
 
-    await user.type(codeInput, '34');
+    await user.type(codeInput, '3456');
     expect(screen.getByRole('button', { name: 'Verify email' })).toBeEnabled();
   });
 
@@ -73,7 +73,7 @@ describe('VerifyEmailPage', () => {
     const user = userEvent.setup();
 
     await user.type(screen.getByLabelText('Email'), 'jane@example.com');
-    await user.type(screen.getByLabelText('Verification code'), '0000');
+    await user.type(screen.getByLabelText('Verification code'), '000000');
     await user.click(screen.getByRole('button', { name: 'Verify email' }));
 
     await waitFor(() =>

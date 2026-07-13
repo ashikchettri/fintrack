@@ -20,14 +20,11 @@ import java.util.Optional;
 
 /**
  * Password reset via emailed one-time code (ADR 005). Reuses the ADR 004
- * hardening (hash at rest, TTL, attempt cap, cooldown) with a 6-digit code —
- * reset grants full account control, so it gets the larger keyspace.
+ * hardening (hash at rest, TTL, attempt cap, cooldown); code length shared
+ * with verification via VerificationProperties (6 digits).
  */
 @Service
 public class PasswordResetService {
-
-    // reset-specific keyspace; other knobs shared with verification (ADR 005)
-    static final int RESET_CODE_LENGTH = 6;
 
     private static final Logger log = LoggerFactory.getLogger(PasswordResetService.class);
 
@@ -121,8 +118,8 @@ public class PasswordResetService {
     }
 
     private String randomNumericCode() {
-        int bound = (int) Math.pow(10, RESET_CODE_LENGTH);
-        return String.format("%0" + RESET_CODE_LENGTH + "d", secureRandom.nextInt(bound));
+        int bound = (int) Math.pow(10, properties.codeLength());
+        return String.format("%0" + properties.codeLength() + "d", secureRandom.nextInt(bound));
     }
 
     private static String normalize(String email) {
