@@ -61,6 +61,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0   # scan the PR's full commit range, not just the merge commit
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
