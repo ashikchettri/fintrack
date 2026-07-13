@@ -76,6 +76,18 @@ default_provider() {
   if gmail_creds_present; then echo smtp; else echo mailpit; fi
 }
 
+# what the running backend is actually using, read from its startup log
+current_provider() {
+  local line
+  line=$(grep "Email transport" "$LOG_DIR/auth-service.log" 2>/dev/null | tail -1)
+  case "$line" in
+    *"Mailpit sink"*) echo mailpit ;;
+    *Resend*)         echo resend ;;
+    *SMTP*)           echo smtp ;;
+    *)                echo unknown ;;
+  esac
+}
+
 start_backend() {
   # $1: optional MAIL_PROVIDER override (empty = auto chain → Mailpit locally)
   local provider="${1:-${MAIL_PROVIDER:-}}"
@@ -148,10 +160,16 @@ start() {
     mailpit_up && ok "Mailpit up (inbox: http://localhost:8025)" || { fail "Mailpit failed to start"; exit 1; }
   fi
 
-  if backend_up; then
+  provider=$(default_provider)
+  if backend_up && [ "$(current_provider)" = "$provider" ]; then
     ok "auth-service already running on :8081"
   else
-    provider=$(default_provider)
+    if backend_up; then
+      # e.g. left in mailpit mode after an e2e run: plain start returns the
+      # stack to its default transport
+      warn "auth-service is on the $(current_provider) transport — restarting on the default transport..."
+      stop_backend
+    fi
     if [ "$provider" = "smtp" ]; then
       warn "Gmail credentials found — user-facing email will be REAL (via $(grep '^MAIL_USERNAME=' "$ROOT/.env" | cut -d= -f2))"
     else

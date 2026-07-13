@@ -31,3 +31,8 @@ so it gets the strictest treatment of our OTP flows (which follow ADR 004).
 - Negative: two OTP tables/services with similar shapes (deliberate — merging
   them behind a "purpose" column couples unrelated lifecycles; revisit if a
   third OTP flow appears).
+
+## Update — 2026-07-13
+
+Signup verification now also uses 6 digits; both flows share the single
+`code-length` property. The 4-vs-6 asymmetry is gone.
