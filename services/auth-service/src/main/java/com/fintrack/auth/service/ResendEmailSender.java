@@ -39,6 +39,11 @@ public class ResendEmailSender implements EmailSender {
         send(toEmail, EmailContent.passwordResetCode(code, codeTtl));
     }
 
+    @Override
+    public void sendEmailChangeCode(String toEmail, String code) {
+        send(toEmail, EmailContent.emailChangeCode(code, codeTtl));
+    }
+
     private void send(String toEmail, EmailContent content) {
         CreateEmailOptions options = CreateEmailOptions.builder()
                 .from(from)

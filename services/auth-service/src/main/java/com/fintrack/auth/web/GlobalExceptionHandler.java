@@ -6,7 +6,9 @@ import com.fintrack.auth.service.InvalidCredentialsException;
 import com.fintrack.auth.service.InvalidRefreshTokenException;
 import com.fintrack.auth.service.InvalidResetCodeException;
 import com.fintrack.auth.service.InvalidVerificationCodeException;
+import com.fintrack.auth.service.IncorrectCurrentPasswordException;
 import com.fintrack.auth.service.TooManyLoginAttemptsException;
+import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -38,13 +40,29 @@ public class GlobalExceptionHandler {
     private static final URI VALIDATION_TYPE = URI.create("https://fintrack.example/problems/validation-error");
     private static final URI INVALID_CREDENTIALS_TYPE = URI.create("https://fintrack.example/problems/invalid-credentials");
 
+    private static ProblemDetail withTrace(ProblemDetail problem) {
+        String traceId = MDC.get(CorrelationIdFilter.MDC_KEY);
+        if (traceId != null) {
+            problem.setProperty("traceId", traceId);
+        }
+        return problem;
+    }
+
+    @ExceptionHandler(IncorrectCurrentPasswordException.class)
+    ProblemDetail handleIncorrectCurrentPassword(IncorrectCurrentPasswordException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setType(URI.create("https://fintrack.example/problems/incorrect-current-password"));
+        problem.setTitle("Incorrect current password");
+        return withTrace(problem);
+    }
+
     @ExceptionHandler(EmailNotVerifiedException.class)
     ProblemDetail handleEmailNotVerified(EmailNotVerifiedException ex) {
         // distinct type: the UI routes to the verification screen on this
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
         problem.setType(URI.create("https://fintrack.example/problems/email-not-verified"));
         problem.setTitle("Email not verified");
-        return problem;
+        return withTrace(problem);
     }
 
     @ExceptionHandler(InvalidResetCodeException.class)
@@ -52,7 +70,7 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problem.setType(URI.create("https://fintrack.example/problems/invalid-reset-code"));
         problem.setTitle("Invalid reset code");
-        return problem;
+        return withTrace(problem);
     }
 
     @ExceptionHandler(InvalidVerificationCodeException.class)
@@ -61,7 +79,7 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problem.setType(URI.create("https://fintrack.example/problems/invalid-verification-code"));
         problem.setTitle("Invalid verification code");
-        return problem;
+        return withTrace(problem);
     }
 
     @ExceptionHandler(TooManyLoginAttemptsException.class)
@@ -70,7 +88,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
         problem.setType(URI.create("https://fintrack.example/problems/too-many-attempts"));
         problem.setTitle("Too many attempts");
-        return problem;
+        return withTrace(problem);
     }
 
     @ExceptionHandler(InvalidRefreshTokenException.class)
@@ -79,7 +97,7 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
         problem.setType(INVALID_CREDENTIALS_TYPE);
         problem.setTitle("Invalid credentials");
-        return problem;
+        return withTrace(problem);
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)
@@ -88,7 +106,7 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
         problem.setType(INVALID_CREDENTIALS_TYPE);
         problem.setTitle("Invalid credentials");
-        return problem;
+        return withTrace(problem);
     }
 
     @ExceptionHandler(EmailAlreadyInUseException.class)
@@ -99,7 +117,7 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problem.setType(EMAIL_IN_USE_TYPE);
         problem.setTitle("Email already in use");
-        return problem;
+        return withTrace(problem);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -117,6 +135,6 @@ public class GlobalExceptionHandler {
                     (a, b) -> a + "; " + b);
         }
         problem.setProperty("errors", errors);
-        return problem;
+        return withTrace(problem);
     }
 }
