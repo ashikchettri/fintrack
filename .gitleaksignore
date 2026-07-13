@@ -1,0 +1,3 @@
+# Historical false positive: PEM header *template* in a test; the key is generated
+# at runtime (the gitleaks:allow marker landed one commit later)
+7447d5d23c88406aba94d5e93c5192ba12666532:services/auth-service/src/test/java/com/fintrack/auth/config/JwtKeyConfigTest.java:private-key:74
