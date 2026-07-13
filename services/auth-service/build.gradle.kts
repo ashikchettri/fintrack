@@ -1,8 +1,8 @@
 plugins {
     java
     jacoco
-    id("org.springframework.boot") version "4.1.0"
-    id("org.sonarqube") version "6.2.0.5505"
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.sonarqube)
 }
 
 group = "com.fintrack"
@@ -21,7 +21,7 @@ repositories {
 
 dependencies {
     // BOM imported explicitly — one place controls every Spring version
-    implementation(platform("org.springframework.boot:spring-boot-dependencies:4.1.0"))
+    implementation(platform(libs.spring.boot.dependencies))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
@@ -29,17 +29,17 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     // Argon2PasswordEncoder delegates to BouncyCastle — optional in
     // spring-security-crypto, so it must be declared explicitly (not in the Boot BOM)
-    implementation("org.bouncycastle:bcprov-jdk18on:1.84")
+    implementation(libs.bouncycastle)
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 
     // springdoc 3.x is the Spring Boot 4 line (2.x targets Boot 3)
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
+    implementation(libs.springdoc.openapi)
     // verification emails: Mailpit locally, Gmail SMTP via env in deployed envs (ADR 004)
     implementation("org.springframework.boot:spring-boot-starter-mail")
     // official Resend SDK (replaces the hand-rolled RestClient integration)
-    implementation("com.resend:resend-java:4.13.0")
+    implementation(libs.resend)
 
     // Boot 4: Flyway auto-configuration lives in its own starter — flyway-core
     // alone on the classpath no longer triggers migrations at startup
@@ -47,7 +47,7 @@ dependencies {
     implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
 
-    testImplementation(platform("org.springframework.boot:spring-boot-dependencies:4.1.0"))
+    testImplementation(platform(libs.spring.boot.dependencies))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     // Boot 4 modularized test support: MockMvc auto-config lives in the
     // per-technology webmvc-test module, no longer inside starter-test
@@ -60,7 +60,7 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     // Karate drives black-box API tests over real HTTP (Gherkin-style features).
     // GroupId is io.karatelabs since 1.5.x (com.intuit.karate stopped at 1.4.1).
-    testImplementation("io.karatelabs:karate-junit5:1.5.2")
+    testImplementation(libs.karate.junit5)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
