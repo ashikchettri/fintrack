@@ -1,8 +1,11 @@
-import { useState } from 'react';
-import type { FormEvent } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { ApiError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
+import { loginSchema } from '@/validators/auth';
+import type { LoginValues } from '@/validators/auth';
 import { AuthLayout } from '@/components/AuthLayout';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -16,33 +19,32 @@ export default function LoginPage() {
   const { login } = useAuth();
   const routedState = location.state as { email?: string; flash?: string } | null;
 
-  const [email, setEmail] = useState(routedState?.email ?? '');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: routedState?.email ?? '', password: '' },
+  });
 
-  async function onSubmit(event: FormEvent) {
-    event.preventDefault();
-    setError(null);
-    setSubmitting(true);
+  async function onSubmit(values: LoginValues) {
     try {
-      await login(email, password);
+      await login(values.email, values.password);
       navigate('/profile');
     } catch (err) {
       if (err instanceof ApiError) {
         // distinct 403 problem type → straight to the verification screen
         if (err.problem.type?.endsWith('email-not-verified')) {
-          navigate('/verify-email', { state: { email } });
+          navigate('/verify-email', { state: { email: values.email } });
           return;
         }
         // 401 → generic invalid credentials; 429 → throttle message.
-        // Both bodies come from the API's RFC 9457 problem details.
-        setError(err.problem.detail ?? 'Login failed');
+        setError('root', { message: err.problem.detail ?? 'Login failed' });
       } else {
-        setError('Network error — is the API running?');
+        toast.error('Network error — is the API running?');
       }
-    } finally {
-      setSubmitting(false);
     }
   }
 
@@ -59,17 +61,20 @@ export default function LoginPage() {
               {routedState.flash}
             </Alert>
           )}
-          <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 placeholder="you@example.com"
+                aria-invalid={errors.email ? true : undefined}
+                {...register('email')}
               />
+              {errors.email && (
+                <p className="text-sm text-destructive" role="alert">{errors.email.message}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -85,16 +90,19 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
+                aria-invalid={errors.password ? true : undefined}
+                {...register('password')}
               />
+              {errors.password && (
+                <p className="text-sm text-destructive" role="alert">{errors.password.message}</p>
+              )}
             </div>
 
-            {error && <Alert role="alert">{error}</Alert>}
+            {errors.root && <Alert role="alert">{errors.root.message}</Alert>}
 
-            <Button type="submit" disabled={submitting} className="mt-1 w-full">
-              {submitting ? 'Logging in…' : 'Log in'}
+            <Button type="submit" disabled={isSubmitting} className="mt-1 w-full">
+              {isSubmitting ? 'Logging in…' : 'Log in'}
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">

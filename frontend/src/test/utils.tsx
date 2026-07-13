@@ -3,6 +3,7 @@ import { render } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { AuthProvider } from '../auth/AuthContext';
+import { ThemeProvider } from '../theme/ThemeProvider';
 import type { UserResponse } from '../api/types';
 
 export const TEST_USER: UserResponse = {
@@ -20,11 +21,13 @@ export function renderWithProviders(ui: ReactNode, initialEntries: string[] = ['
     defaultOptions: { queries: { retry: false } },
   });
   return render(
+    <ThemeProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <MemoryRouter initialEntries={initialEntries}>{ui}</MemoryRouter>
       </AuthProvider>
-    </QueryClientProvider>,
+    </QueryClientProvider>
+    </ThemeProvider>,
   );
 }
 
