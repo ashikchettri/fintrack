@@ -33,7 +33,7 @@ jobs:
     name: Flyway migrations are append-only
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Fail if an applied migration is modified, renamed, or deleted
@@ -58,7 +58,7 @@ jobs:
       contents: read
       pull-requests: read   # gitleaks-action lists the PR's commits via the API
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # scan the PR's full commit range, not just the merge commit
       - uses: gitleaks/gitleaks-action@v3
