@@ -88,9 +88,10 @@ class EmailChangeServiceTest {
     void wrongCurrentPasswordIsRejected() {
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("wrong", "<hash>")).thenReturn(false);
+        UUID id = user.getId();
 
         assertThatExceptionOfType(IncorrectCurrentPasswordException.class)
-                .isThrownBy(() -> service.requestChange(user.getId(), "new@example.com", "wrong"));
+                .isThrownBy(() -> service.requestChange(id, "new@example.com", "wrong"));
         verify(emailSender, never()).sendEmailChangeCode(any(), any());
     }
 
@@ -99,9 +100,10 @@ class EmailChangeServiceTest {
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("current-pw", "<hash>")).thenReturn(true);
         when(userRepository.existsByEmail("taken@example.com")).thenReturn(true);
+        UUID id = user.getId();
 
         assertThatExceptionOfType(EmailAlreadyInUseException.class)
-                .isThrownBy(() -> service.requestChange(user.getId(), "taken@example.com", "current-pw"));
+                .isThrownBy(() -> service.requestChange(id, "taken@example.com", "current-pw"));
     }
 
     @Test
@@ -120,9 +122,10 @@ class EmailChangeServiceTest {
         EmailChangeRequest request = requestAndCapture();
         when(requestRepository.findByUserId(user.getId())).thenReturn(Optional.of(request));
         String wrong = rawCode.equals("000000") ? "111111" : "000000";
+        UUID id = user.getId();
 
         assertThatExceptionOfType(InvalidVerificationCodeException.class)
-                .isThrownBy(() -> service.confirmChange(user.getId(), wrong));
+                .isThrownBy(() -> service.confirmChange(id, wrong));
 
         assertThat(request.getAttempts()).isEqualTo(1);
         assertThat(user.getEmail()).isEqualTo("old@example.com");
@@ -132,8 +135,9 @@ class EmailChangeServiceTest {
     void confirmWithNoPendingRequestFails() {
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(requestRepository.findByUserId(user.getId())).thenReturn(Optional.empty());
+        UUID id = user.getId();
 
         assertThatExceptionOfType(InvalidVerificationCodeException.class)
-                .isThrownBy(() -> service.confirmChange(user.getId(), "123456"));
+                .isThrownBy(() -> service.confirmChange(id, "123456"));
     }
 }
