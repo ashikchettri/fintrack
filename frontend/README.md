@@ -1,14 +1,20 @@
 # frontend
 
-React 19 + Vite + TypeScript SPA. Auth flows only for now (signup, login,
-profile, logout) — finance pages come with phase 2's finance-service.
+React 19 + Vite + TypeScript SPA for FinTrack. Covers the full auth journey today; finance pages arrive with Phase 2.
 
 ## Stack
 
-- **Vite + React 19 + TypeScript**, TanStack Query for server state
-- Access token in JS memory only; refresh token in an **httpOnly cookie**
-  (ADR 003) — sessions survive reloads via silent refresh
+- **Vite · React 19 · TypeScript**
+- **Tailwind CSS v4** + shadcn-style components (owned in `src/components/ui/`)
+- **TanStack Query** for server state
+- **react-hook-form + zod** for forms (schemas in `src/validators/`)
+- **Sonner** toasts · **light/dark theme** (`ThemeProvider`, persisted, follows the OS)
+- Access token in JS memory only; refresh token in an httpOnly cookie (ADR 003) — sessions survive reloads via silent refresh
 - Dev server proxies `/api` → `http://localhost:8081` (no CORS config needed)
+
+## Pages
+
+`/signup` · `/verify-email` · `/login` · `/forgot-password` · `/reset-password` · `/profile` (protected) · `/settings` (protected: change password, change email). The API client (`src/api/client.ts`) attaches the bearer token, does one silent refresh on a 401, and parses RFC 9457 problem bodies into a typed `ApiError`.
 
 ## Run
 
@@ -18,13 +24,12 @@ npm install
 npm run dev             # http://localhost:5173 — needs auth-service on :8081
 ```
 
+Easier: `./dev.sh` from the repo root starts the whole stack.
+
 ## Test
 
 | Command | What it runs |
 |---|---|
-| `npm test` | Vitest + React Testing Library unit/component tests |
-| `npm run test:coverage` | same, with v8 coverage gate (90% lines/statements) |
-| `npm run test:ui` | Playwright against a **mocked** API (no backend needed) |
-| `npm run test:e2e` | Playwright against the **real** stack — run `./dev.sh mailpit` first (e2e reads codes from the Mailpit inbox; the everyday Gmail transport would send real email) |
-
-Playwright starts the Vite dev server itself (`webServer` in `playwright.config.ts`).
+| `npm run test:coverage` | Vitest + React Testing Library, with a coverage gate |
+| `npm run test:ui` | Playwright against a **mocked** API (no backend) |
+| `npm run test:e2e` | Playwright against the **real** stack — run `./dev.sh mailpit` first (e2e reads codes from the Mailpit inbox) |
