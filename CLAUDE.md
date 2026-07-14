@@ -7,7 +7,9 @@ Household personal-finance tracker; learning project for Spring Boot 4 microserv
 - `docs/ARCHITECTURE.md` — services, stack, trade-offs
 - `docs/ROADMAP.md` — phases; **check which phase we're in before suggesting work**
 - `docs/API.md` — endpoint reference (auth + finance)
-- `docs/decisions/` — ADRs. 001 personal-first privacy · 002 JWT keys · 003 refresh cookie · 004 email verification · 005 password reset.
+- `docs/TEMPLATE.md` — the reusable, domain-agnostic auth starter (what to keep/strip when extracting)
+- `docs/PRODUCT.md` — the FinTrack finance-tracker domain (households, accounts, budgets, privacy)
+- `docs/decisions/` — ADRs. 001 personal-first privacy (product) · 002 JWT keys · 003 refresh cookie · 004 email verification · 005 password reset (002–005 are template-generic).
 
 ## Current state
 
