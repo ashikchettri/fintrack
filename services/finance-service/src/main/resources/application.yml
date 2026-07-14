@@ -23,6 +23,12 @@ spring:
     problemdetails:
       enabled: true
 
+  servlet:
+    multipart:
+      # bank statements are small; cap uploads so a huge file can't exhaust memory
+      max-file-size: 5MB
+      max-request-size: 6MB
+
   security:
     oauth2:
       resourceserver:

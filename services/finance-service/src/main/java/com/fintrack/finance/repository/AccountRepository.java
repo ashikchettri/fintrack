@@ -13,4 +13,9 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     List<Account> findByHouseholdIdAndMemberIdOrderByCreatedAtDesc(UUID householdId, UUID memberId);
 
     Optional<Account> findByIdAndHouseholdIdAndMemberId(UUID id, UUID householdId, UUID memberId);
+
+    // CSV import resolves the statement's "Account" column to an existing account
+    // by name (case-insensitive) before creating a new one
+    Optional<Account> findByHouseholdIdAndMemberIdAndNameIgnoreCase(
+            UUID householdId, UUID memberId, String name);
 }

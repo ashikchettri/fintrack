@@ -30,6 +30,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 
+    // robust RFC 4180 CSV parsing for bank-export imports (quotes, embedded commas)
+    implementation(libs.commons.csv)
+
     // Boot 4: Flyway auto-configuration lives in its own starter
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.flywaydb:flyway-database-postgresql")
