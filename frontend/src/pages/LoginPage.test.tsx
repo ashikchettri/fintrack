@@ -44,6 +44,15 @@ async function fillAndSubmit(email: string, password: string) {
 }
 
 describe('LoginPage', () => {
+  it('shows client-side validation for empty fields without calling the API', async () => {
+    renderLogin();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Log in' }));
+
+    expect(await screen.findByText('Email is required')).toBeInTheDocument();
+    expect(screen.getByText('Password is required')).toBeInTheDocument();
+    expect(mockedApi.login).not.toHaveBeenCalled();
+  });
+
   it('logs in and navigates to the profile', async () => {
     mockedApi.login.mockResolvedValue({ accessToken: 'jwt', tokenType: 'Bearer', expiresInSeconds: 900 });
     mockedApi.me.mockResolvedValue(TEST_USER);
