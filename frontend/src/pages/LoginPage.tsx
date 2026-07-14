@@ -32,7 +32,7 @@ export default function LoginPage() {
   async function onSubmit(values: LoginValues) {
     try {
       await login(values.email, values.password);
-      navigate('/profile');
+      navigate('/dashboard');
     } catch (err) {
       if (err instanceof ApiError) {
         // distinct 403 problem type → straight to the verification screen

@@ -169,3 +169,53 @@ describe('logout', () => {
     expect(tokenStore.get()).toBeNull();
   });
 });
+
+describe('finance endpoints', () => {
+  it('dashboard() GETs the dashboard with the bearer token', async () => {
+    tokenStore.set('jwt-held');
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { currency: 'AUD', totals: { transactionCount: 0 } }));
+
+    await api.dashboard();
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/v1/dashboard');
+    expect(new Headers(init.headers).get('Authorization')).toBe('Bearer jwt-held');
+  });
+
+  it('transactions() GETs the transactions feed', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, []));
+
+    await api.transactions();
+
+    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/api/v1/transactions');
+  });
+
+  it('importTransactions() posts multipart form data without a JSON content-type', async () => {
+    tokenStore.set('jwt-held');
+    fetchMock.mockResolvedValueOnce(jsonResponse(201, { imported: 6, duplicatesSkipped: 0 }));
+
+    const file = new File(['Date,Description,Amount\n'], 'statement.csv', { type: 'text/csv' });
+    const summary = await api.importTransactions(file, 'AUD');
+
+    expect(summary.imported).toBe(6);
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/v1/imports/transactions');
+    expect(init.method).toBe('POST');
+    expect(init.body).toBeInstanceOf(FormData);
+    expect(new Headers(init.headers).get('Content-Type')).toBeNull(); // browser sets the boundary
+    expect(new Headers(init.headers).get('Authorization')).toBe('Bearer jwt-held');
+  });
+
+  it('a finance call retries once after a 401 when a silent refresh succeeds', async () => {
+    tokenStore.set('expired-jwt');
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(401, { title: 'Unauthorized', status: 401 }))
+      .mockResolvedValueOnce(jsonResponse(200, { accessToken: 'fresh', tokenType: 'Bearer', expiresInSeconds: 900 }))
+      .mockResolvedValueOnce(jsonResponse(200, { currency: 'AUD', totals: { transactionCount: 0 } }));
+
+    await api.dashboard();
+
+    expect(fetchMock).toHaveBeenCalledTimes(3); // dashboard → refresh → dashboard
+    expect(tokenStore.get()).toBe('fresh');
+  });
+});

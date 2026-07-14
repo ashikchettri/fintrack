@@ -39,6 +39,9 @@ async function signupVerifyLogin(page: Page, request: APIRequestContext, email: 
   await expect(page.getByText('Email verified — log in to continue.')).toBeVisible();
   await page.getByLabel('Password').fill(PASSWORD);
   await page.getByRole('button', { name: 'Log in' }).click();
+  // login lands on the dashboard; reach the profile (and its settings) via the nav
+  await expect(page).toHaveURL(/\/dashboard/);
+  await page.getByRole('link', { name: 'Profile' }).click();
   await expect(page.getByTestId('profile-email')).toHaveText(email);
 }
 
@@ -63,6 +66,8 @@ test.describe('account settings against the real API', () => {
     await expect(page.getByText('Invalid email or password')).toBeVisible();
     await page.getByLabel('Password').fill(newPassword);
     await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page).toHaveURL(/\/dashboard/);
+    await page.getByRole('link', { name: 'Profile' }).click();
     await expect(page.getByTestId('profile-email')).toHaveText(email);
   });
 

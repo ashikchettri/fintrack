@@ -13,8 +13,14 @@ export default defineConfig({
   },
   server: {
     // Dev-time CORS non-issue: the browser only ever talks to this origin;
-    // Vite forwards /api to auth-service. The phase-2 gateway owns this later.
+    // Vite forwards /api to the services. The phase-2 gateway owns this split later.
+    // Finance-service (:8082) owns the finance endpoints; everything else is auth (:8081).
+    // More specific keys must come first — Vite matches in insertion order.
     proxy: {
+      '/api/v1/dashboard': 'http://localhost:8082',
+      '/api/v1/transactions': 'http://localhost:8082',
+      '/api/v1/imports': 'http://localhost:8082',
+      '/api/v1/accounts': 'http://localhost:8082',
       '/api': 'http://localhost:8081',
     },
   },

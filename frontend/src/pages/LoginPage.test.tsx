@@ -31,7 +31,7 @@ beforeEach(() => {
 
 function renderLogin() {
   return renderPageWithDestinations(<LoginPage />, '/login', {
-    '/profile': 'PROFILE_DEST',
+    '/dashboard': 'DASHBOARD_DEST',
     '/verify-email': 'VERIFY_DEST',
   });
 }
@@ -53,14 +53,14 @@ describe('LoginPage', () => {
     expect(mockedApi.login).not.toHaveBeenCalled();
   });
 
-  it('logs in and navigates to the profile', async () => {
+  it('logs in and navigates to the dashboard', async () => {
     mockedApi.login.mockResolvedValue({ accessToken: 'jwt', tokenType: 'Bearer', expiresInSeconds: 900 });
     mockedApi.me.mockResolvedValue(TEST_USER);
     renderLogin();
 
     await fillAndSubmit('jane@example.com', 'correct horse battery staple');
 
-    await waitFor(() => expect(screen.getByText('PROFILE_DEST')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('DASHBOARD_DEST')).toBeInTheDocument());
     expect(mockedApi.login).toHaveBeenCalledWith('jane@example.com', 'correct horse battery staple');
   });
 
