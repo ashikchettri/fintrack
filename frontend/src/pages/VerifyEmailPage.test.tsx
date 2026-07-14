@@ -96,4 +96,31 @@ describe('VerifyEmailPage', () => {
     // cooldown: button disabled and counting down
     expect(screen.getByRole('button', { name: /Resend code \(\d+s\)/ })).toBeDisabled();
   });
+
+  it('shows a network error when resend fails', async () => {
+    mockedApi.resendVerification.mockRejectedValue(new TypeError('fetch failed'));
+    renderVerify();
+    const user = userEvent.setup();
+
+    await user.type(screen.getByLabelText('Email'), 'jane@example.com');
+    await user.click(screen.getByRole('button', { name: 'Resend code' }));
+
+    await waitFor(() =>
+      expect(screen.getByText(/Network error/)).toBeInTheDocument(),
+    );
+  });
+
+  it('shows a network error when verification submit fails', async () => {
+    mockedApi.verifyEmail.mockRejectedValue(new TypeError('fetch failed'));
+    renderVerify();
+    const user = userEvent.setup();
+
+    await user.type(screen.getByLabelText('Email'), 'jane@example.com');
+    await user.type(screen.getByLabelText('Verification code'), '123456');
+    await user.click(screen.getByRole('button', { name: 'Verify email' }));
+
+    await waitFor(() =>
+      expect(screen.getByText(/Network error/)).toBeInTheDocument(),
+    );
+  });
 });

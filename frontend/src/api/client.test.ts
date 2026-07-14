@@ -125,6 +125,40 @@ describe('verification endpoints', () => {
   });
 });
 
+describe('account management', () => {
+  it('changePassword posts current + new to the me endpoint', async () => {
+    tokenStore.set('jwt-held');
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await api.changePassword('old-secret', 'a brand new secret');
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/v1/users/me/password');
+    expect(init.body).toBe(JSON.stringify({ currentPassword: 'old-secret', newPassword: 'a brand new secret' }));
+    expect(new Headers(init.headers).get('Authorization')).toBe('Bearer jwt-held');
+  });
+
+  it('requestEmailChange posts the new email and current password', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await api.requestEmailChange('new@example.com', 'secret');
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/v1/users/me/email');
+    expect(init.body).toBe(JSON.stringify({ newEmail: 'new@example.com', currentPassword: 'secret' }));
+  });
+
+  it('confirmEmailChange posts the code', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await api.confirmEmailChange('123456');
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/v1/users/me/email/verify');
+    expect(init.body).toBe(JSON.stringify({ code: '123456' }));
+  });
+});
+
 describe('logout', () => {
   it('handles the 204 and clears the token', async () => {
     tokenStore.set('jwt-live');
