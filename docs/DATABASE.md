@@ -61,6 +61,53 @@ Schema-per-service: `auth` (identity) and `finance` (empty until Phase 2). `flyw
 
 > ⚠️ These write to the database directly, bypassing the app. Fine for local dev; never a substitute for a real feature. **Schema changes still go only through Flyway migrations** (`V<n>__description.sql`) — never hand-edit tables to change structure.
 
+## Without `./db.sh` — raw `docker exec` + psql
+
+The helper is just a wrapper. If you'd rather run psql directly (or `db.sh` isn't checked out), these do the same thing. All target the local container `fintrack-postgres`, database `fintrack`.
+
+**Open an interactive shell** (tables live in the `auth` schema, so put it on the search path):
+
+```bash
+docker exec -it -e "PGOPTIONS=-c search_path=auth,finance,public" \
+  fintrack-postgres psql -U fintrack -d fintrack
+```
+
+Then inside psql, no prefix needed:
+
+```sql
+\dt                         -- list the auth tables
+\d users                    -- describe the users table
+select email, email_verified_at, created_at from users order by created_at desc limit 10;
+select u.email, h.name as household, m.role
+  from users u
+  join household_members m on m.user_id = u.id
+  join households h on h.id = m.household_id;
+\q
+```
+
+**One-off queries** (no shell — `-c` runs and exits):
+
+```bash
+# list users
+docker exec fintrack-postgres psql -U fintrack -d fintrack \
+  -c "select email, email_verified_at from auth.users order by created_at desc limit 10;"
+
+# one user's details
+docker exec fintrack-postgres psql -U fintrack -d fintrack \
+  -c "select email, email_verified_at, created_at from auth.users where email = 'jane@example.com';"
+
+# list tables
+docker exec fintrack-postgres psql -U fintrack -d fintrack \
+  -c "select table_schema, table_name from information_schema.tables
+      where table_schema in ('auth','finance') order by 1,2;"
+
+# manually verify an account (update)
+docker exec fintrack-postgres psql -U fintrack -d fintrack \
+  -c "update auth.users set email_verified_at = now() where email = 'jane@example.com';"
+```
+
+> Without the `PGOPTIONS` search-path trick, always prefix tables with `auth.` (e.g. `auth.users`) in `-c` queries — `-c` doesn't inherit an interactive `SET search_path`.
+
 ## Troubleshooting
 
 **"I'm in psql but `\dt` shows no tables."** Two causes:
