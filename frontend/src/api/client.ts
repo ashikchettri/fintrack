@@ -74,6 +74,29 @@ export const api = {
     });
   },
 
+  // ---- authenticated account management (bearer token attached automatically) ----
+
+  changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    return request<void>('/api/v1/users/me/password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  },
+
+  requestEmailChange(newEmail: string, currentPassword: string): Promise<void> {
+    return request<void>('/api/v1/users/me/email', {
+      method: 'POST',
+      body: JSON.stringify({ newEmail, currentPassword }),
+    });
+  },
+
+  confirmEmailChange(code: string): Promise<void> {
+    return request<void>('/api/v1/users/me/email/verify', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+  },
+
   async login(email: string, password: string): Promise<LoginResponse> {
     const res = await request<LoginResponse>('/api/v1/auth/login', {
       method: 'POST',

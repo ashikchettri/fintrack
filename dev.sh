@@ -48,14 +48,18 @@ postgres_up() { docker exec fintrack-postgres pg_isready -U "${POSTGRES_USER:-fi
 mailpit_up()  { curl -sf http://localhost:8025/api/v1/info >/dev/null 2>&1; }
 backend_up()  { curl -sf http://localhost:8081/actuator/health 2>/dev/null | grep -q UP; }
 frontend_up() { port_in_use 5173; }
+# SonarQube is opt-in (docker compose --profile quality up -d sonarqube)
+sonarqube_up() { curl -sf http://localhost:9000/api/system/status 2>/dev/null | grep -q '"UP"'; }
 
 status() {
   echo "FinTrack dev stack status:"
-  docker_up   && ok "Docker daemon"              || fail "Docker daemon (start Docker Desktop)"
-  postgres_up && ok "Postgres      :$PG_PORT"    || fail "Postgres"
-  mailpit_up  && ok "Mailpit       :1025 / UI :8025" || fail "Mailpit"
-  backend_up  && ok "auth-service  :8081 (Swagger: /swagger-ui.html)" || fail "auth-service"
-  frontend_up && ok "frontend      :5173"        || fail "frontend"
+  docker_up    && ok "Docker daemon"              || fail "Docker daemon (start Docker Desktop)"
+  postgres_up  && ok "Postgres      :$PG_PORT"    || fail "Postgres"
+  mailpit_up   && ok "Mailpit       :1025 / inbox http://localhost:8025" || fail "Mailpit"
+  backend_up   && ok "auth-service  http://localhost:8081  (Swagger: /swagger-ui.html)" || fail "auth-service"
+  frontend_up  && ok "frontend      http://localhost:5173" || fail "frontend"
+  # only reported when running — it's an opt-in quality tool, not part of the app
+  sonarqube_up && ok "SonarQube     http://localhost:9000  (login admin)"
   if backend_up && [ -f "$LOG_DIR/auth-service.log" ]; then
     transport=$(grep "Email transport" "$LOG_DIR/auth-service.log" | tail -1 | sed 's/.*Email transport: //')
     [ -n "$transport" ] && echo "  ↳ email transport: $transport"
@@ -202,6 +206,7 @@ start() {
   echo "  App        http://localhost:5173"
   echo "  Swagger    http://localhost:8081/swagger-ui.html"
   echo "  Mail inbox http://localhost:8025"
+  sonarqube_up && echo "  SonarQube  http://localhost:9000"
 }
 
 # ---------- stop ------------------------------------------------------------

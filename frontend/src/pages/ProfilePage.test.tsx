@@ -50,6 +50,16 @@ describe('ProfilePage', () => {
     expect(mockedApi.logout).toHaveBeenCalled();
   });
 
+  it('navigates to account settings', async () => {
+    mockedApi.me.mockResolvedValue(TEST_USER);
+    renderPageWithDestinations(<ProfilePage />, '/profile', { '/settings': 'SETTINGS_DEST' });
+    await waitFor(() => expect(screen.getByTestId('profile-email')).toBeInTheDocument());
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Account settings' }));
+
+    await waitFor(() => expect(screen.getByText('SETTINGS_DEST')).toBeInTheDocument());
+  });
+
   it('shows an error state when the profile cannot load', async () => {
     mockedApi.me.mockRejectedValue(new ApiError(401, { status: 401 }));
     renderPageWithDestinations(<ProfilePage />, '/profile', { '/login': 'LOGIN_DEST' });

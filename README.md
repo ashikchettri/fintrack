@@ -4,6 +4,8 @@ Household personal-finance tracker. Learning project covering Spring Boot 4 micr
 
 Docs: [architecture](docs/ARCHITECTURE.md) · [roadmap](docs/ROADMAP.md) · [API reference](docs/API.md) · [decisions](docs/decisions/)
 
+Two lenses on this repo: **[TEMPLATE.md](docs/TEMPLATE.md)** — the reusable, domain-agnostic auth starter (API + UI) you can lift into any project · **[PRODUCT.md](docs/PRODUCT.md)** — the FinTrack finance-tracker product (households, accounts, budgets, privacy model).
+
 ## Status
 
 **Phase 1 complete + hardened.** A production-grade authentication platform (two services + React UI) is done and tested end-to-end. Phase 2 (finance-service accounts/transactions/budgets) is next.
@@ -65,6 +67,8 @@ Then open:
 | http://localhost:8025 | Mailpit inbox (local email lands here) |
 
 App logs go to `.dev-logs/`. `./dev.sh` sends **real email** via Gmail when `MAIL_USERNAME`/`MAIL_PASSWORD` are set in `.env`, otherwise the local Mailpit inbox — see [Email](#email).
+
+Inspect the database with `./db.sh` (`./db.sh tables`, `./db.sh user <email>`, `./db.sh query "…"`) — see [docs/DATABASE.md](docs/DATABASE.md).
 
 ## Test
 
