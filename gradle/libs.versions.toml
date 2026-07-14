@@ -7,6 +7,7 @@ bouncycastle = "1.84"
 springdoc = "3.0.3"
 karate = "1.5.2"
 resend = "4.13.0"
+commonsCsv = "1.12.0"
 
 [libraries]
 spring-boot-dependencies = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "springBoot" }
@@ -14,6 +15,7 @@ bouncycastle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "boun
 springdoc-openapi = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
 resend = { module = "com.resend:resend-java", version.ref = "resend" }
 karate-junit5 = { module = "io.karatelabs:karate-junit5", version.ref = "karate" }
+commons-csv = { module = "org.apache.commons:commons-csv", version.ref = "commonsCsv" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }

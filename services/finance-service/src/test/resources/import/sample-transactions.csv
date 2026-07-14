@@ -1,0 +1,8 @@
+Transaction Date,Details,Account,Category,Subcategory,Tags,Notes,Debit,Credit,Balance,Original Description
+"11 Jul 2026","Transport NSW","Everyday","Transportation","Public Transit","","","12.50","","","TfNSW Opal Fare SYDNEY"
+"26 May 2026","Reddy Express","Everyday","Transportation","Fuel","","","60.00","","","Reddy Express 6701"
+"26 May 2026","Reddy Express","Everyday","Transportation","Fuel","","","60.00","","","Reddy Express 6701"
+"14 Apr 2026","Woolworths","Everyday","Food & Drink","Groceries","","","85.20","","","WOOLWORTHS/10 MARCO AVE"
+"17 Aug 2025","SHEIN Refund","Everyday","Personal","Clothing","","","","40.00","","SHEIN.COM MELBOURNE"
+"01 Jun 2026","Salary","Savings","Income","Pay","","","","3000.00","","EMPLOYER PAYROLL"
+"not a date","Broken Row","Everyday","X","Y","","","1.00","","","Broken"
