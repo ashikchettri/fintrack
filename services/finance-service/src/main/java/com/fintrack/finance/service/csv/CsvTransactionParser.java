@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
@@ -51,34 +52,156 @@ public class CsvTransactionParser {
         List<ParsedTransaction> rows = new ArrayList<>();
         List<CsvParseResult.RowError> errors = new ArrayList<>();
 
+        // No setHeader(): we read every row and decide for ourselves whether the
+        // first one is a header or already data. Many bank exports are
+        // header-less (accounting/Quicken style: "date,amount,description" with
+        // no column names), and assuming a header would eat the first transaction.
         CSVFormat format = CSVFormat.DEFAULT.builder()
-                .setHeader()
-                .setSkipHeaderRecord(true)
                 .setIgnoreEmptyLines(true)
                 .setTrim(true)
                 .build();
 
+        List<CSVRecord> records;
         try (Reader reader = new InputStreamReader(in, StandardCharsets.UTF_8);
              CSVParser parser = CSVParser.parse(reader, format)) {
-
-            Map<CsvColumn, Integer> columns = mapColumns(parser.getHeaderNames());
-            requireUsableColumns(columns, parser.getHeaderNames());
-
-            for (CSVRecord record : parser) {
-                try {
-                    rows.add(toTransaction(record, columns));
-                } catch (RowParseException e) {
-                    errors.add(new CsvParseResult.RowError((int) record.getRecordNumber(), e.getMessage()));
-                }
-            }
+            records = parser.getRecords();
         } catch (IOException e) {
             throw new CsvImportException("Could not read the CSV file: " + e.getMessage(), e);
+        }
+        if (records.isEmpty()) {
+            throw new CsvImportException("The CSV file has no rows.");
+        }
+
+        List<String> firstRow = Arrays.asList(records.get(0).values());
+        Map<CsvColumn, Integer> columns;
+        List<CSVRecord> dataRows;
+        if (looksLikeHeader(firstRow)) {
+            columns = mapColumns(firstRow);
+            requireUsableColumns(columns, firstRow);
+            dataRows = records.subList(1, records.size());
+        } else {
+            // header-less: infer date / amount / description from the data itself
+            columns = inferColumns(records);
+            dataRows = records;
+        }
+
+        for (CSVRecord record : dataRows) {
+            try {
+                rows.add(toTransaction(record, columns));
+            } catch (RowParseException e) {
+                errors.add(new CsvParseResult.RowError((int) record.getRecordNumber(), e.getMessage()));
+            }
         }
 
         if (rows.isEmpty() && errors.isEmpty()) {
             throw new CsvImportException("The CSV file has no data rows.");
         }
         return new CsvParseResult(rows, errors);
+    }
+
+    /** A first row is a header iff its cells name a date and an amount column. */
+    private boolean looksLikeHeader(List<String> firstRow) {
+        Map<CsvColumn, Integer> resolved = mapColumns(firstRow);
+        boolean hasAmount = resolved.containsKey(CsvColumn.AMOUNT)
+                || resolved.containsKey(CsvColumn.DEBIT)
+                || resolved.containsKey(CsvColumn.CREDIT);
+        return resolved.containsKey(CsvColumn.DATE) && hasAmount;
+    }
+
+    /**
+     * Infer columns for a header-less CSV by sniffing the data: which column
+     * parses as dates, which as money, which is free text. Content-based (not
+     * positional), so it handles "date,amount,description" and reordered variants
+     * alike.
+     */
+    private Map<CsvColumn, Integer> inferColumns(List<CSVRecord> records) {
+        int cols = records.get(0).size();
+        int sample = Math.min(records.size(), 20);
+        int[] dateHits = new int[cols];
+        int[] numberHits = new int[cols];
+        int[] textHits = new int[cols];
+        int[] nonBlank = new int[cols];
+
+        for (int r = 0; r < sample; r++) {
+            CSVRecord record = records.get(r);
+            for (int c = 0; c < cols && c < record.size(); c++) {
+                String v = record.get(c);
+                if (v == null || v.isBlank()) {
+                    continue;
+                }
+                v = v.strip();
+                nonBlank[c]++;
+                if (isDate(v)) {
+                    dateHits[c]++;
+                } else if (looksNumeric(v)) {
+                    numberHits[c]++;
+                } else {
+                    textHits[c]++;
+                }
+            }
+        }
+
+        int dateCol = majorityColumn(dateHits, nonBlank, -1);
+        int amountCol = majorityColumn(numberHits, nonBlank, dateCol);
+        int descCol = bestTextColumn(textHits, dateCol, amountCol);
+        if (dateCol < 0 || amountCol < 0 || descCol < 0) {
+            throw new CsvImportException(
+                    "Couldn't detect a date, amount and description column in this header-less CSV.");
+        }
+
+        Map<CsvColumn, Integer> columns = new EnumMap<>(CsvColumn.class);
+        columns.put(CsvColumn.DATE, dateCol);
+        columns.put(CsvColumn.AMOUNT, amountCol);
+        columns.put(CsvColumn.DESCRIPTION, descCol);
+        return columns;
+    }
+
+    /** Lowest-index column (≠ exclude) whose metric is a majority of its cells. */
+    private int majorityColumn(int[] hits, int[] nonBlank, int exclude) {
+        for (int c = 0; c < hits.length; c++) {
+            if (c != exclude && nonBlank[c] > 0 && hits[c] * 2 >= nonBlank[c]) {
+                return c;
+            }
+        }
+        return -1;
+    }
+
+    /** The most free-text column, excluding the date and amount columns. */
+    private int bestTextColumn(int[] textHits, int dateCol, int amountCol) {
+        int best = -1;
+        int bestHits = 0;
+        for (int c = 0; c < textHits.length; c++) {
+            if (c != dateCol && c != amountCol && textHits[c] > bestHits) {
+                bestHits = textHits[c];
+                best = c;
+            }
+        }
+        return best;
+    }
+
+    private boolean isDate(String value) {
+        for (DateTimeFormatter format : DATE_FORMATS) {
+            try {
+                LocalDate.parse(value, format);
+                return true;
+            } catch (DateTimeParseException ignored) {
+                // try the next format
+            }
+        }
+        return false;
+    }
+
+    private boolean looksNumeric(String value) {
+        String cleaned = value.replaceAll("[()\\s,$£€]", "");
+        if (cleaned.isEmpty()) {
+            return false;
+        }
+        try {
+            new BigDecimal(cleaned);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     private Map<CsvColumn, Integer> mapColumns(List<String> headers) {

@@ -138,6 +138,21 @@ class ImportAndDashboardIT {
     }
 
     @Test
+    void importsAHeaderlessAccountingStyleCsv() throws Exception {
+        // ANZ / Quicken style: no header row — date, signed amount, description
+        MockMultipartFile anz = new MockMultipartFile("file", "anz.csv", "text/csv",
+                ("13/07/2026,\"-126.00\",ANZ MOBILE BANKING PAYMENT TO Ashik\n"
+                        + "03/07/2026,\"2200.00\",PAYMENT FROM DIKSHYA THAPA\n").getBytes());
+
+        mockMvc.perform(multipart("/api/v1/imports/transactions").file(anz)
+                        .param("currency", "AUD").with(member(UUID.randomUUID(), UUID.randomUUID())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.imported").value(2))
+                .andExpect(jsonPath("$.totalIncome").value(2200.0))     // credit
+                .andExpect(jsonPath("$.totalExpenses").value(126.0));    // debit
+    }
+
+    @Test
     void aFileMissingRequiredColumnsIs400() throws Exception {
         MockMultipartFile bad = new MockMultipartFile("file", "bad.csv", "text/csv",
                 "Date,Description\n2026-01-01,Nope\n".getBytes());
