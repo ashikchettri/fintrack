@@ -9,15 +9,15 @@ Each phase produces something working and deployable. Don't start a phase until 
 
 **Done when:** `docker run hello-world`, `minikube start`, and `java --version` → 25 all work.
 
-## Phase 1 — auth-service, done properly (1–2 weeks)
-- Spring Boot 4.1 service: signup, login, refresh (rotation + reuse detection), logout, `/users/me`.
-- Household groundwork: signup auto-creates a single-member household (`OWNER` role); JWT carries `householdId` + `role` claims. Tables only — no invite/family features yet.
-- Postgres via Docker Compose, Flyway migrations, Argon2id, RS256 JWTs + JWKS endpoint.
-- Bean Validation, Problem Details errors, springdoc OpenAPI UI.
-- Tests: unit + Testcontainers integration tests for every endpoint.
-- CI: build + test on every push.
+## Phase 1 — auth-service, done properly ✅ COMPLETE (+ hardened)
+- Spring Boot 4.1 service: signup, login, refresh (rotation + reuse detection), logout, `/users/me`. ✅
+- Household groundwork: signup auto-creates a single-member household (`OWNER` role); JWT carries `householdId` + `memberId` + `role` claims. ✅
+- Postgres via Docker Compose, Flyway migrations, Argon2id, RS256 JWTs + JWKS endpoint. ✅
+- Bean Validation, RFC 9457 Problem Details (+ traceId), springdoc OpenAPI UI. ✅
+- Tests: unit + Testcontainers + Karate for every endpoint; CI on every PR. ✅
+- **Beyond the original scope** (former stretch items, now built): email verification, password reset, change-password, change-email, login throttling, request correlation IDs, three-provider email (Gmail/Resend/Mailpit). See ADRs 002–005.
 
-**Done when:** full signup→login→refresh→logout flow works via Swagger UI; token reuse is detected; CI is green.
+**Done ✅:** full signup→verify→login→refresh→logout flow works via Swagger UI and the React UI; token reuse is detected; both Sonar gates green; CI green.
 
 ## Phase 2 — finance-service + gateway (1–2 weeks)
 - finance-service: accounts/transactions/budgets CRUD, JWT verification via JWKS, ownership checks, pagination/filter/sort.
@@ -28,12 +28,13 @@ Each phase produces something working and deployable. Don't start a phase until 
 
 **Done when:** you can create/list/delete transactions through the gateway with a JWT from auth-service; a user cannot read another user's data (test proves it).
 
-## Phase 3 — React UI (1–2 weeks)
-- Vite + React 19 + TypeScript. Pages: signup, login, dashboard, transactions (add/edit/delete), budgets.
-- Auth: access token in memory, refresh via httpOnly cookie; axios/fetch interceptor for silent refresh.
-- TanStack Query for server state; form validation mirrors backend rules.
+## Phase 3 — React UI (partly done, pulled forward)
+- Vite + React 19 + TypeScript + Tailwind/shadcn. **Auth pages done**: signup, verify-email, login, forgot/reset password, profile, account settings (change password/email); light/dark theme; toasts. ✅
+- Auth: access token in memory, refresh via httpOnly cookie; fetch client does one silent refresh on 401. ✅
+- TanStack Query for server state; react-hook-form + zod, mirroring backend rules. ✅
+- **Remaining** (with Phase 2): dashboard, transactions (add/edit/delete), budgets.
 
-**Done when:** complete user journey works in the browser against the local stack.
+**Auth journey ✅** works in the browser against the local stack (Vitest + Playwright mocked & e2e). Finance pages land alongside finance-service.
 
 ## Phase 4 — Claude AI + skills (1 week)
 - insight-service with Spring AI + Claude: auto-categorize transactions, monthly summary, NL Q&A via tool use.

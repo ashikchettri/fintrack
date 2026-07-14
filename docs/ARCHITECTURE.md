@@ -56,19 +56,22 @@ A learning project covering the modern backend/DevOps stack end-to-end: Spring B
 
 **Phase 1 scope**: auth-service only, called directly. Gateway and finance-service in phase 2, insight-service in phase 4. Async events (Kafka) deliberately deferred — add later as a learning extension (e.g. "transaction created" → insight-service).
 
+> **As-built (2026-07):** Phase 1 is **complete and hardened**, and the React UI (originally phase 3) was pulled forward to validate the auth API end-to-end. finance-service is scaffolded and already verifies auth JWTs via JWKS. The gateway and Redis are still ahead. Concrete endpoints: [`docs/API.md`](API.md); design decisions: [`docs/decisions/`](decisions/). Trade-offs below still describe the intended direction.
+
 ## 4. Service design
 
-### auth-service (the foundation — do this properly)
-- `POST /api/v1/auth/signup` — email + password; **Argon2id** hashing (Spring Security default encoder); email-format + password-strength validation (Bean Validation). Signup auto-creates a single-member **household** with role `OWNER`.
-- Owns the household model: `households`, `household_members` (role: `OWNER` / `ADULT` / `CHILD`), member **invitations** (signed, expiring, single-use email tokens — build the flow in phase 7).
-- JWTs carry `householdId` + `role` claims so downstream services authorize without extra lookups.
-- `POST /api/v1/auth/login` — returns short-lived **access JWT (15 min)** + **refresh token (7 days, rotated on use)**.
-- `POST /api/v1/auth/refresh` — rotate refresh token; detect reuse (stolen-token defense).
-- `POST /api/v1/auth/logout` — revoke refresh token.
-- `GET /api/v1/users/me` — authenticated profile.
-- JWTs signed **RS256** (asymmetric) so other services verify with the public key (JWKS endpoint) without sharing secrets.
-- Rate limiting on login (brute-force defense). Account lockout after N failures.
-- Stretch: email verification, password reset, TOTP 2FA, OAuth2 social login.
+### auth-service (the foundation — done properly) ✅ built
+- `POST /auth/signup` — email + password; **Argon2id** hashing; Bean Validation (12–128 char password, NIST-style). Auto-creates a single-member **household** with role `OWNER`, then emails a 6-digit verification code.
+- Owns the household model: `households`, `household_members` (role: `OWNER` / `ADULT` / `CHILD`). Member **invitations** are phase 7.
+- JWTs carry `householdId` + `memberId` + `role` claims so downstream services authorize without extra lookups; signed **RS256**, verified via the `/.well-known/jwks.json` endpoint (no shared secrets).
+- `POST /auth/login` — access JWT (15 min, in body) + refresh token (7 days, rotated) as an **httpOnly `SameSite=Strict` cookie** (ADR 003). Login requires a verified email; throttled 5 fails / 15 min.
+- `POST /auth/refresh` — rotate + **reuse detection** (a replayed rotated token revokes every session).
+- `POST /auth/logout` — revoke + clear the cookie.
+- **Email verification** (`verify-email`/`resend-verification`), **password reset** (`forgot-password`/`reset-password`, revokes sessions), authenticated **change-password** and **change-email** — all with hashed, TTL'd, attempt-capped codes (ADR 004/005).
+- `GET /users/me` — authenticated profile. Request **correlation IDs** (`X-Request-Id` → logs + every ProblemDetail `traceId`).
+- Email transport is a provider chain: **Gmail SMTP → Resend → Mailpit** (ADR 004).
+- Full endpoint list: [`docs/API.md`](API.md).
+- Still stretch: TOTP 2FA, OAuth2 social login, member invitations (phase 7).
 
 ### finance-service
 - CRUD: accounts, transactions (amount, date, merchant, category), budgets — all scoped by `householdId` + `memberId` from day one, even while there's only one member.
