@@ -4,6 +4,8 @@ Household personal-finance tracker. Learning project covering Spring Boot 4 micr
 
 Docs: [architecture](docs/ARCHITECTURE.md) · [roadmap](docs/ROADMAP.md) · [API reference](docs/API.md) · [decisions](docs/decisions/)
 
+Two lenses on this repo: **[TEMPLATE.md](docs/TEMPLATE.md)** — the reusable, domain-agnostic auth starter (API + UI) you can lift into any project · **[PRODUCT.md](docs/PRODUCT.md)** — the FinTrack finance-tracker product (households, accounts, budgets, privacy model).
+
 ## Status
 
 **Phase 1 complete + hardened.** A production-grade authentication platform (two services + React UI) is done and tested end-to-end. Phase 2 (finance-service accounts/transactions/budgets) is next.
