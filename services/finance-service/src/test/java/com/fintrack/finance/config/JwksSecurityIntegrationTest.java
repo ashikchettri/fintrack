@@ -97,7 +97,7 @@ class JwksSecurityIntegrationTest {
 
     @Test
     void requestWithoutTokenIs401() throws Exception {
-        mockMvc.perform(get("/api/v1/accounts"))
+        mockMvc.perform(get("/api/v1/security-probe"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -106,7 +106,7 @@ class JwksSecurityIntegrationTest {
         String token = mintToken(signingKey, Instant.now().plusSeconds(900));
 
         // authenticated → past security → 404 because no handler exists yet
-        mockMvc.perform(get("/api/v1/accounts").header(AUTHORIZATION, "Bearer " + token))
+        mockMvc.perform(get("/api/v1/security-probe").header(AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isNotFound());
     }
 
@@ -115,7 +115,7 @@ class JwksSecurityIntegrationTest {
         // right shape, right claims, wrong key — the signature check is the trust
         String token = mintToken(rogueKey, Instant.now().plusSeconds(900));
 
-        mockMvc.perform(get("/api/v1/accounts").header(AUTHORIZATION, "Bearer " + token))
+        mockMvc.perform(get("/api/v1/security-probe").header(AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -123,13 +123,13 @@ class JwksSecurityIntegrationTest {
     void expiredTokenIsRejected() throws Exception {
         String token = mintToken(signingKey, Instant.now().minusSeconds(120));
 
-        mockMvc.perform(get("/api/v1/accounts").header(AUTHORIZATION, "Bearer " + token))
+        mockMvc.perform(get("/api/v1/security-probe").header(AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void garbageTokenIsRejected() throws Exception {
-        mockMvc.perform(get("/api/v1/accounts").header(AUTHORIZATION, "Bearer not.a.jwt"))
+        mockMvc.perform(get("/api/v1/security-probe").header(AUTHORIZATION, "Bearer not.a.jwt"))
                 .andExpect(status().isUnauthorized());
     }
 
