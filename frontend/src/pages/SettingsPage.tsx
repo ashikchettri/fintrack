@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ApiError, api } from '../api/client';
 import {
@@ -208,7 +209,16 @@ export default function SettingsPage() {
   return (
     <AppShell>
       <div className="mx-auto flex max-w-md flex-col gap-6">
-        <h1 className="text-xl font-semibold tracking-tight">Account settings</h1>
+        <div>
+          <Link
+            to="/profile"
+            className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="size-4" aria-hidden="true" />
+            Back
+          </Link>
+          <h1 className="text-xl font-semibold tracking-tight">Account settings</h1>
+        </div>
         <ChangePasswordCard />
         <ChangeEmailCard />
       </div>

@@ -34,6 +34,16 @@ function renderSettings() {
   return renderPageWithDestinations(<SettingsPage />, '/settings', { '/profile': 'PROFILE_DEST' });
 }
 
+describe('SettingsPage — navigation', () => {
+  it('has a back link to the profile', async () => {
+    renderPageWithDestinations(<SettingsPage />, '/settings', { '/profile': 'PROFILE_DEST' });
+
+    await userEvent.setup().click(screen.getByRole('link', { name: 'Back' }));
+
+    await waitFor(() => expect(screen.getByText('PROFILE_DEST')).toBeInTheDocument());
+  });
+});
+
 describe('SettingsPage — change password', () => {
   it('submits current + new password and toasts success', async () => {
     mockedApi.changePassword.mockResolvedValue(undefined);
