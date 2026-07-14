@@ -66,6 +66,8 @@ Then open:
 
 App logs go to `.dev-logs/`. `./dev.sh` sends **real email** via Gmail when `MAIL_USERNAME`/`MAIL_PASSWORD` are set in `.env`, otherwise the local Mailpit inbox — see [Email](#email).
 
+Inspect the database with `./db.sh` (`./db.sh tables`, `./db.sh user <email>`, `./db.sh query "…"`) — see [docs/DATABASE.md](docs/DATABASE.md).
+
 ## Test
 
 ```bash
