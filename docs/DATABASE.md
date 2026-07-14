@@ -61,6 +61,15 @@ Schema-per-service: `auth` (identity) and `finance` (empty until Phase 2). `flyw
 
 > ⚠️ These write to the database directly, bypassing the app. Fine for local dev; never a substitute for a real feature. **Schema changes still go only through Flyway migrations** (`V<n>__description.sql`) — never hand-edit tables to change structure.
 
+## Troubleshooting
+
+**"I'm in psql but `\dt` shows no tables."** Two causes:
+
+- **Wrong database.** `\conninfo` — if it says `template1` or `postgres`, you connected without a database. Run `\c fintrack`.
+- **Wrong schema.** The tables live in `auth` (and `finance`), not `public`, so a bare `\dt` (which only looks at `public`) shows nothing. Use `\dt auth.*`, or `SET search_path TO auth, finance, public;` then `\dt` works.
+
+`./db.sh` avoids both: it always connects to `fintrack` and sets the search path, so plain `\dt` and unqualified table names (`select * from users`) just work.
+
 ## Passwords
 
 `password_hash` is Argon2id (`$argon2id$…`) and can't be reversed. To "set" a password for testing, use the app's signup/reset flow, or the change-password endpoint — not a SQL update.

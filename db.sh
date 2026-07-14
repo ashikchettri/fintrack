@@ -19,14 +19,19 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONTAINER=fintrack-postgres
 DB_NAME="${POSTGRES_DB:-fintrack}"
 DB_USER="${POSTGRES_USER:-fintrack}"
+# resolve the schema search path so the auth (and finance) tables are visible
+# without a prefix — no more "connected to template1, see no tables" confusion
+export_search_path='PGOPTIONS=-c search_path=auth,finance,public'
 
 if ! docker exec "$CONTAINER" pg_isready -U "$DB_USER" -q 2>/dev/null; then
   echo "Postgres isn't running. Start it with ./dev.sh (or: docker compose up -d postgres)."
   exit 1
 fi
 
-# non-interactive psql; extra args (e.g. -v, -c) passed through, SQL on stdin
-psql_run() { docker exec -i "$CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" "$@"; }
+# non-interactive psql; always the fintrack DB, auth schema on the path
+psql_run() {
+  docker exec -i -e "$export_search_path" "$CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" "$@"
+}
 
 examples() {
   cat <<'EOF'
@@ -63,7 +68,8 @@ EOF
 
 case "${1:-shell}" in
   shell|psql)
-    docker exec -it "$CONTAINER" psql -U "$DB_USER" -d "$DB_NAME"
+    echo "Connected to '$DB_NAME' with search_path=auth,finance — plain \\dt shows the auth tables."
+    docker exec -it -e "$export_search_path" "$CONTAINER" psql -U "$DB_USER" -d "$DB_NAME"
     ;;
 
   tables)
