@@ -113,7 +113,7 @@ public class DashboardService {
                 .limit(RECENT_LIMIT)
                 .map(t -> new DashboardResponse.RecentTransaction(
                         t.getId(), t.getTxnDate(), t.getDescription(), t.getCategory(),
-                        t.getAmount(), t.getAccountId()))
+                        t.getAmount(), t.getAccountId(), t.getVisibility().dbValue()))
                 .toList();
     }
 

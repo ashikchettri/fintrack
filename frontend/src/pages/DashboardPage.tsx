@@ -7,6 +7,8 @@ import { AppShell } from '@/components/AppShell';
 import { Alert } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ImportCsvCard } from '@/components/ImportCsvCard';
+import { SharedCommitmentsCard } from '@/components/SharedCommitmentsCard';
+import { ShareToggle } from '@/components/ShareToggle';
 import { DonutChart } from '@/components/charts/DonutChart';
 import { BarChart } from '@/components/charts/BarChart';
 import { formatDate, formatMoney } from '@/lib/format';
@@ -81,6 +83,9 @@ function Populated({ data }: { data: DashboardResponse }) {
         <Kpi label="Net" value={formatMoney(net, currency)} tone={net >= 0 ? 'income' : 'expense'}
              icon={<Wallet className="size-4" aria-hidden="true" />} />
       </div>
+
+      {/* the differentiator: household coordination, not just a statement view */}
+      <SharedCommitmentsCard />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
@@ -181,6 +186,7 @@ function RecentTable({ data }: { data: DashboardResponse }) {
             <th className="px-6 py-2 font-medium">Description</th>
             <th className="px-6 py-2 font-medium">Category</th>
             <th className="px-6 py-2 text-right font-medium">Amount</th>
+            <th className="px-6 py-2 text-right font-medium">Share</th>
           </tr>
         </thead>
         <tbody>
@@ -194,6 +200,9 @@ function RecentTable({ data }: { data: DashboardResponse }) {
                 t.amount < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400',
               )}>
                 {formatMoney(t.amount, data.currency)}
+              </td>
+              <td className="px-6 py-2.5 text-right">
+                <ShareToggle id={t.id} visibility={t.visibility} />
               </td>
             </tr>
           ))}

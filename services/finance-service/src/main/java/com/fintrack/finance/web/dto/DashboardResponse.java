@@ -37,6 +37,6 @@ public record DashboardResponse(
     /** A recent transaction row for the activity feed. */
     public record RecentTransaction(
             UUID id, LocalDate date, String description, String category,
-            BigDecimal amount, UUID accountId) {
+            BigDecimal amount, UUID accountId, String visibility) {
     }
 }

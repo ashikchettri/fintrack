@@ -1,6 +1,7 @@
 package com.fintrack.finance.web;
 
 import com.fintrack.finance.service.AccountNotFoundException;
+import com.fintrack.finance.service.TransactionNotFoundException;
 import com.fintrack.finance.service.csv.CsvImportException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -32,6 +33,14 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         problem.setType(URI.create("https://fintrack.example/problems/account-not-found"));
         problem.setTitle("Account not found");
+        return problem;
+    }
+
+    @ExceptionHandler(TransactionNotFoundException.class)
+    ProblemDetail handleTransactionNotFound(TransactionNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setType(URI.create("https://fintrack.example/problems/transaction-not-found"));
+        problem.setTitle("Transaction not found");
         return problem;
     }
 
