@@ -19,9 +19,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
             sharing is always your choice.
           </p>
         </div>
-        <p className="text-xs opacity-60">
-          Private by default · Argon2id-secured · Open source
-        </p>
+        <span />
         {/* soft decorative rings */}
         <div className="pointer-events-none absolute -right-24 -top-24 size-80 rounded-full border-[1.5rem] border-primary-foreground/10" />
         <div className="pointer-events-none absolute -bottom-32 -right-8 size-96 rounded-full border-[1.5rem] border-primary-foreground/5" />
