@@ -26,8 +26,8 @@ const POPULATED = {
   ],
   topMerchants: [{ description: 'Reddy Express', spent: 120, count: 2 }],
   recent: [
-    { id: 't1', date: '2026-07-11', description: 'Transport NSW', category: 'Transportation', amount: -12.5, accountId: 'a1' },
-    { id: 't2', date: '2026-06-01', description: 'Salary', category: 'Income', amount: 3000, accountId: 'a2' },
+    { id: 't1', date: '2026-07-11', description: 'Transport NSW', category: 'Transportation', amount: -12.5, accountId: 'a1', visibility: 'personal' },
+    { id: 't2', date: '2026-06-01', description: 'Salary', category: 'Income', amount: 3000, accountId: 'a2', visibility: 'personal' },
   ],
 };
 
@@ -47,6 +47,14 @@ async function login(page: Page) {
     route.fulfill(json({ accessToken: 'jwt-mock', tokenType: 'Bearer', expiresInSeconds: 900 })),
   );
   await page.route('**/api/v1/users/me', (route) => route.fulfill(json(PROFILE)));
+  // the shared-commitments card self-fetches; default to "nothing shared yet"
+  await page.route('**/api/v1/household/shared', (route) =>
+    route.fulfill(json({
+      currency: null, totalShared: 0, memberCount: 0, fairShare: 0,
+      settlement: { yourContribution: 0, fairShare: 0, balance: 0, status: 'settled', amount: 0 },
+      contributions: [], byCategory: [], transactions: [],
+    })),
+  );
 }
 
 test.describe('dashboard', () => {

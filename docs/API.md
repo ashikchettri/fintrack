@@ -37,4 +37,17 @@ Base path `/api/v1`. All errors are RFC 9457 `ProblemDetail` (`application/probl
 
 ## finance-service
 
-`/api/v1/**` requires a Bearer access token, verified against auth-service's JWKS (`AUTH_JWKS_URI`). The `role` claim maps to a `ROLE_*` authority. Domain endpoints (accounts, transactions, budgets) arrive in Phase 2. `AuthenticatedMember` exposes `userId`/`householdId`/`memberId`/`role` from the token — every household-scoped query must filter by these, never by client-supplied parameters.
+`/api/v1/**` requires a Bearer access token, verified against auth-service's JWKS (`AUTH_JWKS_URI`). The `role` claim maps to a `ROLE_*` authority. `AuthenticatedMember` exposes `userId`/`householdId`/`memberId`/`role` from the token — every household-scoped query must filter by these, never by client-supplied parameters.
+
+### Endpoints
+
+| Method & path | Purpose |
+|---|---|
+| `POST /api/v1/accounts` · `GET /api/v1/accounts` · `GET/DELETE /api/v1/accounts/{id}` | Accounts CRUD, household+member scoped |
+| `POST /api/v1/imports/transactions` (multipart `file`, `currency`) | Import a bank CSV → transactions + auto-created accounts, deduped |
+| `GET /api/v1/dashboard` | Dashboard read model: totals, by-category, by-month, top merchants, recent |
+| `GET /api/v1/transactions` | The caller's transactions (scoped) |
+| `PATCH /api/v1/transactions/{id}/visibility` (`{"visibility":"shared\|personal"}`) | Mark/unmark a shared commitment (ADR 006); member-scoped |
+| `GET /api/v1/household/shared` | Private household view of shared commitments — only shared items + agreed totals + suggested settlement, never personal spending (ADR 006) |
+
+**Privacy boundary (ADR 006):** personal queries filter `household_id + member_id`; the household shared view filters `household_id + visibility = 'shared'` across members, so personal rows are structurally unreachable.

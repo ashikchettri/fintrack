@@ -206,6 +206,27 @@ describe('finance endpoints', () => {
     expect(new Headers(init.headers).get('Authorization')).toBe('Bearer jwt-held');
   });
 
+  it('householdShared() GETs the private household view', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { totalShared: 1600, memberCount: 2 }));
+
+    const view = await api.householdShared();
+
+    expect(view.memberCount).toBe(2);
+    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/api/v1/household/shared');
+  });
+
+  it('setTransactionVisibility() PATCHes the visibility', async () => {
+    tokenStore.set('jwt-held');
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { id: 't1', visibility: 'shared' }));
+
+    await api.setTransactionVisibility('t1', 'shared');
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/v1/transactions/t1/visibility');
+    expect(init.method).toBe('PATCH');
+    expect(init.body).toBe(JSON.stringify({ visibility: 'shared' }));
+  });
+
   it('a finance call retries once after a 401 when a silent refresh succeeds', async () => {
     tokenStore.set('expired-jwt');
     fetchMock

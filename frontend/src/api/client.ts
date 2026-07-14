@@ -3,6 +3,7 @@ import type {
   ImportSummary,
   LoginResponse,
   ProblemDetail,
+  SharedHouseholdView,
   SignupResponse,
   TransactionResponse,
   UserResponse,
@@ -186,5 +187,18 @@ export const api = {
     form.append('file', file);
     form.append('currency', currency);
     return withRefresh(() => upload<ImportSummary>('/api/v1/imports/transactions', form));
+  },
+
+  /** The private household view of shared commitments (ADR 006). */
+  householdShared(): Promise<SharedHouseholdView> {
+    return withRefresh(() => request<SharedHouseholdView>('/api/v1/household/shared'));
+  },
+
+  /** Mark/unmark one of your own transactions as a shared commitment. */
+  setTransactionVisibility(id: string, visibility: 'shared' | 'personal'): Promise<TransactionResponse> {
+    return withRefresh(() => request<TransactionResponse>(
+      `/api/v1/transactions/${id}/visibility`,
+      { method: 'PATCH', body: JSON.stringify({ visibility }) },
+    ));
   },
 };

@@ -16,6 +16,8 @@ vi.mock('../api/client', async (importOriginal) => {
       dashboard: vi.fn(),
       transactions: vi.fn(),
       importTransactions: vi.fn(),
+      householdShared: vi.fn(),
+      setTransactionVisibility: vi.fn(),
     },
   };
 });
@@ -35,9 +37,20 @@ const POPULATED: DashboardResponse = {
   ],
   topMerchants: [{ description: 'Reddy Express', spent: 120, count: 2 }],
   recent: [
-    { id: 't1', date: '2026-07-11', description: 'Transport NSW', category: 'Transportation', amount: -12.5, accountId: 'a1' },
-    { id: 't2', date: '2026-06-01', description: 'Salary', category: 'Income', amount: 3000, accountId: 'a2' },
+    { id: 't1', date: '2026-07-11', description: 'Transport NSW', category: 'Transportation', amount: -12.5, accountId: 'a1', visibility: 'personal' },
+    { id: 't2', date: '2026-06-01', description: 'Salary', category: 'Income', amount: 3000, accountId: 'a2', visibility: 'personal' },
   ],
+};
+
+const EMPTY_HOUSEHOLD = {
+  currency: null,
+  totalShared: 0,
+  memberCount: 0,
+  fairShare: 0,
+  settlement: { yourContribution: 0, fairShare: 0, balance: 0, status: 'settled' as const, amount: 0 },
+  contributions: [],
+  byCategory: [],
+  transactions: [],
 };
 
 const EMPTY: DashboardResponse = {
@@ -52,6 +65,7 @@ const EMPTY: DashboardResponse = {
 beforeEach(() => {
   vi.clearAllMocks();
   mockedApi.refresh.mockResolvedValue(false);
+  mockedApi.householdShared.mockResolvedValue(EMPTY_HOUSEHOLD);
 });
 
 describe('DashboardPage', () => {
@@ -79,6 +93,10 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Reddy Express')).toBeInTheDocument();
     expect(screen.getByText('Transport NSW')).toBeInTheDocument();
     expect(screen.getByText('Salary')).toBeInTheDocument();
+
+    // the differentiator card (self-fetches) + per-row share toggles are present
+    expect(await screen.findByText('Shared with your household')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /shared with household/i }).length).toBeGreaterThan(0);
   });
 
   it('surfaces an error when the dashboard cannot load', async () => {

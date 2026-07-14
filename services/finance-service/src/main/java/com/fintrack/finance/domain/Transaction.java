@@ -169,6 +169,11 @@ public class Transaction {
         return visibility;
     }
 
+    /** Expose to (or hide from) the household — the "mark as shared commitment" action (ADR 006). */
+    public void setVisibility(Visibility visibility) {
+        this.visibility = visibility;
+    }
+
     public TransactionSource getSource() {
         return source;
     }
