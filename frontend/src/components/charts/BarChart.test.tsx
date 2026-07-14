@@ -19,7 +19,12 @@ describe('BarChart', () => {
     expect(screen.getByText('Income')).toBeInTheDocument();
     expect(screen.getByText('Expenses')).toBeInTheDocument();
     // a bar carries its value in the title for hover
-    expect(screen.getByTitle('Jun 2026 · income $3000.00')).toBeInTheDocument();
+    const tallest = screen.getByTitle('Jun 2026 · income $3000.00');
+    expect(tallest).toBeInTheDocument();
+    // regression guard: the largest value must fill the plot (not collapse to 0)
+    expect(tallest).toHaveStyle({ height: '140px' });
+    // a zero value renders no bar (July has no income)
+    expect(screen.getByTitle('Jul 2026 · income $0.00')).toHaveStyle({ height: '0px' });
   });
 
   it('shows a message when there is no monthly activity', () => {

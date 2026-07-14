@@ -13,7 +13,7 @@
 # before `npm run test:e2e`, then `./dev.sh` to go back to real email.
 #
 # Services: Postgres + Mailpit (docker compose), auth-service (:8081),
-# frontend dev server (:5173). Logs land in .dev-logs/.
+# finance-service (:8082), frontend dev server (:5173). Logs land in .dev-logs/.
 
 set -euo pipefail
 
@@ -47,6 +47,7 @@ docker_up()   { docker info >/dev/null 2>&1; }
 postgres_up() { docker exec fintrack-postgres pg_isready -U "${POSTGRES_USER:-fintrack}" -q 2>/dev/null; }
 mailpit_up()  { curl -sf http://localhost:8025/api/v1/info >/dev/null 2>&1; }
 backend_up()  { curl -sf http://localhost:8081/actuator/health 2>/dev/null | grep -q UP; }
+finance_up()  { curl -sf http://localhost:8082/actuator/health 2>/dev/null | grep -q UP; }
 frontend_up() { port_in_use 5173; }
 # SonarQube is opt-in (docker compose --profile quality up -d sonarqube)
 sonarqube_up() { curl -sf http://localhost:9000/api/system/status 2>/dev/null | grep -q '"UP"'; }
@@ -57,6 +58,7 @@ status() {
   postgres_up  && ok "Postgres      :$PG_PORT"    || fail "Postgres"
   mailpit_up   && ok "Mailpit       :1025 / inbox http://localhost:8025" || fail "Mailpit"
   backend_up   && ok "auth-service  http://localhost:8081  (Swagger: /swagger-ui.html)" || fail "auth-service"
+  finance_up   && ok "finance-service http://localhost:8082 (health: /actuator/health)" || fail "finance-service"
   frontend_up  && ok "frontend      http://localhost:5173" || fail "frontend"
   # only reported when running — it's an opt-in quality tool, not part of the app
   sonarqube_up && ok "SonarQube     http://localhost:9000  (login admin)"
@@ -113,6 +115,29 @@ stop_backend() {
   fi
   port_in_use 8081 && lsof -nP -iTCP:8081 -sTCP:LISTEN -t | xargs kill 2>/dev/null || true
   for _ in $(seq 1 10); do port_in_use 8081 || break; sleep 1; done
+}
+
+# finance-service (:8082) verifies auth JWTs via auth-service's JWKS — no mail,
+# no shared secret. It just needs Postgres (the finance schema) and DB_PORT.
+start_finance() {
+  if finance_up; then ok "finance-service already running on :8082"; return; fi
+  warn "starting finance-service — first compile can take a minute…"
+  (cd "$ROOT/services/finance-service" \
+    && DB_PORT="$PG_PORT" nohup ./gradlew bootRun --console=plain -q \
+       > "$LOG_DIR/finance-service.log" 2>&1 & echo $! > "$LOG_DIR/finance-service.pid")
+  for _ in $(seq 1 60); do finance_up && break; sleep 3; done
+  finance_up && ok "finance-service up on :8082" \
+    || { fail "finance-service failed — see .dev-logs/finance-service.log"; exit 1; }
+}
+
+stop_finance() {
+  if [ -f "$LOG_DIR/finance-service.pid" ]; then
+    pkill -P "$(cat "$LOG_DIR/finance-service.pid")" 2>/dev/null || true
+    kill "$(cat "$LOG_DIR/finance-service.pid")" 2>/dev/null || true
+    rm -f "$LOG_DIR/finance-service.pid"
+  fi
+  port_in_use 8082 && lsof -nP -iTCP:8082 -sTCP:LISTEN -t | xargs kill 2>/dev/null || true
+  for _ in $(seq 1 10); do port_in_use 8082 || break; sleep 1; done
 }
 
 # restart just the backend with an explicit email transport
@@ -182,6 +207,8 @@ start() {
     start_backend "$provider"
   fi
 
+  start_finance
+
   if frontend_up; then
     ok "frontend already running on :5173"
   else
@@ -203,9 +230,10 @@ start() {
 
   echo ""
   echo "All green. Open:"
-  echo "  App        http://localhost:5173"
-  echo "  Swagger    http://localhost:8081/swagger-ui.html"
-  echo "  Mail inbox http://localhost:8025"
+  echo "  App          http://localhost:5173"
+  echo "  auth API     http://localhost:8081/swagger-ui.html"
+  echo "  finance API  http://localhost:8082  (/api/v1/dashboard, /accounts, /transactions)"
+  echo "  Mail inbox   http://localhost:8025"
   sonarqube_up && echo "  SonarQube  http://localhost:9000"
 }
 
@@ -213,6 +241,7 @@ start() {
 stop() {
   echo "Stopping FinTrack dev stack…"
   stop_backend
+  stop_finance
   if [ -f "$LOG_DIR/frontend.pid" ]; then
     pkill -P "$(cat "$LOG_DIR/frontend.pid")" 2>/dev/null || true
     kill "$(cat "$LOG_DIR/frontend.pid")" 2>/dev/null || true
