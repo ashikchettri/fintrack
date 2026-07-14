@@ -171,6 +171,18 @@ test.describe('login', () => {
     await page.route('**/api/v1/users/me', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(PROFILE) }),
     );
+    // login now lands on the dashboard
+    await page.route('**/api/v1/dashboard', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          currency: null,
+          totals: { income: 0, expenses: 0, net: 0, transactionCount: 0 },
+          byCategory: [], byMonth: [], topMerchants: [], recent: [],
+        }),
+      }),
+    );
     await page.route('**/api/v1/auth/logout', (route) => route.fulfill({ status: 204 }));
 
     await page.goto('/login');
@@ -178,6 +190,9 @@ test.describe('login', () => {
     await page.getByLabel('Password').fill('correct horse battery staple');
     await page.getByRole('button', { name: 'Log in' }).click();
 
+    // dashboard is the post-login landing; the profile lives behind its nav link
+    await expect(page).toHaveURL(/\/dashboard/);
+    await page.getByRole('link', { name: 'Profile' }).click();
     await expect(page.getByTestId('profile-email')).toHaveText('jane@example.com');
     await expect(page.getByTestId('profile-role')).toHaveText('OWNER');
 

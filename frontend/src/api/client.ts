@@ -1,4 +1,12 @@
-import type { LoginResponse, ProblemDetail, SignupResponse, UserResponse } from './types';
+import type {
+  DashboardResponse,
+  ImportSummary,
+  LoginResponse,
+  ProblemDetail,
+  SignupResponse,
+  TransactionResponse,
+  UserResponse,
+} from './types';
 
 /** A non-2xx response, carrying the parsed RFC 9457 problem body. */
 export class ApiError extends Error {
@@ -36,6 +44,33 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const body: unknown = await response.json().catch(() => ({}));
   if (!response.ok) throw new ApiError(response.status, body as ProblemDetail);
   return body as T;
+}
+
+/** Multipart POST (file upload): let the browser set the multipart boundary. */
+async function upload<T>(path: string, form: FormData): Promise<T> {
+  const headers = new Headers();
+  if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
+
+  const response = await fetch(path, { method: 'POST', body: form, headers, credentials: 'include' });
+  const body: unknown = await response.json().catch(() => ({}));
+  if (!response.ok) throw new ApiError(response.status, body as ProblemDetail);
+  return body as T;
+}
+
+/**
+ * Run an authenticated call, and if the access token has expired (401), do one
+ * silent refresh and retry — the same recovery api.me() uses, shared so every
+ * finance call survives a mid-session token expiry.
+ */
+async function withRefresh<T>(call: () => Promise<T>): Promise<T> {
+  try {
+    return await call();
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401 && (await api.refresh())) {
+      return call();
+    }
+    throw error;
+  }
 }
 
 export const api = {
@@ -133,5 +168,23 @@ export const api = {
       }
       throw error;
     }
+  },
+
+  // ---- finance-service (proxied to :8082); each survives a token expiry ----
+
+  dashboard(): Promise<DashboardResponse> {
+    return withRefresh(() => request<DashboardResponse>('/api/v1/dashboard'));
+  },
+
+  transactions(): Promise<TransactionResponse[]> {
+    return withRefresh(() => request<TransactionResponse[]>('/api/v1/transactions'));
+  },
+
+  /** Upload a bank CSV; returns what landed (imported / duplicates / accounts). */
+  importTransactions(file: File, currency: string): Promise<ImportSummary> {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('currency', currency);
+    return withRefresh(() => upload<ImportSummary>('/api/v1/imports/transactions', form));
   },
 };
