@@ -73,7 +73,29 @@ export interface DashboardResponse {
     category: string | null;
     amount: number;
     accountId: string;
+    visibility: string;
   }[];
+}
+
+/**
+ * The private household view of shared commitments (ADR 006) — only shared items
+ * and agreed totals, never anyone's personal spending.
+ */
+export interface SharedHouseholdView {
+  currency: string | null;
+  totalShared: number;
+  memberCount: number;
+  fairShare: number;
+  settlement: {
+    yourContribution: number;
+    fairShare: number;
+    balance: number;
+    status: 'owed' | 'owes' | 'settled';
+    amount: number;
+  };
+  contributions: { memberId: string; covered: number; isYou: boolean }[];
+  byCategory: { category: string; amount: number }[];
+  transactions: TransactionResponse[];
 }
 
 export interface TransactionResponse {

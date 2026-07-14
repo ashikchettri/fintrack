@@ -19,6 +19,7 @@ export default defineConfig({
     proxy: {
       '/api/v1/dashboard': 'http://localhost:8082',
       '/api/v1/transactions': 'http://localhost:8082',
+      '/api/v1/household': 'http://localhost:8082',
       '/api/v1/imports': 'http://localhost:8082',
       '/api/v1/accounts': 'http://localhost:8082',
       '/api': 'http://localhost:8081',
