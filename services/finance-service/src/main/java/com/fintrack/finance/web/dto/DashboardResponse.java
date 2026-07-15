@@ -12,6 +12,11 @@ import java.util.UUID;
  */
 public record DashboardResponse(
         String currency,
+        // the selected month ("2026-07") or null for all-time; the snapshot
+        // metrics (totals/byCategory/topMerchants/recent) respect it, while
+        // byMonth stays the full trend for context
+        String month,
+        List<String> availableMonths,
         Totals totals,
         List<CategorySpend> byCategory,
         List<MonthlyFlow> byMonth,

@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
@@ -89,7 +90,28 @@ class DashboardServiceTest {
         assertThat(d.recent()).isEmpty();
     }
 
+    @Test
+    void filteringByMonthScopesTheSnapshotButKeepsTheFullTrend() {
+        when(transactionRepository.findByHouseholdIdAndMemberIdOrderByTxnDateDescCreatedAtDesc(any(), any()))
+                .thenReturn(List.of(
+                        txn(LocalDate.of(2026, 7, 11), "Transport NSW", "Transportation", "-12.50"),
+                        txn(LocalDate.of(2026, 6, 1), "Salary", "Income", "3000.00"),
+                        txn(LocalDate.of(2026, 5, 26), "Reddy Express", "Transportation", "-60.00"),
+                        txn(LocalDate.of(2026, 4, 14), "Woolworths", "Food & Drink", "-85.20")));
+
+        DashboardResponse d = new DashboardService(transactionRepository).build(caller, YearMonth.of(2026, 6));
+
+        // snapshot scoped to June — just the salary
+        assertThat(d.month()).isEqualTo("2026-06");
+        assertThat(d.totals().transactionCount()).isEqualTo(1);
+        assertThat(d.totals().income()).isEqualByComparingTo("3000.00");
+        assertThat(d.totals().expenses()).isEqualByComparingTo("0");
+        // the trend stays all-time, and every month is offered to the selector
+        assertThat(d.byMonth()).hasSize(4);
+        assertThat(d.availableMonths()).containsExactly("2026-07", "2026-06", "2026-05", "2026-04");
+    }
+
     private DashboardResponse dashboardFor() {
-        return new DashboardService(transactionRepository).build(caller);
+        return new DashboardService(transactionRepository).build(caller, null);
     }
 }

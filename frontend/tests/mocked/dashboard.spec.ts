@@ -15,6 +15,8 @@ const PROFILE = {
 
 const POPULATED = {
   currency: 'AUD',
+  month: null,
+  availableMonths: ['2026-07', '2026-06'],
   totals: { income: 3040, expenses: 217.7, net: 2822.3, transactionCount: 6 },
   byCategory: [
     { category: 'Transportation', spent: 132.5, share: 0.6086 },
@@ -33,6 +35,8 @@ const POPULATED = {
 
 const EMPTY = {
   currency: null,
+  month: null,
+  availableMonths: [],
   totals: { income: 0, expenses: 0, net: 0, transactionCount: 0 },
   byCategory: [], byMonth: [], topMerchants: [], recent: [],
 };

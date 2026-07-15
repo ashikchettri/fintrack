@@ -182,6 +182,22 @@ describe('finance endpoints', () => {
     expect(new Headers(init.headers).get('Authorization')).toBe('Bearer jwt-held');
   });
 
+  it('dashboard(month) scopes the request to a month', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { month: '2026-07', totals: { transactionCount: 0 } }));
+
+    await api.dashboard('2026-07');
+
+    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/api/v1/dashboard?month=2026-07');
+  });
+
+  it('householdShared(month) scopes the request to a month', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { month: '2026-07', memberCount: 0 }));
+
+    await api.householdShared('2026-07');
+
+    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/api/v1/household/shared?month=2026-07');
+  });
+
   it('transactions() GETs the transactions feed', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(200, []));
 

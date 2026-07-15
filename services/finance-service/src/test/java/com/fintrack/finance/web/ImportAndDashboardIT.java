@@ -153,6 +153,26 @@ class ImportAndDashboardIT {
     }
 
     @Test
+    void dashboardAcceptsAMonthFilterAndRejectsABadOne() throws Exception {
+        UUID household = UUID.randomUUID();
+        UUID memberId = UUID.randomUUID();
+        mockMvc.perform(multipart("/api/v1/imports/transactions").file(sampleCsv())
+                        .param("currency", "AUD").with(member(household, memberId)))
+                .andExpect(status().isCreated());
+
+        // valid month scopes the snapshot; the selector list is populated
+        mockMvc.perform(get("/api/v1/dashboard").param("month", "2026-04").with(member(household, memberId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.month").value("2026-04"))
+                .andExpect(jsonPath("$.availableMonths").isNotEmpty());
+
+        // a malformed month is a clean 400
+        mockMvc.perform(get("/api/v1/dashboard").param("month", "nope").with(member(household, memberId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Invalid month"));
+    }
+
+    @Test
     void aFileMissingRequiredColumnsIs400() throws Exception {
         MockMultipartFile bad = new MockMultipartFile("file", "bad.csv", "text/csv",
                 "Date,Description\n2026-01-01,Nope\n".getBytes());

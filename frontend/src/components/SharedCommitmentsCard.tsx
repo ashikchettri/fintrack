@@ -13,11 +13,12 @@ import { cn } from '@/lib/utils';
  * every member's personal spending stays invisible. Self-fetching so the
  * mark-as-shared toggle can refresh it by invalidating ['household'].
  */
-export function SharedCommitmentsCard() {
+export function SharedCommitmentsCard({ month = null }: { month?: string | null }) {
   const { data, isPending, isError } = useQuery({
-    queryKey: ['household'],
-    queryFn: api.householdShared,
+    queryKey: ['household', month],
+    queryFn: () => api.householdShared(month ?? undefined),
     retry: false,
+    placeholderData: (prev) => prev,
   });
 
   if (isPending || isError || !data) return null; // stay quiet on load/error; the dashboard still works

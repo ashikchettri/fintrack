@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.YearMonth;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -49,16 +51,21 @@ public class SharedCommitmentService {
     }
 
     @Transactional(readOnly = true)
-    public SharedHouseholdView sharedView(AuthenticatedMember caller) {
+    public SharedHouseholdView sharedView(AuthenticatedMember caller, YearMonth month) {
         // only the household's SHARED rows are ever loaded — personal rows never
         // match this query (the privacy boundary)
         List<Transaction> shared = transactionRepository
                 .findByHouseholdIdAndVisibilityOrderByTxnDateDescCreatedAtDesc(
                         caller.householdId(), Visibility.SHARED);
         // a shared commitment is a shared cost — spend, not income
-        List<Transaction> commitments = shared.stream()
+        List<Transaction> allCommitments = shared.stream()
                 .filter(t -> t.getAmount().signum() < 0)
                 .toList();
+        // ...scoped to the selected month for the totals/contributions
+        List<Transaction> commitments = month == null
+                ? allCommitments
+                : allCommitments.stream()
+                        .filter(t -> YearMonth.from(t.getTxnDate()).equals(month)).toList();
 
         BigDecimal total = commitments.stream()
                 .map(t -> t.getAmount().abs())
@@ -75,6 +82,8 @@ public class SharedCommitmentService {
 
         return new SharedHouseholdView(
                 dominantCurrency(commitments),
+                month == null ? null : month.toString(),
+                availableMonths(allCommitments),
                 total,
                 members,
                 fairShare,
@@ -82,6 +91,16 @@ public class SharedCommitmentService {
                 contributions(caller, coveredByMember),
                 byCategory(commitments),
                 commitments.stream().map(TransactionResponse::from).toList());
+    }
+
+    /** Months with shared activity, newest first — populates the month selector. */
+    private List<String> availableMonths(List<Transaction> commitments) {
+        return commitments.stream()
+                .map(t -> YearMonth.from(t.getTxnDate()))
+                .distinct()
+                .sorted(Comparator.reverseOrder())
+                .map(YearMonth::toString)
+                .toList();
     }
 
     private SharedHouseholdView.Settlement settlement(AuthenticatedMember caller,

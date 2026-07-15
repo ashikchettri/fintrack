@@ -26,6 +26,8 @@ const mockedApi = vi.mocked(api);
 
 const POPULATED: DashboardResponse = {
   currency: 'AUD',
+  month: null,
+  availableMonths: ['2026-07', '2026-06'],
   totals: { income: 3040, expenses: 217.7, net: 2822.3, transactionCount: 6 },
   byCategory: [
     { category: 'Transportation', spent: 132.5, share: 0.6086 },
@@ -44,6 +46,8 @@ const POPULATED: DashboardResponse = {
 
 const EMPTY_HOUSEHOLD = {
   currency: null,
+  month: null,
+  availableMonths: [],
   totalShared: 0,
   memberCount: 0,
   fairShare: 0,
@@ -55,6 +59,8 @@ const EMPTY_HOUSEHOLD = {
 
 const EMPTY: DashboardResponse = {
   currency: null,
+  month: null,
+  availableMonths: [],
   totals: { income: 0, expenses: 0, net: 0, transactionCount: 0 },
   byCategory: [],
   byMonth: [],
@@ -89,7 +95,8 @@ describe('DashboardPage', () => {
     // category donut legend (also shown in the recent-table category cell) +
     // monthly chart + merchants + recent row
     expect(screen.getAllByText('Transportation').length).toBeGreaterThan(0);
-    expect(screen.getByText('Jun 2026')).toBeInTheDocument();
+    // "Jun 2026" now appears in both the trend and the period selector
+    expect(screen.getAllByText('Jun 2026').length).toBeGreaterThan(0);
     expect(screen.getByText('Reddy Express')).toBeInTheDocument();
     expect(screen.getByText('Transport NSW')).toBeInTheDocument();
     expect(screen.getByText('Salary')).toBeInTheDocument();
@@ -97,6 +104,17 @@ describe('DashboardPage', () => {
     // the differentiator card (self-fetches) + per-row share toggles are present
     expect(await screen.findByText('Shared with your household')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /shared with household/i }).length).toBeGreaterThan(0);
+  });
+
+  it('scopes the dashboard to a month via the period selector', async () => {
+    mockedApi.dashboard.mockResolvedValue(POPULATED);
+    renderWithProviders(<DashboardPage />, ['/dashboard']);
+
+    await waitFor(() => expect(screen.getByTestId('kpi-income')).toBeInTheDocument());
+    // selector is populated from availableMonths
+    await userEvent.selectOptions(screen.getByLabelText('Period'), '2026-07');
+
+    await waitFor(() => expect(mockedApi.dashboard).toHaveBeenCalledWith('2026-07'));
   });
 
   it('surfaces an error when the dashboard cannot load', async () => {

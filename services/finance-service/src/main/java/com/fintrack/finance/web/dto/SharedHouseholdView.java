@@ -11,6 +11,8 @@ import java.util.UUID;
  */
 public record SharedHouseholdView(
         String currency,
+        String month,                    // selected month ("2026-07") or null for all-time
+        List<String> availableMonths,    // months with shared activity, newest first
         BigDecimal totalShared,
         int memberCount,
         BigDecimal fairShare,

@@ -33,6 +33,9 @@ dependencies {
     // robust RFC 4180 CSV parsing for bank-export imports (quotes, embedded commas)
     implementation(libs.commons.csv)
 
+    // interactive API docs at /swagger-ui.html (same as auth-service)
+    implementation(libs.springdoc.openapi)
+
     // Boot 4: Flyway auto-configuration lives in its own starter
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.flywaydb:flyway-database-postgresql")
