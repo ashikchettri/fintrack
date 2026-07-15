@@ -17,6 +17,7 @@ vi.mock('../api/client', async (importOriginal) => {
       transactions: vi.fn(),
       importTransactions: vi.fn(),
       householdShared: vi.fn(),
+      householdMembers: vi.fn().mockResolvedValue([]),
       setTransactionVisibility: vi.fn(),
     },
   };

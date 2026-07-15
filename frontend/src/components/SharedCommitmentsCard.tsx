@@ -20,8 +20,16 @@ export function SharedCommitmentsCard({ month = null }: { month?: string | null 
     retry: false,
     placeholderData: (prev) => prev,
   });
+  // the roster gives contributions a real name instead of "Housemate"
+  const { data: members } = useQuery({
+    queryKey: ['household-members'],
+    queryFn: api.householdMembers,
+    retry: false,
+  });
 
   if (isPending || isError || !data) return null; // stay quiet on load/error; the dashboard still works
+
+  const nameById = new Map((members ?? []).map((m) => [m.memberId, m.name]));
 
   return (
     <Card className="border-primary/30 bg-primary/[0.03]">
@@ -35,7 +43,9 @@ export function SharedCommitmentsCard({ month = null }: { month?: string | null 
           Only shared items appear here — personal spending stays private.
         </CardDescription>
       </CardHeader>
-      <CardContent>{data.memberCount === 0 ? <Empty /> : <Populated data={data} />}</CardContent>
+      <CardContent>
+        {data.memberCount === 0 ? <Empty /> : <Populated data={data} nameById={nameById} />}
+      </CardContent>
     </Card>
   );
 }
@@ -49,7 +59,7 @@ function Empty() {
   );
 }
 
-function Populated({ data }: { data: SharedHouseholdView }) {
+function Populated({ data, nameById }: { data: SharedHouseholdView; nameById: Map<string, string> }) {
   const currency = data.currency;
   const { status, amount } = data.settlement;
   const maxCovered = Math.max(1, ...data.contributions.map((c) => c.covered));
@@ -78,8 +88,7 @@ function Populated({ data }: { data: SharedHouseholdView }) {
 
       <div className="space-y-2">
         {data.contributions.map((c, i) => {
-          const others = data.contributions.filter((x) => !x.isYou);
-          const label = c.isYou ? 'You' : others.length > 1 ? `Housemate ${others.indexOf(c) + 1}` : 'Housemate';
+          const label = c.isYou ? 'You' : nameById.get(c.memberId) ?? 'Housemate';
           return (
             <div key={c.memberId} className="flex items-center gap-2 text-sm">
               <span className="w-24 shrink-0 truncate">{label}</span>

@@ -2,6 +2,7 @@ import type {
   DashboardResponse,
   ImportSummary,
   LoginResponse,
+  MemberResponse,
   ProblemDetail,
   SharedHouseholdView,
   SignupResponse,
@@ -130,6 +131,29 @@ export const api = {
     return request<void>('/api/v1/users/me/email/verify', {
       method: 'POST',
       body: JSON.stringify({ code }),
+    });
+  },
+
+  // ---- household membership (auth-service) ----
+
+  /** OWNER invites an email to the household; the invitee is emailed a code. */
+  inviteMember(email: string): Promise<void> {
+    return withRefresh(() => request<void>('/api/v1/households/invites', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }));
+  },
+
+  /** The caller's household roster — names for the shared-commitments view. */
+  householdMembers(): Promise<MemberResponse[]> {
+    return withRefresh(() => request<MemberResponse[]>('/api/v1/households/members'));
+  },
+
+  /** Public: accept an invite, creating an account inside the inviting household. */
+  acceptInvite(email: string, code: string, password: string, name: string): Promise<SignupResponse> {
+    return request<SignupResponse>('/api/v1/households/invites/accept', {
+      method: 'POST',
+      body: JSON.stringify({ email, code, password, name }),
     });
   },
 

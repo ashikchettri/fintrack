@@ -9,7 +9,12 @@ vi.mock('../api/client', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../api/client')>();
   return {
     ...actual,
-    api: { refresh: vi.fn().mockResolvedValue(false), me: vi.fn(), householdShared: vi.fn() },
+    api: {
+      refresh: vi.fn().mockResolvedValue(false),
+      me: vi.fn(),
+      householdShared: vi.fn(),
+      householdMembers: vi.fn().mockResolvedValue([]),
+    },
   };
 });
 
@@ -35,6 +40,7 @@ const view = (over: Partial<SharedHouseholdView>): SharedHouseholdView => ({
 beforeEach(() => {
   vi.clearAllMocks();
   mockedApi.refresh.mockResolvedValue(false);
+  mockedApi.householdMembers.mockResolvedValue([]);
 });
 
 describe('SharedCommitmentsCard', () => {
@@ -49,6 +55,20 @@ describe('SharedCommitmentsCard', () => {
     expect(screen.getByText('Housemate')).toBeInTheDocument();
     // the privacy promise is stated on the card
     expect(screen.getByText(/personal spending stays private/i)).toBeInTheDocument();
+  });
+
+  it('labels a contribution with the member name from the roster', async () => {
+    mockedApi.householdShared.mockResolvedValue(view({}));
+    mockedApi.householdMembers.mockResolvedValue([
+      { memberId: 'me', name: 'Jane', role: 'OWNER', isYou: true },
+      { memberId: 'them', name: 'Ashik', role: 'ADULT', isYou: false },
+    ]);
+    renderWithProviders(<SharedCommitmentsCard />);
+
+    // "You" for the caller, the real name for the other member (not "Housemate")
+    await waitFor(() => expect(screen.getByText('Ashik')).toBeInTheDocument());
+    expect(screen.getByText('You')).toBeInTheDocument();
+    expect(screen.queryByText('Housemate')).not.toBeInTheDocument();
   });
 
   it('says you owe when under your fair share', async () => {

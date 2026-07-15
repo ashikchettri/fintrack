@@ -111,6 +111,12 @@ export default function LoginPage() {
               Create an account
             </Link>
           </p>
+          <p className="mt-1 text-center text-sm text-muted-foreground">
+            Have an invite?{' '}
+            <Link to="/join" className="font-medium text-primary hover:underline">
+              Join a household
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </AuthLayout>

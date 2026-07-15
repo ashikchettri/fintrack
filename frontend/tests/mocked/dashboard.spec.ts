@@ -59,6 +59,10 @@ async function login(page: Page) {
       contributions: [], byCategory: [], transactions: [],
     })),
   );
+  // the shared card also fetches the roster (to name contributions)
+  await page.route('**/api/v1/households/members', (route) =>
+    route.fulfill(json([{ memberId: 'm1', name: 'Jane', role: 'OWNER', isYou: true }])),
+  );
 }
 
 test.describe('dashboard', () => {

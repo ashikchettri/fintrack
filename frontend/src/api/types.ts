@@ -102,6 +102,14 @@ export interface SharedHouseholdView {
   transactions: TransactionResponse[];
 }
 
+/** A household member for the roster (names for the shared-commitments view). */
+export interface MemberResponse {
+  memberId: string;
+  name: string;
+  role: string;
+  isYou: boolean;
+}
+
 export interface TransactionResponse {
   id: string;
   accountId: string;
