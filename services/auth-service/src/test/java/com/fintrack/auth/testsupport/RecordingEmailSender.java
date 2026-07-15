@@ -15,6 +15,7 @@ public class RecordingEmailSender implements EmailSender {
     private static final Map<String, String> CODES_BY_EMAIL = new ConcurrentHashMap<>();
     private static final Map<String, String> RESET_CODES_BY_EMAIL = new ConcurrentHashMap<>();
     private static final Map<String, String> CHANGE_CODES_BY_EMAIL = new ConcurrentHashMap<>();
+    private static final Map<String, String> INVITE_CODES_BY_EMAIL = new ConcurrentHashMap<>();
 
     @Override
     public void sendVerificationCode(String toEmail, String code) {
@@ -41,5 +42,14 @@ public class RecordingEmailSender implements EmailSender {
 
     public static String lastChangeCodeFor(String email) {
         return CHANGE_CODES_BY_EMAIL.get(email);
+    }
+
+    @Override
+    public void sendHouseholdInvite(String toEmail, String inviterName, String householdName, String code) {
+        INVITE_CODES_BY_EMAIL.put(toEmail, code);
+    }
+
+    public static String lastInviteCodeFor(String email) {
+        return INVITE_CODES_BY_EMAIL.get(email);
     }
 }

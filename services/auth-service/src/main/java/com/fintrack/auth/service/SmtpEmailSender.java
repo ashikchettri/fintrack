@@ -37,6 +37,11 @@ public class SmtpEmailSender implements EmailSender {
         send(toEmail, EmailContent.emailChangeCode(code, properties.codeTtl()));
     }
 
+    @Override
+    public void sendHouseholdInvite(String toEmail, String inviterName, String householdName, String code) {
+        send(toEmail, EmailContent.householdInvite(inviterName, householdName, code, EmailContent.INVITE_TTL));
+    }
+
     private void send(String toEmail, EmailContent content) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

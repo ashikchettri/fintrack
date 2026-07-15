@@ -31,6 +31,8 @@ public class SecurityConfig {
                                 "/api/v1/auth/refresh", "/api/v1/auth/logout",
                                 "/api/v1/auth/verify-email", "/api/v1/auth/resend-verification",
                                 "/api/v1/auth/forgot-password", "/api/v1/auth/reset-password").permitAll()
+                        // accepting an invite creates the account — the invitee has no token yet
+                        .requestMatchers("/api/v1/households/invites/accept").permitAll()
                         .requestMatchers("/.well-known/jwks.json").permitAll()
                         // API docs are public for now; the gateway will gate them in phase 2
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
