@@ -36,19 +36,36 @@ public class DashboardService {
     }
 
     @Transactional(readOnly = true)
-    public DashboardResponse build(AuthenticatedMember caller) {
+    public DashboardResponse build(AuthenticatedMember caller, YearMonth month) {
         // already sorted most-recent first by the repository
         List<Transaction> txns = transactionRepository
                 .findByHouseholdIdAndMemberIdOrderByTxnDateDescCreatedAtDesc(
                         caller.householdId(), caller.memberId());
 
+        // snapshot metrics respect the selected month; the trend stays all-time
+        List<Transaction> scoped = month == null
+                ? txns
+                : txns.stream().filter(t -> YearMonth.from(t.getTxnDate()).equals(month)).toList();
+
         return new DashboardResponse(
                 dominantCurrency(txns),
-                totals(txns),
-                byCategory(txns),
+                month == null ? null : month.toString(),
+                availableMonths(txns),
+                totals(scoped),
+                byCategory(scoped),
                 byMonth(txns),
-                topMerchants(txns),
-                recent(txns));
+                topMerchants(scoped),
+                recent(scoped));
+    }
+
+    /** Every month with activity, newest first — populates the month selector. */
+    private List<String> availableMonths(List<Transaction> txns) {
+        return txns.stream()
+                .map(t -> YearMonth.from(t.getTxnDate()))
+                .distinct()
+                .sorted(Comparator.reverseOrder())
+                .map(YearMonth::toString)
+                .toList();
     }
 
     private String dominantCurrency(List<Transaction> txns) {

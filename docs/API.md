@@ -45,9 +45,9 @@ Base path `/api/v1`. All errors are RFC 9457 `ProblemDetail` (`application/probl
 |---|---|
 | `POST /api/v1/accounts` · `GET /api/v1/accounts` · `GET/DELETE /api/v1/accounts/{id}` | Accounts CRUD, household+member scoped |
 | `POST /api/v1/imports/transactions` (multipart `file`, `currency`) | Import a bank CSV → transactions + auto-created accounts, deduped |
-| `GET /api/v1/dashboard` | Dashboard read model: totals, by-category, by-month, top merchants, recent |
+| `GET /api/v1/dashboard[?month=YYYY-MM]` | Dashboard read model: totals, by-category, by-month, top merchants, recent. `month` scopes the snapshot (the trend stays all-time); response carries `availableMonths` |
 | `GET /api/v1/transactions` | The caller's transactions (scoped) |
 | `PATCH /api/v1/transactions/{id}/visibility` (`{"visibility":"shared\|personal"}`) | Mark/unmark a shared commitment (ADR 006); member-scoped |
-| `GET /api/v1/household/shared` | Private household view of shared commitments — only shared items + agreed totals + suggested settlement, never personal spending (ADR 006) |
+| `GET /api/v1/household/shared[?month=YYYY-MM]` | Private household view of shared commitments — only shared items + agreed totals + suggested settlement, never personal spending (ADR 006) |
 
 **Privacy boundary (ADR 006):** personal queries filter `household_id + member_id`; the household shared view filters `household_id + visibility = 'shared'` across members, so personal rows are structurally unreachable.

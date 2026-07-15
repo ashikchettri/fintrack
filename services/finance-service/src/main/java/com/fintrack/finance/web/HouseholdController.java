@@ -7,6 +7,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -25,7 +26,8 @@ public class HouseholdController {
     }
 
     @GetMapping("/shared")
-    public SharedHouseholdView shared(@AuthenticationPrincipal Jwt jwt) {
-        return sharedCommitmentService.sharedView(AuthenticatedMember.from(jwt));
+    public SharedHouseholdView shared(@AuthenticationPrincipal Jwt jwt,
+                                      @RequestParam(required = false) String month) {
+        return sharedCommitmentService.sharedView(AuthenticatedMember.from(jwt), MonthParam.parse(month));
     }
 }

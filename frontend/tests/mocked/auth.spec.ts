@@ -178,6 +178,8 @@ test.describe('login', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           currency: null,
+          month: null,
+          availableMonths: [],
           totals: { income: 0, expenses: 0, net: 0, transactionCount: 0 },
           byCategory: [], byMonth: [], topMerchants: [], recent: [],
         }),

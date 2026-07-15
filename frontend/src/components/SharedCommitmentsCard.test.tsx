@@ -17,6 +17,8 @@ const mockedApi = vi.mocked(api);
 
 const view = (over: Partial<SharedHouseholdView>): SharedHouseholdView => ({
   currency: 'AUD',
+  month: null,
+  availableMonths: ['2026-07'],
   totalShared: 1600,
   memberCount: 2,
   fairShare: 800,

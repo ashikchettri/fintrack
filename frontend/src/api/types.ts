@@ -57,6 +57,8 @@ export interface ImportSummary {
 
 export interface DashboardResponse {
   currency: string | null;
+  month: string | null;          // selected month ("2026-07") or null for all-time
+  availableMonths: string[];     // months with activity, newest first
   totals: {
     income: number;
     expenses: number;
@@ -83,6 +85,8 @@ export interface DashboardResponse {
  */
 export interface SharedHouseholdView {
   currency: string | null;
+  month: string | null;
+  availableMonths: string[];
   totalShared: number;
   memberCount: number;
   fairShare: number;

@@ -58,7 +58,7 @@ status() {
   postgres_up  && ok "Postgres      :$PG_PORT"    || fail "Postgres"
   mailpit_up   && ok "Mailpit       :1025 / inbox http://localhost:8025" || fail "Mailpit"
   backend_up   && ok "auth-service  http://localhost:8081  (Swagger: /swagger-ui.html)" || fail "auth-service"
-  finance_up   && ok "finance-service http://localhost:8082 (health: /actuator/health)" || fail "finance-service"
+  finance_up   && ok "finance-service http://localhost:8082 (Swagger: /swagger-ui.html)" || fail "finance-service"
   frontend_up  && ok "frontend      http://localhost:5173" || fail "frontend"
   # only reported when running — it's an opt-in quality tool, not part of the app
   sonarqube_up && ok "SonarQube     http://localhost:9000  (login admin)"
@@ -232,7 +232,7 @@ start() {
   echo "All green. Open:"
   echo "  App          http://localhost:5173"
   echo "  auth API     http://localhost:8081/swagger-ui.html"
-  echo "  finance API  http://localhost:8082  (/api/v1/dashboard, /accounts, /transactions)"
+  echo "  finance API  http://localhost:8082/swagger-ui.html"
   echo "  Mail inbox   http://localhost:8025"
   sonarqube_up && echo "  SonarQube  http://localhost:9000"
 }
