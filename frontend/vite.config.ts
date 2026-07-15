@@ -22,6 +22,7 @@ export default defineConfig({
       // finance's shared view is /household/shared (singular); the trailing
       // path keeps it from swallowing auth's /households/** (plural, :8081)
       '/api/v1/household/shared': 'http://localhost:8082',
+      '/api/v1/household/home-loan': 'http://localhost:8082',
       '/api/v1/imports': 'http://localhost:8082',
       '/api/v1/accounts': 'http://localhost:8082',
       '/api': 'http://localhost:8081',

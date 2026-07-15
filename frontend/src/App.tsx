@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useAuth } from './auth/AuthContext';
 import DashboardPage from './pages/DashboardPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import HomeLoanPage from './pages/HomeLoanPage';
 import HouseholdPage from './pages/HouseholdPage';
 import JoinHouseholdPage from './pages/JoinHouseholdPage';
 import LoginPage from './pages/LoginPage';
@@ -50,6 +51,14 @@ export default function App() {
         element={
           <RequireAuth>
             <HouseholdPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/home-loan"
+        element={
+          <RequireAuth>
+            <HomeLoanPage />
           </RequireAuth>
         }
       />

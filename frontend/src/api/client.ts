@@ -1,5 +1,6 @@
 import type {
   DashboardResponse,
+  HomeLoan,
   ImportSummary,
   LoginResponse,
   MemberResponse,
@@ -155,6 +156,21 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ email, code, password, name }),
     });
+  },
+
+  // ---- household financial profile (finance-service) ----
+
+  /** The household's home-loan profile (empty shape if none saved yet). */
+  getHomeLoan(): Promise<HomeLoan> {
+    return withRefresh(() => request<HomeLoan>('/api/v1/household/home-loan'));
+  },
+
+  /** Upsert the household's home-loan profile. */
+  saveHomeLoan(loan: Partial<HomeLoan>): Promise<HomeLoan> {
+    return withRefresh(() => request<HomeLoan>('/api/v1/household/home-loan', {
+      method: 'PUT',
+      body: JSON.stringify(loan),
+    }));
   },
 
   async login(email: string, password: string): Promise<LoginResponse> {

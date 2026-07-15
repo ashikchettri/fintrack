@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { LogOut, Settings } from 'lucide-react';
+import { Landmark, LogOut, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
@@ -76,6 +76,10 @@ export default function ProfilePage() {
                 </dd>
               </div>
             </dl>
+            <Button variant="outline" onClick={() => navigate('/home-loan')} className="w-full">
+              <Landmark className="size-4" aria-hidden="true" />
+              Home loan
+            </Button>
             <Button variant="outline" onClick={() => navigate('/settings')} className="w-full">
               <Settings className="size-4" aria-hidden="true" />
               Account settings

@@ -102,6 +102,26 @@ export interface SharedHouseholdView {
   transactions: TransactionResponse[];
 }
 
+/**
+ * The household's home-loan profile — jointly held. `hasHomeLoan = false` means
+ * "no loan / not answered yet". Amounts are numbers; interest is an annual %.
+ */
+export interface HomeLoan {
+  hasHomeLoan: boolean;
+  lender: string | null;
+  loanAmount: number | null;
+  interestRate: number | null;
+  repaymentFrequency: 'WEEKLY' | 'FORTNIGHTLY' | 'MONTHLY' | null;
+  repaymentAmount: number | null;
+  hasOffset: boolean;
+  offsetBalance: number | null;
+  ownership: 'JOINT' | 'SOLE' | null;
+  currency: string;
+  notes: string | null;
+  updatedBy?: string | null;
+  updatedAt?: string | null;
+}
+
 /** A household member for the roster (names for the shared-commitments view). */
 export interface MemberResponse {
   memberId: string;

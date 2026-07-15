@@ -195,6 +195,29 @@ describe('household membership', () => {
   });
 });
 
+describe('home loan', () => {
+  it('getHomeLoan() GETs the profile', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { hasHomeLoan: true, loanAmount: 650000 }));
+
+    const loan = await api.getHomeLoan();
+
+    expect(loan.loanAmount).toBe(650000);
+    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/api/v1/household/home-loan');
+  });
+
+  it('saveHomeLoan() PUTs the profile', async () => {
+    tokenStore.set('jwt-held');
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { hasHomeLoan: true }));
+
+    await api.saveHomeLoan({ hasHomeLoan: true, loanAmount: 650000, interestRate: 6.25 });
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/v1/household/home-loan');
+    expect(init.method).toBe('PUT');
+    expect(init.body).toBe(JSON.stringify({ hasHomeLoan: true, loanAmount: 650000, interestRate: 6.25 }));
+  });
+});
+
 describe('logout', () => {
   it('handles the 204 and clears the token', async () => {
     tokenStore.set('jwt-live');
