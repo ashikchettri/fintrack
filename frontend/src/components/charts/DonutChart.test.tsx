@@ -28,6 +28,16 @@ describe('DonutChart', () => {
     );
   });
 
+  it('groups the long tail into a single "Other" slice', () => {
+    // 9 categories (values 90,80,…,10) → top 7 kept, last 2 rolled into Other
+    const data = Array.from({ length: 9 }, (_, i) => ({ label: `Cat${i}`, value: 90 - i * 10 }));
+    render(<DonutChart data={data} formatValue={(v) => `$${v}`} />);
+
+    expect(screen.getByText('Other (2)')).toBeInTheDocument();
+    expect(screen.getByText('Cat0')).toBeInTheDocument();        // biggest kept
+    expect(screen.queryByText('Cat8')).not.toBeInTheDocument();  // smallest grouped away
+  });
+
   it('shows a message when there is nothing to chart', () => {
     render(<DonutChart data={[]} />);
     expect(screen.getByText(/no spending to chart/i)).toBeInTheDocument();

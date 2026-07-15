@@ -10,24 +10,29 @@ export interface MonthlyBar {
 interface BarChartProps {
   data: MonthlyBar[];
   formatValue?: (value: number) => string;
+  /** show at most this many of the most-recent months (default 12) */
+  maxMonths?: number;
 }
 
 // Fixed plot height in px. Percentage heights would need a definite-height
 // parent; a fixed px plot keeps the bars reliable regardless of layout.
-const PLOT_HEIGHT = 140;
+const PLOT_HEIGHT = 160;
 
 /**
  * Grouped vertical bars — income vs expenses per month — built with sized divs
  * (no chart library). Bars are sized in pixels against the largest value in the
  * series, so the tallest fills the plot and small non-zero values stay visible.
  */
-export function BarChart({ data, formatValue }: BarChartProps) {
+export function BarChart({ data, formatValue, maxMonths = 12 }: BarChartProps) {
   const fmt = formatValue ?? ((v: number) => v.toFixed(2));
-  const max = Math.max(1, ...data.flatMap((d) => [d.income, d.expenses]));
 
   if (data.length === 0) {
     return <p className="text-sm text-muted-foreground">No monthly activity yet.</p>;
   }
+
+  // data is oldest→newest; keep the most recent window so bars stay legible
+  const months = data.slice(-maxMonths);
+  const max = Math.max(1, ...months.flatMap((d) => [d.income, d.expenses]));
 
   // 0 → no bar; any positive value → at least 2px so it doesn't vanish
   const barPx = (value: number) => (value <= 0 ? 0 : Math.max(2, Math.round((value / max) * PLOT_HEIGHT)));
@@ -39,10 +44,10 @@ export function BarChart({ data, formatValue }: BarChartProps) {
         <Legend color={EXPENSE_COLOR} label="Expenses" />
       </div>
 
-      <div className="flex items-end gap-3 overflow-x-auto pb-1" role="img"
-           aria-label="Monthly income and expenses">
-        {data.map((d) => (
-          <div key={d.month} className="flex min-w-12 flex-1 flex-col items-center gap-1">
+      {/* columns flex to fit the card width — no forced min-width / scrollbar */}
+      <div className="flex items-end gap-2" role="img" aria-label="Monthly income and expenses">
+        {months.map((d) => (
+          <div key={d.month} className="flex min-w-0 flex-1 flex-col items-center gap-1">
             <div className="flex items-end justify-center gap-1" style={{ height: PLOT_HEIGHT }}>
               <Bar px={barPx(d.income)} color={INCOME_COLOR}
                    title={`${formatMonth(d.month)} · income ${fmt(d.income)}`} />
