@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import HomeLoanPage from './pages/HomeLoanPage';
 import HouseholdPage from './pages/HouseholdPage';
+import IncomePage from './pages/IncomePage';
 import JoinHouseholdPage from './pages/JoinHouseholdPage';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
@@ -59,6 +60,14 @@ export default function App() {
         element={
           <RequireAuth>
             <HomeLoanPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/income"
+        element={
+          <RequireAuth>
+            <IncomePage />
           </RequireAuth>
         }
       />
