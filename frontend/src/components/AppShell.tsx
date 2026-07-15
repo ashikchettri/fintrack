@@ -16,6 +16,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
           <nav className="flex items-center gap-1 text-sm">
             <ShellLink to="/dashboard">Dashboard</ShellLink>
+            <ShellLink to="/household">Household</ShellLink>
             <ShellLink to="/profile">Profile</ShellLink>
           </nav>
           <ThemeToggle className="ml-auto" />

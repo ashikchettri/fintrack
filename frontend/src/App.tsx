@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import { useAuth } from './auth/AuthContext';
 import DashboardPage from './pages/DashboardPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import HouseholdPage from './pages/HouseholdPage';
+import JoinHouseholdPage from './pages/JoinHouseholdPage';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -33,12 +35,21 @@ export default function App() {
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/join" element={<JoinHouseholdPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route
         path="/dashboard"
         element={
           <RequireAuth>
             <DashboardPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/household"
+        element={
+          <RequireAuth>
+            <HouseholdPage />
           </RequireAuth>
         }
       />

@@ -244,6 +244,105 @@ test.describe('password reset', () => {
   });
 });
 
+test.describe('household invitations', () => {
+  test('an owner invites a member, who accepts and lands on their dashboard', async ({ page }) => {
+    const partner = {
+      userId: '4f2c8a10-0000-0000-0000-000000000003',
+      email: 'ashik@example.com',
+      householdId: PROFILE.householdId,
+      householdName: PROFILE.householdName,
+      role: 'ADULT',
+      createdAt: '2026-07-15T00:00:00Z',
+    };
+    let profileRequests = 0;
+
+    // The initial app bootstrap restores Jane's owner session. After Ashik
+    // accepts the invite, the join page logs in as the new member instead.
+    await page.route('**/api/v1/auth/refresh', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ accessToken: 'owner-jwt', tokenType: 'Bearer', expiresInSeconds: 900 }),
+      }),
+    );
+    await page.route('**/api/v1/users/me', (route) => {
+      profileRequests++;
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(profileRequests === 1 ? PROFILE : partner),
+      });
+    });
+    await page.route('**/api/v1/households/members', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { memberId: 'owner-member', name: 'Jane', role: 'OWNER', isYou: true },
+        ]),
+      }),
+    );
+    await page.route('**/api/v1/households/invites', async (route) => {
+      expect(route.request().postDataJSON()).toEqual({ email: 'ashik@example.com' });
+      await route.fulfill({ status: 202 });
+    });
+    await page.route('**/api/v1/households/invites/accept', async (route) => {
+      expect(route.request().postDataJSON()).toEqual({
+        email: 'ashik@example.com', code: '123456',
+        password: 'correct horse battery staple', name: 'Ashik',
+      });
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify(partner) });
+    });
+    await page.route('**/api/v1/auth/login', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ accessToken: 'partner-jwt', tokenType: 'Bearer', expiresInSeconds: 900 }),
+      }),
+    );
+    await page.route('**/api/v1/dashboard', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          currency: null, month: null, availableMonths: [],
+          totals: { income: 0, expenses: 0, net: 0, transactionCount: 0 },
+          byCategory: [], byMonth: [], topMerchants: [], recent: [],
+        }),
+      }),
+    );
+    await page.route('**/api/v1/household/shared', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          currency: null, month: null, availableMonths: [], totalShared: 0, memberCount: 0,
+          fairShare: 0, settlement: { status: 'settled', amount: 0 }, contributions: [],
+          byCategory: [], transactions: [],
+        }),
+      }),
+    );
+
+    await page.goto('/household');
+    await expect(page.getByRole('heading', { name: 'Household' })).toBeVisible();
+    await page.getByLabel('Email').fill('ashik@example.com');
+    await page.getByRole('button', { name: 'Send invite' }).click();
+    await expect(page.getByText('Invitation sent')).toBeVisible();
+
+    // Public invite acceptance works without a separate manually-created
+    // browser session; the successful acceptance replaces the owner session.
+    await page.goto('/join');
+    await page.getByLabel('Your name').fill('Ashik');
+    await page.getByLabel('Email').fill('ashik@example.com');
+    await page.getByLabel('Invite code').fill('123456');
+    await page.getByLabel('Password').fill('correct horse battery staple');
+    await page.getByRole('button', { name: 'Join household' }).click();
+
+    await expect(page).toHaveURL(/\/dashboard/);
+    await expect(page.getByText('Start by importing a bank statement.')).toBeVisible();
+  });
+});
+
 test.describe('route guarding', () => {
   test('visiting /profile without a session redirects to /login', async ({ page }) => {
     await mockNoSession(page);

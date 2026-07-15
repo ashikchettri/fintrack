@@ -159,6 +159,42 @@ describe('account management', () => {
   });
 });
 
+describe('household membership', () => {
+  it('inviteMember() POSTs the email with the bearer token', async () => {
+    tokenStore.set('jwt-held');
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 202 }));
+
+    await api.inviteMember('partner@example.com');
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/v1/households/invites');
+    expect(init.body).toBe(JSON.stringify({ email: 'partner@example.com' }));
+    expect(new Headers(init.headers).get('Authorization')).toBe('Bearer jwt-held');
+  });
+
+  it('householdMembers() GETs the roster', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, [{ memberId: 'm1', name: 'Jane', role: 'OWNER', isYou: true }]));
+
+    const members = await api.householdMembers();
+
+    expect(members[0].name).toBe('Jane');
+    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/api/v1/households/members');
+  });
+
+  it('acceptInvite() POSTs to the public accept endpoint without a token', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(201, { email: 'partner@example.com', role: 'ADULT' }));
+
+    await api.acceptInvite('partner@example.com', '123456', 'a long enough password', 'Ashik');
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/v1/households/invites/accept');
+    expect(init.body).toBe(JSON.stringify({
+      email: 'partner@example.com', code: '123456', password: 'a long enough password', name: 'Ashik',
+    }));
+    expect(new Headers(init.headers).get('Authorization')).toBeNull();
+  });
+});
+
 describe('logout', () => {
   it('handles the 204 and clears the token', async () => {
     tokenStore.set('jwt-live');

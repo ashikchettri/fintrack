@@ -21,3 +21,14 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 export type LoginValues = z.infer<typeof loginSchema>;
+
+export const inviteSchema = z.object({ email });
+export type InviteValues = z.infer<typeof inviteSchema>;
+
+export const acceptInviteSchema = z.object({
+  email,
+  code: z.string().min(1, 'Enter the invite code'),
+  password,
+  name: z.string().min(1, 'Enter your name').max(100, 'Name must be at most 100 characters'),
+});
+export type AcceptInviteValues = z.infer<typeof acceptInviteSchema>;
