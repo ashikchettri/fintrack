@@ -3,7 +3,9 @@ package com.fintrack.auth.web;
 import com.fintrack.auth.service.EmailAlreadyInUseException;
 import com.fintrack.auth.service.EmailNotVerifiedException;
 import com.fintrack.auth.service.InvalidCredentialsException;
+import com.fintrack.auth.service.InvalidInviteException;
 import com.fintrack.auth.service.InvalidRefreshTokenException;
+import com.fintrack.auth.service.NotHouseholdOwnerException;
 import com.fintrack.auth.service.InvalidResetCodeException;
 import com.fintrack.auth.service.InvalidVerificationCodeException;
 import com.fintrack.auth.service.IncorrectCurrentPasswordException;
@@ -79,6 +81,23 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problem.setType(URI.create("https://fintrack.example/problems/invalid-verification-code"));
         problem.setTitle("Invalid verification code");
+        return withTrace(problem);
+    }
+
+    @ExceptionHandler(InvalidInviteException.class)
+    ProblemDetail handleInvalidInvite(InvalidInviteException ex) {
+        // wrong, expired, over-attempted, unknown — all identical (no enumeration)
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setType(URI.create("https://fintrack.example/problems/invalid-invite"));
+        problem.setTitle("Invalid invitation");
+        return withTrace(problem);
+    }
+
+    @ExceptionHandler(NotHouseholdOwnerException.class)
+    ProblemDetail handleNotOwner(NotHouseholdOwnerException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setType(URI.create("https://fintrack.example/problems/not-household-owner"));
+        problem.setTitle("Not the household owner");
         return withTrace(problem);
     }
 

@@ -20,6 +20,7 @@ Base path `/api/v1`. All errors are RFC 9457 `ProblemDetail` (`application/probl
 | POST | `/auth/logout` | — (refresh cookie) | 204 + cleared cookie | idempotent |
 | POST | `/auth/forgot-password` | `{email}` | 204 | always 204 (no enumeration) |
 | POST | `/auth/reset-password` | `{email, code, newPassword}` | 204 | 6-digit code; revokes all sessions; marks email verified |
+| POST | `/households/invites/accept` | `{email, code, password, name}` | 201 profile | joins the inviting household as ADULT; email pre-verified by the invite; 400 `invalid-invite` |
 | GET | `/.well-known/jwks.json` | — | 200 JWKS | public keys only |
 
 ## Authenticated endpoints (Bearer access token)
@@ -30,10 +31,12 @@ Base path `/api/v1`. All errors are RFC 9457 `ProblemDetail` (`application/probl
 | POST | `/users/me/password` | `{currentPassword, newPassword}` | 204 | verifies current password; revokes other sessions |
 | POST | `/users/me/email` | `{newEmail, currentPassword}` | 204 | emails a code to the NEW address; old stays active |
 | POST | `/users/me/email/verify` | `{code}` | 204 | confirms and swaps the login email |
+| POST | `/households/invites` | `{email}` | 202 | OWNER-only (else **403** `not-household-owner`); emails a 72h invite code; 409 if the email already has an account |
+| GET | `/households/members` | — | 200 `[{memberId, name, role, isYou}]` | the caller's household roster (names for the shared view) |
 
 ## Problem types
 
-`https://fintrack.example/problems/…`: `validation-error` (400), `invalid-credentials` (401), `email-not-verified` (403), `too-many-attempts` (429), `email-already-in-use` (409), `invalid-verification-code` / `invalid-reset-code` / `incorrect-current-password` (400).
+`https://fintrack.example/problems/…`: `validation-error` (400), `invalid-credentials` (401), `email-not-verified` (403), `too-many-attempts` (429), `email-already-in-use` (409), `invalid-verification-code` / `invalid-reset-code` / `incorrect-current-password` / `invalid-invite` (400), `not-household-owner` (403).
 
 ## finance-service
 

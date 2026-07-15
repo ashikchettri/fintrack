@@ -9,6 +9,9 @@ import java.time.Duration;
  */
 public record EmailContent(String subject, String text, String html) {
 
+    /** Invites live longer than login codes — an invite email may sit unread. */
+    public static final Duration INVITE_TTL = Duration.ofHours(72);
+
     public static EmailContent verificationCode(String code, Duration ttl) {
         return new EmailContent(
                 "Your FinTrack verification code",
@@ -48,6 +51,39 @@ public record EmailContent(String subject, String text, String html) {
                 html("Confirm your new email",
                         "Enter this code in FinTrack to confirm your new email address.",
                         code, ttl));
+    }
+
+    public static EmailContent householdInvite(String inviterName, String householdName,
+                                               String code, Duration ttl) {
+        return new EmailContent(
+                inviterName + " invited you to their FinTrack household",
+                """
+                %s invited you to join the "%s" household on FinTrack.
+
+                Your invite code is: %s
+
+                Open FinTrack, choose "Join a household", and enter this code with
+                your email to set up your account. It expires in %d hours. If you
+                weren't expecting this, you can ignore this email.
+                """.formatted(inviterName, householdName, code, ttl.toHours()),
+                inviteHtml(inviterName, householdName, code, ttl));
+    }
+
+    private static String inviteHtml(String inviterName, String householdName, String code, Duration ttl) {
+        return """
+                <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:420px;margin:0 auto;padding:24px">
+                  <h2 style="color:#0f766e;margin:0 0 8px">You're invited to a household</h2>
+                  <p style="color:#555;font-size:15px;margin:0 0 20px">
+                    <strong>%s</strong> invited you to join the "%s" household on FinTrack.
+                    Choose "Join a household" and enter this code with your email.
+                  </p>
+                  <div style="font-size:36px;font-weight:700;letter-spacing:10px;color:#0f766e;
+                              background:#f0fdfa;border-radius:12px;padding:16px;text-align:center">%s</div>
+                  <p style="color:#999;font-size:13px;margin:20px 0 0">
+                    This invite expires in %d hours. If you weren't expecting it, ignore this email.
+                  </p>
+                </div>
+                """.formatted(inviterName, householdName, code, ttl.toHours());
     }
 
     private static String html(String title, String intro, String code, Duration ttl) {

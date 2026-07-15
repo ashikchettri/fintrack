@@ -12,4 +12,6 @@ public interface EmailSender {
     void sendPasswordResetCode(String toEmail, String code);
 
     void sendEmailChangeCode(String toEmail, String code);
+
+    void sendHouseholdInvite(String toEmail, String inviterName, String householdName, String code);
 }
