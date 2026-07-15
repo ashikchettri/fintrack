@@ -1,6 +1,8 @@
 import type {
   DashboardResponse,
   HomeLoan,
+  HouseholdIncome,
+  Income,
   ImportSummary,
   LoginResponse,
   MemberResponse,
@@ -171,6 +173,24 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(loan),
     }));
+  },
+
+  /** The caller's own income (empty shape if none saved). */
+  getIncome(): Promise<Income> {
+    return withRefresh(() => request<Income>('/api/v1/household/income'));
+  },
+
+  /** Upsert the caller's own income. */
+  saveIncome(income: Partial<Income>): Promise<Income> {
+    return withRefresh(() => request<Income>('/api/v1/household/income', {
+      method: 'PUT',
+      body: JSON.stringify(income),
+    }));
+  },
+
+  /** The household's combined income — every member's annual income + the total. */
+  householdIncome(): Promise<HouseholdIncome> {
+    return withRefresh(() => request<HouseholdIncome>('/api/v1/household/income/summary'));
   },
 
   async login(email: string, password: string): Promise<LoginResponse> {
