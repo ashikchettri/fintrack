@@ -173,8 +173,9 @@ export const api = {
 
   // ---- finance-service (proxied to :8082); each survives a token expiry ----
 
-  dashboard(): Promise<DashboardResponse> {
-    return withRefresh(() => request<DashboardResponse>('/api/v1/dashboard'));
+  dashboard(month?: string): Promise<DashboardResponse> {
+    const query = month ? `?month=${encodeURIComponent(month)}` : '';
+    return withRefresh(() => request<DashboardResponse>(`/api/v1/dashboard${query}`));
   },
 
   transactions(): Promise<TransactionResponse[]> {
@@ -190,8 +191,9 @@ export const api = {
   },
 
   /** The private household view of shared commitments (ADR 006). */
-  householdShared(): Promise<SharedHouseholdView> {
-    return withRefresh(() => request<SharedHouseholdView>('/api/v1/household/shared'));
+  householdShared(month?: string): Promise<SharedHouseholdView> {
+    const query = month ? `?month=${encodeURIComponent(month)}` : '';
+    return withRefresh(() => request<SharedHouseholdView>(`/api/v1/household/shared${query}`));
   },
 
   /** Mark/unmark one of your own transactions as a shared commitment. */

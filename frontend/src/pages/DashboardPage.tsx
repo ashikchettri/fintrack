@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { ArrowDownRight, ArrowUpRight, Wallet } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { api } from '../api/client';
 import type { DashboardResponse } from '../api/types';
 import { AppShell } from '@/components/AppShell';
@@ -11,14 +11,16 @@ import { SharedCommitmentsCard } from '@/components/SharedCommitmentsCard';
 import { ShareToggle } from '@/components/ShareToggle';
 import { DonutChart } from '@/components/charts/DonutChart';
 import { BarChart } from '@/components/charts/BarChart';
-import { formatDate, formatMoney } from '@/lib/format';
+import { formatDate, formatMonth, formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 export default function DashboardPage() {
+  const [month, setMonth] = useState<string | null>(null);
   const { data, isPending, isError } = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: api.dashboard,
+    queryKey: ['dashboard', month],
+    queryFn: () => api.dashboard(month ?? undefined),
     retry: false,
+    placeholderData: (prev) => prev, // don't flash a loader when switching months
   });
 
   if (isPending) {
@@ -36,21 +38,48 @@ export default function DashboardPage() {
     );
   }
 
-  const empty = data.totals.transactionCount === 0;
+  // only the first-run (no data at all) shows the upload CTA; a month with no
+  // activity still shows the (empty) dashboard so the selector stays available
+  const firstRun = data.totals.transactionCount === 0 && month === null && data.availableMonths.length === 0;
 
   return (
     <AppShell>
-      <div className="mb-6 flex items-end justify-between">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground">
-            {empty ? 'Start by importing a bank statement.' : 'Your money at a glance.'}
+            {firstRun ? 'Start by importing a bank statement.' : 'Your money at a glance.'}
           </p>
         </div>
+        {!firstRun && (
+          <MonthSelect months={data.availableMonths} value={month} onChange={setMonth} />
+        )}
       </div>
 
-      {empty ? <EmptyState /> : <Populated data={data} />}
+      {firstRun ? <EmptyState /> : <Populated data={data} month={month} />}
     </AppShell>
+  );
+}
+
+/** "All time" + one option per month with activity. */
+function MonthSelect({ months, value, onChange }: {
+  months: string[]; value: string | null; onChange: (v: string | null) => void;
+}) {
+  return (
+    <label className="flex items-center gap-2 text-sm">
+      <span className="text-muted-foreground">Period</span>
+      <select
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value || null)}
+        aria-label="Period"
+        className="rounded-md border bg-background px-2 py-1.5 text-sm"
+      >
+        <option value="">All time</option>
+        {months.map((m) => (
+          <option key={m} value={m}>{formatMonth(m)}</option>
+        ))}
+      </select>
+    </label>
   );
 }
 
@@ -69,7 +98,7 @@ function EmptyState() {
   );
 }
 
-function Populated({ data }: { data: DashboardResponse }) {
+function Populated({ data, month }: { data: DashboardResponse; month: string | null }) {
   const currency = data.currency;
   const { income, expenses, net } = data.totals;
 
@@ -85,7 +114,7 @@ function Populated({ data }: { data: DashboardResponse }) {
       </div>
 
       {/* the differentiator: household coordination, not just a statement view */}
-      <SharedCommitmentsCard />
+      <SharedCommitmentsCard month={month} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>

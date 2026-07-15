@@ -1,6 +1,7 @@
 package com.fintrack.finance.web;
 
 import com.fintrack.finance.service.AccountNotFoundException;
+import com.fintrack.finance.service.InvalidMonthException;
 import com.fintrack.finance.service.TransactionNotFoundException;
 import com.fintrack.finance.service.csv.CsvImportException;
 import org.springframework.core.Ordered;
@@ -41,6 +42,14 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         problem.setType(URI.create("https://fintrack.example/problems/transaction-not-found"));
         problem.setTitle("Transaction not found");
+        return problem;
+    }
+
+    @ExceptionHandler(InvalidMonthException.class)
+    ProblemDetail handleInvalidMonth(InvalidMonthException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setType(URI.create("https://fintrack.example/problems/validation-error"));
+        problem.setTitle("Invalid month");
         return problem;
     }
 
