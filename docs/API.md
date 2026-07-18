@@ -54,5 +54,6 @@ Base path `/api/v1`. All errors are RFC 9457 `ProblemDetail` (`application/probl
 | `GET /api/v1/household/shared[?month=YYYY-MM]` | Private household view of shared commitments — only shared items + agreed totals + suggested settlement, never personal spending (ADR 006) |
 | `GET · PUT /api/v1/household/home-loan` | The household's home-loan profile (jointly held → **household-scoped**, not member-scoped). Upserted; feeds the cash-flow + affordability calculations |
 | `GET · PUT /api/v1/household/income` · `GET …/income/summary` | A member's own income (member-scoped; salary annualized by frequency + bonus + other). `summary` totals every member's annual income for the household |
+| `GET /api/v1/household/cash-flow` | Monthly snapshot: household income − avg spending = surplus (loan repayment shown as context). The affordability "what-if" (new loan → repayment → verdict) runs client-side against the surplus |
 
 **Privacy boundary (ADR 006):** personal queries filter `household_id + member_id`; the household shared view filters `household_id + visibility = 'shared'` across members, so personal rows are structurally unreachable.
