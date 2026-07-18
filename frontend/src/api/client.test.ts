@@ -249,6 +249,17 @@ describe('income', () => {
   });
 });
 
+describe('cash flow', () => {
+  it('getCashFlow() GETs the snapshot', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { monthlySurplus: 4000, monthlyIncome: 7500 }));
+
+    const cf = await api.getCashFlow();
+
+    expect(cf.monthlySurplus).toBe(4000);
+    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/api/v1/household/cash-flow');
+  });
+});
+
 describe('logout', () => {
   it('handles the 204 and clears the token', async () => {
     tokenStore.set('jwt-live');

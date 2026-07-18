@@ -1,4 +1,5 @@
 import type {
+  CashFlow,
   DashboardResponse,
   HomeLoan,
   HouseholdIncome,
@@ -191,6 +192,11 @@ export const api = {
   /** The household's combined income — every member's annual income + the total. */
   householdIncome(): Promise<HouseholdIncome> {
     return withRefresh(() => request<HouseholdIncome>('/api/v1/household/income/summary'));
+  },
+
+  /** The household's monthly cash-flow snapshot (income, spending, surplus). */
+  getCashFlow(): Promise<CashFlow> {
+    return withRefresh(() => request<CashFlow>('/api/v1/household/cash-flow'));
   },
 
   async login(email: string, password: string): Promise<LoginResponse> {

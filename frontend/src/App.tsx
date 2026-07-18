@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { useAuth } from './auth/AuthContext';
+import CashFlowPage from './pages/CashFlowPage';
 import DashboardPage from './pages/DashboardPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import HomeLoanPage from './pages/HomeLoanPage';
@@ -68,6 +69,14 @@ export default function App() {
         element={
           <RequireAuth>
             <IncomePage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/cash-flow"
+        element={
+          <RequireAuth>
+            <CashFlowPage />
           </RequireAuth>
         }
       />

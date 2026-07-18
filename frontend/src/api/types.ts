@@ -122,6 +122,19 @@ export interface HomeLoan {
   updatedAt?: string | null;
 }
 
+/**
+ * The household's monthly cash-flow snapshot — inputs to the affordability
+ * question. `monthlySurplus = monthlyIncome − monthlyAvgSpending`.
+ */
+export interface CashFlow {
+  currency: string;
+  monthlyIncome: number;
+  monthlyLoanRepayment: number;
+  monthlyAvgSpending: number;
+  monthlySurplus: number;
+  monthsOfSpendingData: number;
+}
+
 /** A member's own income. `annualIncome` is the derived spendable figure. */
 export interface Income {
   salaryAmount: number | null;
