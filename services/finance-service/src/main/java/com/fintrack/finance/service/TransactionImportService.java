@@ -120,6 +120,9 @@ public class TransactionImportService {
                 .description(truncate(row.description(), 200))
                 .category(truncate(row.category(), 60))
                 .subcategory(truncate(row.subcategory(), 60))
+                // normalise onto the canonical vocabulary (ADR 008); Phase 4 AI
+                // replaces this rule-based mapping, writing the same column
+                .canonicalCategory(CategoryMapper.fromBankCategory(row.category(), row.description()).name())
                 .amount(row.amount())
                 .currency(currency)
                 .originalDescription(truncate(row.originalDescription(), 300))

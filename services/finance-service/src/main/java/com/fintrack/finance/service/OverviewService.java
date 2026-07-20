@@ -2,6 +2,7 @@ package com.fintrack.finance.service;
 
 import com.fintrack.finance.domain.BudgetLine;
 import com.fintrack.finance.domain.BudgetSection;
+import com.fintrack.finance.domain.SpendingCategory;
 import com.fintrack.finance.domain.Transaction;
 import com.fintrack.finance.repository.BudgetLineRepository;
 import com.fintrack.finance.repository.TransactionRepository;
@@ -13,7 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The dashboard rollup: the household's monthly budget (plan) vs the caller's
@@ -54,6 +59,7 @@ public class OverviewService {
 
         BigDecimal actualIncome = BigDecimal.ZERO;
         BigDecimal actualExpenses = BigDecimal.ZERO;
+        Map<SpendingCategory, BigDecimal> actualByCategory = new EnumMap<>(SpendingCategory.class);
         if (latest != null) {
             for (Transaction t : txns) {
                 if (!YearMonth.from(t.getTxnDate()).equals(latest)) {
@@ -63,6 +69,9 @@ public class OverviewService {
                     actualIncome = actualIncome.add(t.getAmount());
                 } else {
                     actualExpenses = actualExpenses.add(t.getAmount().abs());
+                    SpendingCategory category = CategoryMapper.resolve(
+                            t.getCanonicalCategory(), t.getCategory(), t.getDescription());
+                    actualByCategory.merge(category, t.getAmount().abs(), BigDecimal::add);
                 }
             }
         }
@@ -73,7 +82,46 @@ public class OverviewService {
                 !budget.isEmpty(),
                 latest == null ? null : latest.toString(),
                 planned,
-                new OverviewResponse.Actual(actualIncome, actualExpenses));
+                new OverviewResponse.Actual(actualIncome, actualExpenses),
+                byCategory(plannedByCategory(budget), actualByCategory));
+    }
+
+    /** Monthly planned spend per canonical category, from the EXPENSE budget lines. */
+    private Map<SpendingCategory, BigDecimal> plannedByCategory(List<BudgetLine> budget) {
+        Map<SpendingCategory, BigDecimal> planned = new EnumMap<>(SpendingCategory.class);
+        for (BudgetLine line : budget) {
+            if (line.getSection() != BudgetSection.EXPENSE) {
+                continue;
+            }
+            SpendingCategory category = CategoryMapper.fromBudgetGroup(line.getCategory());
+            planned.merge(category, monthlyOf(line), BigDecimal::add);
+        }
+        return planned;
+    }
+
+    /**
+     * One comparison row per canonical category present in the plan or the actuals,
+     * ordered by planned spend then actual — the biggest budget lines first.
+     */
+    private List<OverviewResponse.CategoryComparison> byCategory(
+            Map<SpendingCategory, BigDecimal> planned,
+            Map<SpendingCategory, BigDecimal> actual) {
+        var categories = new java.util.TreeSet<SpendingCategory>();
+        categories.addAll(planned.keySet());
+        categories.addAll(actual.keySet());
+
+        List<OverviewResponse.CategoryComparison> rows = new ArrayList<>();
+        for (SpendingCategory category : categories) {
+            rows.add(new OverviewResponse.CategoryComparison(
+                    category.label(),
+                    planned.getOrDefault(category, BigDecimal.ZERO),
+                    actual.getOrDefault(category, BigDecimal.ZERO)));
+        }
+        rows.sort(Comparator
+                .comparing(OverviewResponse.CategoryComparison::planned)
+                .thenComparing(OverviewResponse.CategoryComparison::actual)
+                .reversed());
+        return rows;
     }
 
     private BigDecimal monthlyTotal(List<BudgetLine> lines, BudgetSection section) {

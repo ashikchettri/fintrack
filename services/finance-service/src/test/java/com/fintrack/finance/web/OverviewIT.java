@@ -65,9 +65,16 @@ class OverviewIT {
     }
 
     private void txn(UUID household, UUID member, UUID accountId, LocalDate date, String amount) {
+        txnCat(household, member, accountId, date, amount, null, null);
+    }
+
+    private void txnCat(UUID household, UUID member, UUID accountId, LocalDate date, String amount,
+                        String bankCategory, String canonical) {
         transactionRepository.save(Transaction.builder()
                 .householdId(household).memberId(member).accountId(accountId)
-                .txnDate(date).description("t").amount(new BigDecimal(amount)).currency("AUD")
+                .txnDate(date).description(bankCategory == null ? "t" : bankCategory)
+                .category(bankCategory).canonicalCategory(canonical)
+                .amount(new BigDecimal(amount)).currency("AUD")
                 .visibility(Visibility.PERSONAL).source(TransactionSource.MANUAL)
                 .dedupHash("h" + UUID.randomUUID()).build());
     }
@@ -102,6 +109,40 @@ class OverviewIT {
                 .andExpect(jsonPath("$.planned.leftover").value(5400.0))     // 10000 − 2600 − 2000
                 .andExpect(jsonPath("$.actual.income").value(200.0))
                 .andExpect(jsonPath("$.actual.expenses").value(1500.0));     // June only
+    }
+
+    @Test
+    void breaksDownPlanVsActualByCanonicalCategory() throws Exception {
+        UUID household = UUID.randomUUID();
+        UUID me = UUID.randomUUID();
+
+        mockMvc.perform(put("/api/v1/household/budget").with(member(household, me))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"currency": "AUD", "lines": [
+                          {"section": "EXPENSE", "category": "Housing", "name": "Rent", "frequency": "MONTHLY", "amount": 2600},
+                          {"section": "EXPENSE", "category": "Groceries & Food", "name": "Groceries", "frequency": "MONTHLY", "amount": 1000}
+                        ]}""")).andExpect(status().isOk());
+
+        UUID accountId = accountRepository.save(
+                new Account(household, me, "Everyday", AccountType.CHECKING, "AUD", BigDecimal.ZERO)).getId();
+        // stored canonical wins for the grocery row; the transport row has no
+        // canonical, so the rollup derives it live from "Transportation"
+        txnCat(household, me, accountId, LocalDate.of(2026, 6, 5), "-240", "Food & Drink", "GROCERIES");
+        txnCat(household, me, accountId, LocalDate.of(2026, 6, 12), "-60", "Transportation", null);
+
+        mockMvc.perform(get("/api/v1/household/overview").with(member(household, me)))
+                .andExpect(status().isOk())
+                // ordered by planned spend desc: Housing (2600) then Groceries (1000) then Transport (0)
+                .andExpect(jsonPath("$.byCategory[0].category").value("Housing"))
+                .andExpect(jsonPath("$.byCategory[0].planned").value(2600.0))
+                .andExpect(jsonPath("$.byCategory[0].actual").value(0))
+                .andExpect(jsonPath("$.byCategory[1].category").value("Groceries & Food"))
+                .andExpect(jsonPath("$.byCategory[1].planned").value(1000.0))
+                .andExpect(jsonPath("$.byCategory[1].actual").value(240.0))
+                .andExpect(jsonPath("$.byCategory[2].category").value("Transport"))
+                .andExpect(jsonPath("$.byCategory[2].planned").value(0))
+                .andExpect(jsonPath("$.byCategory[2].actual").value(60.0));
     }
 
     @Test

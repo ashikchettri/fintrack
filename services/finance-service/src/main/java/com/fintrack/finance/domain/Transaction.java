@@ -51,6 +51,11 @@ public class Transaction {
     @Column(length = 60)
     private String subcategory;
 
+    // canonical spending category (ADR 008): the normalised bucket used by the
+    // budget-vs-actual rollup. Raw `category` above stays for provenance.
+    @Column(name = "canonical_category", length = 40)
+    private String canonicalCategory;
+
     // money: BigDecimal ↔ NUMERIC(19,4), signed. Never double.
     @Column(nullable = false, precision = 19, scale = 4)
     private BigDecimal amount;
@@ -97,6 +102,7 @@ public class Transaction {
         this.description = b.description;
         this.category = b.category;
         this.subcategory = b.subcategory;
+        this.canonicalCategory = b.canonicalCategory;
         this.amount = b.amount;
         this.currency = b.currency;
         this.originalDescription = b.originalDescription;
@@ -143,6 +149,11 @@ public class Transaction {
 
     public String getSubcategory() {
         return subcategory;
+    }
+
+    /** Canonical spending bucket (ADR 008); may be null for pre-V7 rows. */
+    public String getCanonicalCategory() {
+        return canonicalCategory;
     }
 
     public BigDecimal getAmount() {
@@ -199,6 +210,7 @@ public class Transaction {
         private String description;
         private String category;
         private String subcategory;
+        private String canonicalCategory;
         private BigDecimal amount;
         private String currency;
         private String originalDescription;
@@ -241,6 +253,11 @@ public class Transaction {
 
         public Builder subcategory(String v) {
             this.subcategory = v;
+            return this;
+        }
+
+        public Builder canonicalCategory(String v) {
+            this.canonicalCategory = v;
             return this;
         }
 
