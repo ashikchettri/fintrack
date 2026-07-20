@@ -1,4 +1,25 @@
-/** Household finance maths for the affordability calculator. */
+/** Household finance maths for the affordability calculator + budget. */
+
+/** Payments per year for each budget/pay frequency. */
+export const FREQUENCY_PER_YEAR: Record<string, number> = {
+  WEEKLY: 52,
+  FORTNIGHTLY: 26,
+  MONTHLY: 12,
+  QUARTERLY: 4,
+  ANNUALLY: 1,
+};
+
+/** Annualize a per-period amount by its frequency (0 if either is missing). */
+export function annualAmount(amount: number | null, frequency: string | null): number {
+  if (amount == null || !frequency) return 0;
+  return amount * (FREQUENCY_PER_YEAR[frequency] ?? 0);
+}
+
+/** The monthly equivalent of a per-period amount. */
+export function monthlyAmount(amount: number | null, frequency: string | null): number {
+  return annualAmount(amount, frequency) / 12;
+}
+
 
 /**
  * The standard amortized monthly repayment for a `principal` borrowed at

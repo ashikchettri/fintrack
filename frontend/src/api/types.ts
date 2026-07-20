@@ -122,6 +122,24 @@ export interface HomeLoan {
   updatedAt?: string | null;
 }
 
+export type BudgetSection = 'INCOME' | 'EXPENSE' | 'SAVING';
+export type BudgetFrequency = 'WEEKLY' | 'FORTNIGHTLY' | 'MONTHLY' | 'QUARTERLY' | 'ANNUALLY';
+
+/** One planned budget line — monthly/annual are derived from amount × frequency. */
+export interface BudgetLine {
+  section: BudgetSection;
+  category: string | null;
+  name: string;
+  frequency: BudgetFrequency | null;
+  amount: number | null;
+}
+
+/** The household budget: income, expenses (categorized) and savings. */
+export interface Budget {
+  currency: string;
+  lines: BudgetLine[];
+}
+
 /**
  * The household's monthly cash-flow snapshot — inputs to the affordability
  * question. `monthlySurplus = monthlyIncome − monthlyAvgSpending`.

@@ -1,5 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { monthlyRepayment } from './finance';
+import { annualAmount, monthlyAmount, monthlyRepayment } from './finance';
+
+describe('annualAmount / monthlyAmount', () => {
+  it('annualizes by frequency', () => {
+    expect(annualAmount(100, 'WEEKLY')).toBe(5200);
+    expect(annualAmount(250, 'QUARTERLY')).toBe(1000);
+    expect(annualAmount(1200, 'MONTHLY')).toBe(14400);
+  });
+
+  it('gives the monthly equivalent', () => {
+    expect(monthlyAmount(600, 'WEEKLY')).toBeCloseTo(2600, 0); // 600×52/12
+    expect(monthlyAmount(1200, 'ANNUALLY')).toBe(100);
+  });
+
+  it('is 0 when amount or frequency is missing', () => {
+    expect(annualAmount(null, 'WEEKLY')).toBe(0);
+    expect(monthlyAmount(100, null)).toBe(0);
+  });
+});
 
 describe('monthlyRepayment', () => {
   it('amortizes a standard loan', () => {
