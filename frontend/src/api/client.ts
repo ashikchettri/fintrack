@@ -1,4 +1,5 @@
 import type {
+  Budget,
   CashFlow,
   DashboardResponse,
   HomeLoan,
@@ -197,6 +198,19 @@ export const api = {
   /** The household's monthly cash-flow snapshot (income, spending, surplus). */
   getCashFlow(): Promise<CashFlow> {
     return withRefresh(() => request<CashFlow>('/api/v1/household/cash-flow'));
+  },
+
+  /** The household budget (saved, or the starter template if none). */
+  getBudget(): Promise<Budget> {
+    return withRefresh(() => request<Budget>('/api/v1/household/budget'));
+  },
+
+  /** Replace the household budget wholesale. */
+  saveBudget(budget: Budget): Promise<Budget> {
+    return withRefresh(() => request<Budget>('/api/v1/household/budget', {
+      method: 'PUT',
+      body: JSON.stringify(budget),
+    }));
   },
 
   async login(email: string, password: string): Promise<LoginResponse> {

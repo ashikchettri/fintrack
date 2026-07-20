@@ -249,6 +249,28 @@ describe('income', () => {
   });
 });
 
+describe('budget', () => {
+  it('getBudget() GETs the budget', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { currency: 'AUD', lines: [] }));
+
+    const budget = await api.getBudget();
+
+    expect(budget.currency).toBe('AUD');
+    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/api/v1/household/budget');
+  });
+
+  it('saveBudget() PUTs the budget', async () => {
+    tokenStore.set('jwt-held');
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { currency: 'AUD', lines: [] }));
+
+    await api.saveBudget({ currency: 'AUD', lines: [] });
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/v1/household/budget');
+    expect(init.method).toBe('PUT');
+  });
+});
+
 describe('cash flow', () => {
   it('getCashFlow() GETs the snapshot', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(200, { monthlySurplus: 4000, monthlyIncome: 7500 }));
