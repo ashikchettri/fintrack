@@ -10,6 +10,7 @@ import type {
   LoginResponse,
   MemberResponse,
   ProblemDetail,
+  RecategorizeResult,
   SharedHouseholdView,
   SignupResponse,
   TransactionResponse,
@@ -153,6 +154,13 @@ export const api = {
   /** The caller's household roster — names for the shared-commitments view. */
   householdMembers(): Promise<MemberResponse[]> {
     return withRefresh(() => request<MemberResponse[]>('/api/v1/households/members'));
+  },
+
+  /** Re-run the categorizer over the caller's transactions (ADR 009). */
+  recategorizeTransactions(): Promise<RecategorizeResult> {
+    return withRefresh(() => request<RecategorizeResult>('/api/v1/transactions/recategorize', {
+      method: 'POST',
+    }));
   },
 
   /** Public: accept an invite, creating an account inside the inviting household. */

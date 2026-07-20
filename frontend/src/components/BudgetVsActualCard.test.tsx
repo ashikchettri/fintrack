@@ -1,15 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { toast } from 'sonner';
 import { BudgetVsActualCard } from './BudgetVsActualCard';
 import { api } from '../api/client';
 import type { Overview } from '../api/types';
 import { renderWithProviders } from '../test/utils';
 
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+
 vi.mock('../api/client', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../api/client')>();
   return {
     ...actual,
-    api: { refresh: vi.fn().mockResolvedValue(false), me: vi.fn(), getOverview: vi.fn() },
+    api: {
+      refresh: vi.fn().mockResolvedValue(false),
+      me: vi.fn(),
+      getOverview: vi.fn(),
+      recategorizeTransactions: vi.fn(),
+    },
   };
 });
 
@@ -67,6 +76,35 @@ describe('BudgetVsActualCard', () => {
     expect(breakdown).toHaveTextContent('Groceries & Food');
     // a category with no plan and no spend is omitted
     expect(breakdown).not.toHaveTextContent('Health & Wellbeing');
+  });
+
+  it('recategorizes transactions and reports the result', async () => {
+    mockedApi.getOverview.mockResolvedValue(
+      overview({ byCategory: [{ category: 'Housing', planned: 2600, actual: 2600 }] }),
+    );
+    mockedApi.recategorizeTransactions.mockResolvedValue({ reviewed: 12, changed: 3 });
+    renderWithProviders(<BudgetVsActualCard />);
+
+    await userEvent.click(await screen.findByRole('button', { name: /recategorize/i }));
+
+    await waitFor(() => expect(mockedApi.recategorizeTransactions).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(vi.mocked(toast).success).toHaveBeenCalledWith(expect.stringContaining('Recategorized 3 of 12')),
+    );
+  });
+
+  it('reports when recategorizing changed nothing', async () => {
+    mockedApi.getOverview.mockResolvedValue(
+      overview({ byCategory: [{ category: 'Housing', planned: 2600, actual: 2600 }] }),
+    );
+    mockedApi.recategorizeTransactions.mockResolvedValue({ reviewed: 1, changed: 0 });
+    renderWithProviders(<BudgetVsActualCard />);
+
+    await userEvent.click(await screen.findByRole('button', { name: /recategorize/i }));
+
+    await waitFor(() =>
+      expect(vi.mocked(toast).success).toHaveBeenCalledWith(expect.stringContaining('all already up to date')),
+    );
   });
 
   it('omits the breakdown section when there are no categories', async () => {
