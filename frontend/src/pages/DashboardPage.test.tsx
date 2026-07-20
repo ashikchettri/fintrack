@@ -18,6 +18,7 @@ vi.mock('../api/client', async (importOriginal) => {
       importTransactions: vi.fn(),
       householdShared: vi.fn(),
       householdMembers: vi.fn().mockResolvedValue([]),
+      getOverview: vi.fn().mockResolvedValue({ hasBudget: false }),
       setTransactionVisibility: vi.fn(),
     },
   };
@@ -73,6 +74,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockedApi.refresh.mockResolvedValue(false);
   mockedApi.householdShared.mockResolvedValue(EMPTY_HOUSEHOLD);
+  mockedApi.householdMembers.mockResolvedValue([]);
+  mockedApi.getOverview.mockResolvedValue({ hasBudget: false } as never);
 });
 
 describe('DashboardPage', () => {

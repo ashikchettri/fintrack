@@ -271,6 +271,17 @@ describe('budget', () => {
   });
 });
 
+describe('overview', () => {
+  it('getOverview() GETs the rollup', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { hasBudget: true, planned: {}, actual: {} }));
+
+    const o = await api.getOverview();
+
+    expect(o.hasBudget).toBe(true);
+    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/api/v1/household/overview');
+  });
+});
+
 describe('cash flow', () => {
   it('getCashFlow() GETs the snapshot', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(200, { monthlySurplus: 4000, monthlyIncome: 7500 }));

@@ -56,5 +56,6 @@ Base path `/api/v1`. All errors are RFC 9457 `ProblemDetail` (`application/probl
 | `GET · PUT /api/v1/household/income` · `GET …/income/summary` | A member's own income (member-scoped; salary annualized by frequency + bonus + other). `summary` totals every member's annual income for the household |
 | `GET /api/v1/household/cash-flow` | Monthly snapshot: household income − avg spending = surplus (loan repayment shown as context). The affordability "what-if" (new loan → repayment → verdict) runs client-side against the surplus |
 | `GET · PUT /api/v1/household/budget` | The household budget — income / expenses (categorized) / savings line items with frequency + amount (household-scoped). GET returns the saved budget or a starter template; PUT replaces it wholesale. Monthly/annual + summary derived in the UI |
+| `GET /api/v1/household/overview` | Dashboard rollup: the monthly budget (plan) vs the caller's latest month of transactions (reality) — income & expense totals, so the dashboard is a position, not just a statement |
 
 **Privacy boundary (ADR 006):** personal queries filter `household_id + member_id`; the household shared view filters `household_id + visibility = 'shared'` across members, so personal rows are structurally unreachable.

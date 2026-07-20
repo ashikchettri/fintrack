@@ -2,6 +2,7 @@ import type {
   Budget,
   CashFlow,
   DashboardResponse,
+  Overview,
   HomeLoan,
   HouseholdIncome,
   Income,
@@ -211,6 +212,11 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(budget),
     }));
+  },
+
+  /** Dashboard rollup — the budget (plan) vs the latest month's actuals. */
+  getOverview(): Promise<Overview> {
+    return withRefresh(() => request<Overview>('/api/v1/household/overview'));
   },
 
   async login(email: string, password: string): Promise<LoginResponse> {

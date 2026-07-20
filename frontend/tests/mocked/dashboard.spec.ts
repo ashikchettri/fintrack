@@ -63,6 +63,8 @@ async function login(page: Page) {
   await page.route('**/api/v1/households/members', (route) =>
     route.fulfill(json([{ memberId: 'm1', name: 'Jane', role: 'OWNER', isYou: true }])),
   );
+  // the budget-vs-actual card self-fetches the rollup; default to "no budget"
+  await page.route('**/api/v1/household/overview', (route) => route.fulfill(json({ hasBudget: false })));
 }
 
 test.describe('dashboard', () => {
