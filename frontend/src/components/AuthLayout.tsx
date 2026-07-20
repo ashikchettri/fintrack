@@ -6,7 +6,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 export function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      <aside className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground lg:flex">
+      <aside className="auth-panel relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground lg:flex">
         <Logo size="lg" className="text-primary-foreground" />
         <div className="space-y-4">
           <h2 className="text-3xl font-semibold leading-tight tracking-tight">
