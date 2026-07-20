@@ -280,6 +280,17 @@ describe('overview', () => {
     expect(o.hasBudget).toBe(true);
     expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/api/v1/household/overview');
   });
+
+  it('recategorizeTransactions() POSTs and returns the counts', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { reviewed: 12, changed: 3 }));
+
+    const result = await api.recategorizeTransactions();
+
+    expect(result).toEqual({ reviewed: 12, changed: 3 });
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/v1/transactions/recategorize');
+    expect(init.method).toBe('POST');
+  });
 });
 
 describe('cash flow', () => {

@@ -133,6 +133,12 @@ export interface Overview {
   byCategory: { category: string; planned: number; actual: number }[];
 }
 
+/** Result of re-running the categorizer over the caller's transactions (ADR 009). */
+export interface RecategorizeResult {
+  reviewed: number;
+  changed: number;
+}
+
 export type BudgetSection = 'INCOME' | 'EXPENSE' | 'SAVING';
 export type BudgetFrequency = 'WEEKLY' | 'FORTNIGHTLY' | 'MONTHLY' | 'QUARTERLY' | 'ANNUALLY';
 

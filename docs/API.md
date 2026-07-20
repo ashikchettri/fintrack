@@ -50,6 +50,7 @@ Base path `/api/v1`. All errors are RFC 9457 `ProblemDetail` (`application/probl
 | `POST /api/v1/imports/transactions` (multipart `file`, `currency`) | Import a bank CSV → transactions + auto-created accounts, deduped |
 | `GET /api/v1/dashboard[?month=YYYY-MM]` | Dashboard read model: totals, by-category, by-month, top merchants, recent. `month` scopes the snapshot (the trend stays all-time); response carries `availableMonths` |
 | `GET /api/v1/transactions` | The caller's transactions (scoped) |
+| `POST /api/v1/transactions/recategorize` | Re-run the categorizer over the caller's transactions → `{reviewed, changed}` (ADR 009); member-scoped |
 | `PATCH /api/v1/transactions/{id}/visibility` (`{"visibility":"shared\|personal"}`) | Mark/unmark a shared commitment (ADR 006); member-scoped |
 | `GET /api/v1/household/shared[?month=YYYY-MM]` | Private household view of shared commitments — only shared items + agreed totals + suggested settlement, never personal spending (ADR 006) |
 | `GET · PUT /api/v1/household/home-loan` | The household's home-loan profile (jointly held → **household-scoped**, not member-scoped). Upserted; feeds the cash-flow + affordability calculations |

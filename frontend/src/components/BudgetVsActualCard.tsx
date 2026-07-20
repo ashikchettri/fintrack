@@ -1,7 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Scale } from 'lucide-react';
-import { api } from '../api/client';
+import { Scale, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
+import { ApiError, api } from '../api/client';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatMoney, formatMonth } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -56,7 +58,10 @@ export function BudgetVsActualCard() {
 
         {breakdown.length > 0 && (
           <div className="space-y-2.5 border-t pt-3" data-testid="category-breakdown">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">By category</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">By category</p>
+              <RecategorizeButton />
+            </div>
             {breakdown.map((c) => (
               <CategoryRow key={c.category} label={c.category} planned={c.planned}
                            actual={c.actual} currency={data.currency} />
@@ -65,6 +70,37 @@ export function BudgetVsActualCard() {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * Re-runs the categorizer over the caller's transactions (ADR 009) and refreshes
+ * the views that read canonical categories. Uses AI when it's enabled server-side,
+ * the rule mapper otherwise — either way the breakdown updates in place.
+ */
+function RecategorizeButton() {
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: api.recategorizeTransactions,
+    onSuccess: ({ reviewed, changed }) => {
+      toast.success(
+        changed > 0
+          ? `Recategorized ${changed} of ${reviewed} transaction${reviewed === 1 ? '' : 's'}.`
+          : `Reviewed ${reviewed} transaction${reviewed === 1 ? '' : 's'} — all already up to date.`,
+      );
+      void queryClient.invalidateQueries({ queryKey: ['overview'] });
+      void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+    onError: (error: unknown) =>
+      toast.error(error instanceof ApiError ? (error.problem.detail ?? 'Could not recategorize') : 'Network error'),
+  });
+
+  return (
+    <Button variant="ghost" size="sm" className="h-7 gap-1.5 px-2 text-xs"
+            onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+      <Sparkles className="size-3.5" aria-hidden="true" />
+      {mutation.isPending ? 'Recategorizing…' : 'Recategorize'}
+    </Button>
   );
 }
 

@@ -156,6 +156,11 @@ public class Transaction {
         return canonicalCategory;
     }
 
+    /** Re-derive the canonical bucket — the recategorize pass (ADR 009). */
+    public void setCanonicalCategory(String canonicalCategory) {
+        this.canonicalCategory = canonicalCategory;
+    }
+
     public BigDecimal getAmount() {
         return amount;
     }
