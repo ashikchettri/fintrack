@@ -8,6 +8,7 @@ import com.fintrack.finance.domain.Visibility;
 import com.fintrack.finance.repository.AccountRepository;
 import com.fintrack.finance.repository.TransactionRepository;
 import com.fintrack.finance.security.AuthenticatedMember;
+import com.fintrack.finance.service.ai.RuleBasedCategorizer;
 import com.fintrack.finance.service.csv.CsvParseResult;
 import com.fintrack.finance.service.csv.CsvTransactionParser;
 import com.fintrack.finance.service.csv.ParsedTransaction;
@@ -48,7 +49,10 @@ class TransactionImportServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new TransactionImportService(parser, accountRepository, transactionRepository);
+        // real rule-based categorizer — AI is off in tests, so canonical categories
+        // come from the same keyword rules as before
+        service = new TransactionImportService(parser, accountRepository, transactionRepository,
+                new RuleBasedCategorizer());
         caller = new AuthenticatedMember(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "OWNER");
     }
 

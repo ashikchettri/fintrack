@@ -37,7 +37,8 @@ Each phase produces something working and deployable. Don't start a phase until 
 **Auth journey ✅** works in the browser against the local stack (Vitest + Playwright mocked & e2e). Finance pages land alongside finance-service.
 
 ## Phase 4 — Claude AI + skills (1 week)
-- insight-service with Spring AI + Claude: auto-categorize transactions, monthly summary, NL Q&A via tool use.
+- insight-service with Spring AI + Claude: monthly summary, NL Q&A via tool use.
+- **Auto-categorize transactions ⏳ pulled forward** into finance-service (ADR 009): `TransactionCategorizer` seam, Claude via the Anthropic Messages API (behind a port, since Spring AI trails Boot 4.1), rule-based fallback, off by default. Remaining Phase-4 AI work (summaries, Q&A) still lands in insight-service.
 - Structured JSON outputs; prompt + eval notes in `docs/ai.md`.
 - Build 1–2 custom Claude skills for your dev workflow (endpoint scaffolding, review checklist).
 
