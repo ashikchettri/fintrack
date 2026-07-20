@@ -19,12 +19,17 @@ services:
       timeout: 3s
       retries: 10
 
-  # Uncomment in phase 2 (refresh-token store, rate limiting)
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: fintrack-redis
-  #   ports:
-  #     - "6379:6379"
+  # Backs the gateway rate limiter (ADR 007); later the refresh-token store too.
+  redis:
+    image: redis:7-alpine
+    container_name: fintrack-redis
+    ports:
+      - "${REDIS_HOST_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   # Local mail sink (ADR 004): signup verification emails land here.
   # Web inbox: http://localhost:8025 · SMTP: localhost:1025 (auth-service default)

@@ -56,7 +56,7 @@ A learning project covering the modern backend/DevOps stack end-to-end: Spring B
 
 **Phase 1 scope**: auth-service only, called directly. Gateway and finance-service in phase 2, insight-service in phase 4. Async events (Kafka) deliberately deferred — add later as a learning extension (e.g. "transaction created" → insight-service).
 
-> **As-built (2026-07):** Phase 1 is **complete and hardened**, and the React UI (originally phase 3) was pulled forward to validate the auth API end-to-end. finance-service is scaffolded and already verifies auth JWTs via JWKS. The gateway and Redis are still ahead. Concrete endpoints: [`docs/API.md`](API.md); design decisions: [`docs/decisions/`](decisions/). Trade-offs below still describe the intended direction.
+> **As-built (2026-07):** Phase 1 is **complete and hardened**, and the React UI (originally phase 3) was pulled forward to validate the auth API end-to-end. finance-service is well underway (accounts, transactions, CSV import, dashboard, home loan, income, budget) and verifies auth JWTs via JWKS. The **API gateway** (`gateway-service`, reactive Spring Cloud Gateway on `:8080`) and **Redis** (gateway rate limiter) are now scaffolded — see [ADR 007](decisions/007-api-gateway.md); the gateway runs in parallel and the frontend cuts over to `:8080` once it's verified end-to-end. Concrete endpoints: [`docs/API.md`](API.md); design decisions: [`docs/decisions/`](decisions/). Trade-offs below still describe the intended direction.
 
 ## 4. Service design
 

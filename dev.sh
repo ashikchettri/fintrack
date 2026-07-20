@@ -48,6 +48,8 @@ postgres_up() { docker exec fintrack-postgres pg_isready -U "${POSTGRES_USER:-fi
 mailpit_up()  { curl -sf http://localhost:8025/api/v1/info >/dev/null 2>&1; }
 backend_up()  { curl -sf http://localhost:8081/actuator/health 2>/dev/null | grep -q UP; }
 finance_up()  { curl -sf http://localhost:8082/actuator/health 2>/dev/null | grep -q UP; }
+redis_up()    { docker exec fintrack-redis redis-cli ping 2>/dev/null | grep -q PONG; }
+gateway_up()  { curl -sf http://localhost:8080/actuator/health 2>/dev/null | grep -q UP; }
 frontend_up() { port_in_use 5173; }
 # SonarQube is opt-in (docker compose --profile quality up -d sonarqube)
 sonarqube_up() { curl -sf http://localhost:9000/api/system/status 2>/dev/null | grep -q '"UP"'; }
@@ -57,8 +59,10 @@ status() {
   docker_up    && ok "Docker daemon"              || fail "Docker daemon (start Docker Desktop)"
   postgres_up  && ok "Postgres      :$PG_PORT"    || fail "Postgres"
   mailpit_up   && ok "Mailpit       :1025 / inbox http://localhost:8025" || fail "Mailpit"
+  redis_up     && ok "Redis         :6379"         || fail "Redis"
   backend_up   && ok "auth-service  http://localhost:8081  (Swagger: /swagger-ui.html)" || fail "auth-service"
   finance_up   && ok "finance-service http://localhost:8082 (Swagger: /swagger-ui.html)" || fail "finance-service"
+  gateway_up   && ok "gateway       http://localhost:8080  (single public entry, ADR 007)" || fail "gateway"
   frontend_up  && ok "frontend      http://localhost:5173" || fail "frontend"
   # only reported when running — it's an opt-in quality tool, not part of the app
   sonarqube_up && ok "SonarQube     http://localhost:9000  (login admin)"
@@ -140,6 +144,31 @@ stop_finance() {
   for _ in $(seq 1 10); do port_in_use 8082 || break; sleep 1; done
 }
 
+# gateway-service (:8080) is the single public entry point (ADR 007). It routes
+# to auth + finance and needs Redis for its rate limiter. Non-fatal on failure:
+# the gateway is being brought online, so a hiccup here shouldn't tear down the
+# rest of the stack. Cut the frontend over to :8080 only once it's verified.
+start_gateway() {
+  if gateway_up; then ok "gateway already running on :8080"; return; fi
+  warn "starting gateway-service — first compile can take a minute…"
+  (cd "$ROOT/services/gateway-service" \
+    && nohup ./gradlew bootRun --console=plain -q \
+       > "$LOG_DIR/gateway-service.log" 2>&1 & echo $! > "$LOG_DIR/gateway-service.pid")
+  for _ in $(seq 1 60); do gateway_up && break; sleep 3; done
+  gateway_up && ok "gateway up on :8080" \
+    || warn "gateway not up yet — see .dev-logs/gateway-service.log (stack still usable via :8081/:8082)"
+}
+
+stop_gateway() {
+  if [ -f "$LOG_DIR/gateway-service.pid" ]; then
+    pkill -P "$(cat "$LOG_DIR/gateway-service.pid")" 2>/dev/null || true
+    kill "$(cat "$LOG_DIR/gateway-service.pid")" 2>/dev/null || true
+    rm -f "$LOG_DIR/gateway-service.pid"
+  fi
+  port_in_use 8080 && lsof -nP -iTCP:8080 -sTCP:LISTEN -t | xargs kill 2>/dev/null || true
+  for _ in $(seq 1 10); do port_in_use 8080 || break; sleep 1; done
+}
+
 # restart just the backend with an explicit email transport
 switch_mail() {
   local provider="$1"
@@ -189,6 +218,15 @@ start() {
     mailpit_up && ok "Mailpit up (inbox: http://localhost:8025)" || { fail "Mailpit failed to start"; exit 1; }
   fi
 
+  if redis_up; then
+    ok "Redis already running on :6379"
+  else
+    warn "starting Redis…"
+    (cd "$ROOT" && docker compose up -d redis >/dev/null 2>&1)
+    for _ in $(seq 1 15); do redis_up && break; sleep 1; done
+    redis_up && ok "Redis up on :6379" || { fail "Redis failed to start"; exit 1; }
+  fi
+
   provider=$(default_provider)
   if backend_up && [ "$(current_provider)" = "$provider" ]; then
     ok "auth-service already running on :8081"
@@ -208,6 +246,7 @@ start() {
   fi
 
   start_finance
+  start_gateway
 
   if frontend_up; then
     ok "frontend already running on :5173"
@@ -231,6 +270,7 @@ start() {
   echo ""
   echo "All green. Open:"
   echo "  App          http://localhost:5173"
+  echo "  Gateway      http://localhost:8080  (single public entry — ADR 007)"
   echo "  auth API     http://localhost:8081/swagger-ui.html"
   echo "  finance API  http://localhost:8082/swagger-ui.html"
   echo "  Mail inbox   http://localhost:8025"
@@ -240,6 +280,7 @@ start() {
 # ---------- stop ------------------------------------------------------------
 stop() {
   echo "Stopping FinTrack dev stack…"
+  stop_gateway
   stop_backend
   stop_finance
   if [ -f "$LOG_DIR/frontend.pid" ]; then
@@ -249,7 +290,7 @@ stop() {
   fi
   # catch processes not started by this script (e.g. manual npm run dev)
   port_in_use 5173 && lsof -nP -iTCP:5173 -sTCP:LISTEN -t | xargs kill 2>/dev/null || true
-  (cd "$ROOT" && docker compose stop postgres mailpit >/dev/null 2>&1) || true
+  (cd "$ROOT" && docker compose stop postgres mailpit redis >/dev/null 2>&1) || true
   ok "stopped (containers paused, not removed — data kept)"
 }
 
@@ -257,7 +298,8 @@ case "${1:-start}" in
   start)   start ;;
   status)  status ;;
   stop)    stop ;;
+  gateway) stop_gateway; start_gateway ;;
   resend)  switch_mail resend ;;
   mailpit) switch_mail mailpit ;;
-  *) echo "usage: ./dev.sh [start|status|stop|resend|mailpit]"; exit 1 ;;
+  *) echo "usage: ./dev.sh [start|status|stop|gateway|resend|mailpit]"; exit 1 ;;
 esac
