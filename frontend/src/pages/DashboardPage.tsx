@@ -8,6 +8,7 @@ import { Alert } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ImportCsvCard } from '@/components/ImportCsvCard';
 import { SharedCommitmentsCard } from '@/components/SharedCommitmentsCard';
+import { BudgetVsActualCard } from '@/components/BudgetVsActualCard';
 import { ShareToggle } from '@/components/ShareToggle';
 import { DonutChart } from '@/components/charts/DonutChart';
 import { BarChart } from '@/components/charts/BarChart';
@@ -113,7 +114,9 @@ function Populated({ data, month }: { data: DashboardResponse; month: string | n
              icon={<Wallet className="size-4" aria-hidden="true" />} />
       </div>
 
-      {/* the differentiator: household coordination, not just a statement view */}
+      {/* the rollup: budget (plan) vs actual, and household coordination —
+          not just a statement view */}
+      <BudgetVsActualCard />
       <SharedCommitmentsCard month={month} />
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">

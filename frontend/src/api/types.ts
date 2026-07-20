@@ -122,6 +122,15 @@ export interface HomeLoan {
   updatedAt?: string | null;
 }
 
+/** Dashboard rollup — the household budget (plan) vs the latest month's actuals. */
+export interface Overview {
+  currency: string;
+  hasBudget: boolean;
+  actualMonth: string | null;
+  planned: { income: number; expenses: number; savings: number; leftover: number };
+  actual: { income: number; expenses: number };
+}
+
 export type BudgetSection = 'INCOME' | 'EXPENSE' | 'SAVING';
 export type BudgetFrequency = 'WEEKLY' | 'FORTNIGHTLY' | 'MONTHLY' | 'QUARTERLY' | 'ANNUALLY';
 
