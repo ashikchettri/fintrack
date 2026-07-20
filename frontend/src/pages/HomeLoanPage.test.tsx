@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';
 import HomeLoanPage from './HomeLoanPage';
@@ -46,8 +46,10 @@ describe('HomeLoanPage', () => {
     expect(screen.queryByLabelText('Total loan amount')).not.toBeInTheDocument();
 
     await userEvent.click(toggle);
+    // scope to the form: the payoff calculator below has its own rate input
+    const form = screen.getByLabelText('Total loan amount').closest('form') as HTMLFormElement;
     await userEvent.type(screen.getByLabelText('Total loan amount'), '650000');
-    await userEvent.type(screen.getByLabelText('Interest rate (% p.a.)'), '6.25');
+    await userEvent.type(within(form).getByLabelText('Interest rate (% p.a.)'), '6.25');
     await userEvent.selectOptions(screen.getByLabelText('Repayment frequency'), 'MONTHLY');
     await userEvent.selectOptions(screen.getByLabelText('Whose name is the loan in?'), 'JOINT');
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -70,7 +72,8 @@ describe('HomeLoanPage', () => {
     renderWithProviders(<HomeLoanPage />, ['/home-loan']);
 
     await waitFor(() => expect(screen.getByLabelText('Total loan amount')).toHaveValue(500000));
-    expect(screen.getByLabelText('Interest rate (% p.a.)')).toHaveValue(5.99);
+    const form = screen.getByLabelText('Total loan amount').closest('form') as HTMLFormElement;
+    expect(within(form).getByLabelText('Interest rate (% p.a.)')).toHaveValue(5.99);
     // offset sub-field is shown because hasOffset is true
     expect(screen.getByLabelText('Savings in offset account')).toHaveValue(42000);
   });

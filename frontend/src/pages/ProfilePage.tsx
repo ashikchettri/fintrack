@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { AppShell } from '@/components/AppShell';
+import { HouseholdSection } from '@/components/HouseholdSection';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,7 +45,7 @@ export default function ProfilePage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-md">
+      <div className="mx-auto max-w-lg space-y-6">
         <Card>
           <CardHeader className="items-center pb-4 text-center">
             <span className="mb-2 flex size-16 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground">
@@ -94,6 +95,8 @@ export default function ProfilePage() {
             </Button>
           </CardContent>
         </Card>
+
+        <HouseholdSection />
       </div>
     </AppShell>
   );

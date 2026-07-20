@@ -7,54 +7,43 @@ import { ApiError, api } from '../api/client';
 import type { MemberResponse } from '../api/types';
 import { inviteSchema } from '@/validators/auth';
 import type { InviteValues } from '@/validators/auth';
-import { AppShell } from '@/components/AppShell';
-import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export default function HouseholdPage() {
-  const { data: members, isPending, isError } = useQuery({
+/**
+ * The household roster + (owner-only) invite — embedded in the profile page.
+ * Self-fetching; stays quiet on load/error so it never blocks the profile.
+ */
+export function HouseholdSection() {
+  const { data: members, isError } = useQuery({
     queryKey: ['household-members'],
     queryFn: api.householdMembers,
     retry: false,
   });
 
-  if (isPending) {
-    return <AppShell><p className="text-muted-foreground">Loading your household…</p></AppShell>;
-  }
-  if (isError || !members) {
-    return <AppShell><Alert role="alert" className="max-w-md">Could not load your household.</Alert></AppShell>;
-  }
+  if (isError || !members) return null;
 
   const isOwner = members.some((m) => m.isYou && m.role === 'OWNER');
 
   return (
-    <AppShell>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Household</h1>
-        <p className="text-sm text-muted-foreground">
-          Everyone here can coordinate shared costs — without exposing personal spending.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Users className="size-4" aria-hidden="true" />
+            Household
+          </CardTitle>
+          <CardDescription>Everyone here can coordinate shared costs — personal spending stays private.</CardDescription>
+        </CardHeader>
+        <CardContent className="divide-y">
+          {members.map((m) => <MemberRow key={m.memberId} member={m} />)}
+        </CardContent>
+      </Card>
 
-      <div className="mx-auto max-w-lg space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Users className="size-4" aria-hidden="true" />
-              Members
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="divide-y">
-            {members.map((m) => <MemberRow key={m.memberId} member={m} />)}
-          </CardContent>
-        </Card>
-
-        {isOwner && <InviteCard />}
-      </div>
-    </AppShell>
+      {isOwner && <InviteCard />}
+    </div>
   );
 }
 

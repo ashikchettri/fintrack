@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { ApiError, api } from '../api/client';
 import type { HomeLoan } from '../api/types';
 import { AppShell } from '@/components/AppShell';
+import { LoanCalculator } from '@/components/LoanCalculator';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -93,8 +94,8 @@ function HomeLoanForm({ loan }: { loan: HomeLoan }) {
   });
 
   return (
-    <div className="mx-auto max-w-lg">
-      <div className="mb-6">
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <div>
         <h1 className="text-2xl font-semibold tracking-tight">Home loan</h1>
         <p className="text-sm text-muted-foreground">
           Used to work out your household&apos;s cash flow — and later, what you can afford.
@@ -151,6 +152,14 @@ function HomeLoanForm({ loan }: { loan: HomeLoan }) {
           </form>
         </CardContent>
       </Card>
+
+      {hasLoan && (
+        <LoanCalculator
+          loanAmount={loan.loanAmount}
+          interestRate={loan.interestRate}
+          currency={loan.currency}
+        />
+      )}
     </div>
   );
 }

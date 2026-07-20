@@ -6,7 +6,6 @@ import CashFlowPage from './pages/CashFlowPage';
 import DashboardPage from './pages/DashboardPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import HomeLoanPage from './pages/HomeLoanPage';
-import HouseholdPage from './pages/HouseholdPage';
 import IncomePage from './pages/IncomePage';
 import JoinHouseholdPage from './pages/JoinHouseholdPage';
 import LoginPage from './pages/LoginPage';
@@ -49,14 +48,8 @@ export default function App() {
           </RequireAuth>
         }
       />
-      <Route
-        path="/household"
-        element={
-          <RequireAuth>
-            <HouseholdPage />
-          </RequireAuth>
-        }
-      />
+      {/* household moved into the profile page */}
+      <Route path="/household" element={<Navigate to="/profile" replace />} />
       <Route
         path="/home-loan"
         element={

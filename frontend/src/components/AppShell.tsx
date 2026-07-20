@@ -17,7 +17,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           <nav className="flex flex-wrap items-center gap-1 text-sm">
             <ShellLink to="/dashboard">Dashboard</ShellLink>
             <ShellLink to="/cash-flow">Cash flow</ShellLink>
-            <ShellLink to="/household">Household</ShellLink>
             <ShellLink to="/home-loan">Home loan</ShellLink>
             <ShellLink to="/budget">Income &amp; expenses</ShellLink>
             <ShellLink to="/profile">Profile</ShellLink>
