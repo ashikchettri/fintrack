@@ -1,11 +1,11 @@
 # FinTrack — Claude context
 
-Household personal-finance tracker; learning project for Spring Boot 4 microservices → Docker → K8s → GCP. Owner: ashik (senior engineer, finance industry).
+Household personal-finance platform: Spring Boot 4 microservices behind a reactive API gateway, a React 19 SPA, and Claude-powered transaction categorization. Owner: ashik (senior engineer, finance industry).
 
 ## Read first
 
 - `docs/ARCHITECTURE.md` — services, stack, trade-offs
-- `docs/ROADMAP.md` — phases; **check which phase we're in before suggesting work**
+- `docs/ROADMAP.md` — what's shipped vs. next; **check it before suggesting work**
 - `docs/API.md` — endpoint reference (auth + finance)
 - `docs/TEMPLATE.md` — the reusable, domain-agnostic auth starter (what to keep/strip when extracting)
 - `docs/PRODUCT.md` — the FinTrack finance-tracker domain (households, accounts, budgets, privacy)
@@ -13,11 +13,18 @@ Household personal-finance tracker; learning project for Spring Boot 4 microserv
 
 ## Current state
 
-Phase 1 **complete + hardened**. auth-service: signup + 6-digit email verification, login (RS256 JWT + JWKS), refresh rotation with reuse detection, logout, `/users/me`, password reset with session revocation, authenticated **change-password** and **change-email**, login throttling, request correlation IDs (traceId in every ProblemDetail), Swagger UI. Refresh token = httpOnly `SameSite=Strict` cookie (ADR 003). Email via a provider chain (ADR 004): Gmail SMTP / Resend / Mailpit — `./dev.sh` picks Gmail if configured else Mailpit; `./dev.sh mailpit|resend` flip it. React UI (Vite + TS + Tailwind + shadcn + TanStack Query + react-hook-form + zod + Sonner + light/dark theme) covers every auth flow. finance-service scaffolded, verifying auth JWTs via JWKS. ~200 tests (JUnit + Testcontainers + Karate + Vitest + Playwright), both Sonar gates > 90%. Repo public with branch protection (7 required checks). Local stack: `./dev.sh`. **Next: phase 2 finance-service accounts/transactions/budgets.**
+Three services run together via `./dev.sh` (Postgres, Redis, Mailpit, gateway, auth, finance, frontend).
+
+- **auth-service** (:8081): signup + 6-digit email verification, login (RS256 JWT + JWKS), refresh rotation with reuse detection, logout, `/users/me`, password reset with session revocation, authenticated change-password/change-email, login throttling, household **email invitations** (multi-member), request correlation IDs, Swagger. Refresh token = httpOnly `SameSite=Strict` cookie (ADR 003). Email via provider chain (ADR 004): Gmail SMTP / Resend / Mailpit.
+- **finance-service** (:8082): accounts, transactions, **CSV import** (dedup, auto-created accounts), **dashboard** (KPIs/category/monthly/merchants), **budgets** + **budget-vs-actual per canonical category** (ADR 008), **AI categorization** (ADR 009, opt-in Claude + rule fallback) with a **recategorize** endpoint, **home loan** + payoff calculator, **income** + **cash flow**/affordability, **shared commitments** (ADR 006, personal-by-default). Verifies auth JWTs via JWKS; correlation IDs (ADR 010).
+- **gateway-service** (:8080): reactive Spring Cloud Gateway (ADR 007) — routing, CORS, Redis rate limiting, edge correlation IDs.
+- **React 19 SPA**: every flow above — Dashboard, Cash flow, Home loan, Income & expenses, Profile (household roster + invites), Settings; charts (donut/bar/payoff); light/dark.
+
+~250 tests (JUnit + Testcontainers + Karate + Vitest + Playwright), coverage gates enforced. Public repo, branch protection. **Next: see `docs/ROADMAP.md` (Redis refresh-token store, insight-service, containerization → K8s).**
 
 ## Stack
 
-Java 25 · Spring Boot 4.1 · Gradle (Kotlin DSL, shared version catalog `gradle/libs.versions.toml`) · Postgres 17 · Flyway · Testcontainers · Argon2id · Nimbus JOSE (RS256/JWKS) · Spring Mail + Resend SDK. Frontend: React 19 · Vite · TypeScript · Tailwind v4 · shadcn-style components · TanStack Query · react-hook-form + zod · Sonner. Later: Spring Cloud Gateway, Redis, Spring AI + Claude, Minikube/GKE.
+Java 25 · Spring Boot 4.1 (Spring Framework 7) · Gradle (Kotlin DSL, shared version catalog `gradle/libs.versions.toml`) · Postgres 17 (schema-per-service) · Redis · Flyway · Testcontainers · Argon2id · Nimbus JOSE (RS256/JWKS) · reactive Spring Cloud Gateway · Anthropic Messages API (Claude, behind a port) · Spring Mail + Resend SDK. **Note: Boot 4.1 uses Jackson 3 (`tools.jackson`), not Jackson 2** — annotations stay `com.fasterxml.jackson.annotation`. Frontend: React 19 · Vite · TypeScript · Tailwind v4 · shadcn-style components · TanStack Query · react-hook-form + zod · Sonner. Ahead: Minikube/GKE, insight-service.
 
 ## Conventions — enforce these in every change
 
@@ -46,6 +53,6 @@ cd frontend && npm run test:coverage       # Vitest; npm run test:ui (mocked) / 
 
 Machine-specific gotchas (also in Claude memory): a native Postgres owns 5432, so compose maps `POSTGRES_HOST_PORT=5433` and `bootRun` needs `DB_PORT=5433` — `./dev.sh` handles both. `DOCKER_DEFAULT_PLATFORM=linux/amd64` in the shell forces amd64 images on this arm64 Mac; `./dev.sh` overrides to arm64.
 
-## Learning mode
+## Ways of working
 
-This is a learning project: when making non-obvious choices, explain the why briefly. Record significant decisions as ADRs in `docs/decisions/`. Owner types the fix when debugging together — suggest, don't just apply, unless asked.
+When making non-obvious choices, explain the why briefly. Record significant decisions as ADRs in `docs/decisions/`. Owner types the fix when debugging together — suggest, don't just apply, unless asked.

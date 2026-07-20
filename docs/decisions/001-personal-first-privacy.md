@@ -16,6 +16,6 @@ FinTrack supports households with multiple members (owner, partner, children). F
 
 ## Consequences
 
-- Positive: honest logging isn't penalized; family value prop ("see our shared finances") survives; policy-based authorization is still exercised (the learning goal).
+- Positive: honest logging isn't penalized; family value prop ("see our shared finances") survives; the privacy boundary is enforced in the query, not bolted on afterward.
 - Negative: "family total spending" is only as accurate as what members share; aggregate totals partially reveal spending levels (accepted — totals without line items is the standard compromise).
 - Revisit at Phase 7 with real usage experience; dropping family features entirely remains a zero-cost option.

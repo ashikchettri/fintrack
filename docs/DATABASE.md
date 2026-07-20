@@ -2,7 +2,7 @@
 
 The dev Postgres runs in a Docker container (`fintrack-postgres`). `./db.sh` wraps `psql` via `docker exec`, so it works no matter which host port the container is mapped to. Postgres must be running — `./dev.sh` starts it.
 
-Schema-per-service: `auth` (identity) and `finance` (empty until Phase 2). `flyway_schema_history` in each tracks applied migrations.
+Schema-per-service: `auth` (identity, households) and `finance` (accounts, transactions, budgets, income, home loan, shared commitments). `flyway_schema_history` in each tracks applied migrations.
 
 ## The `./db.sh` helper
 

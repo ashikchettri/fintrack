@@ -4,9 +4,9 @@
 
 ## Context
 
-Signup should prove mailbox ownership before an account can log in (phase-1
-stretch item, pulled forward). Interim sender is a dedicated Gmail account;
-a custom domain (and likely a transactional provider) comes later.
+Signup should prove mailbox ownership before an account can log in. Interim
+sender is a dedicated Gmail account; a custom domain (and likely a transactional
+provider) comes later.
 
 ## Decision
 

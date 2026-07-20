@@ -1,6 +1,6 @@
 # frontend
 
-React 19 + Vite + TypeScript SPA for FinTrack. Covers the full auth journey today; finance pages arrive with Phase 2.
+React 19 + Vite + TypeScript SPA for FinTrack — the full app: auth, dashboard, budgets, home loan, income & cash flow, and household sharing.
 
 ## Stack
 
@@ -10,11 +10,14 @@ React 19 + Vite + TypeScript SPA for FinTrack. Covers the full auth journey toda
 - **react-hook-form + zod** for forms (schemas in `src/validators/`)
 - **Sonner** toasts · **light/dark theme** (`ThemeProvider`, persisted, follows the OS)
 - Access token in JS memory only; refresh token in an httpOnly cookie (ADR 003) — sessions survive reloads via silent refresh
-- Dev server proxies `/api` → `http://localhost:8081` (no CORS config needed)
+- Dev server proxies `/api` → the services (auth `:8081` / finance `:8082`); the production entry point is the gateway (`:8080`)
 
 ## Pages
 
-`/signup` · `/verify-email` · `/login` · `/forgot-password` · `/reset-password` · `/profile` (protected) · `/settings` (protected: change password, change email). The API client (`src/api/client.ts`) attaches the bearer token, does one silent refresh on a 401, and parses RFC 9457 problem bodies into a typed `ApiError`.
+**Public:** `/signup` · `/verify-email` · `/login` · `/forgot-password` · `/reset-password` · `/join` (accept a household invite).
+**Protected:** `/dashboard` (CSV import → KPIs, charts, budget-vs-actual) · `/cash-flow` · `/home-loan` (+ payoff calculator) · `/budget` (income & expenses) · `/profile` (household roster + invites) · `/settings` (change password/email).
+
+The API client (`src/api/client.ts`) attaches the bearer token, does one silent refresh on a 401, and parses RFC 9457 problem bodies into a typed `ApiError`.
 
 ## Run
 

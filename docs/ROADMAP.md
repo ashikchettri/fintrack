@@ -1,81 +1,67 @@
 # FinTrack Roadmap
 
-Each phase produces something working and deployable. Don't start a phase until the previous one's "done when" holds.
+Each milestone produces something working and deployable. FinTrack is built incrementally — a runnable, tested app at every step.
 
-## Phase 0 — Setup (½ day)
-- Install: Java 25 (SDKMAN), Docker Desktop, Minikube, kubectl, Node 22, gcloud CLI.
-- Create monorepo: `services/`, `frontend/`, `infra/`, `docs/` (these two files go in `docs/`), root `CLAUDE.md`.
-- GitHub repo + branch protection + empty GitHub Actions workflow.
+## Shipped
 
-**Done when:** `docker run hello-world`, `minikube start`, and `java --version` → 25 all work.
+### Identity & households (auth-service)
+- Signup with 6-digit **email verification**, login, refresh (rotation + **reuse detection**), logout, `/users/me`.
+- **RS256 JWT + JWKS** — other services verify against the public key, no shared secrets. Claims carry `householdId` + `memberId` + `role`.
+- **Argon2id** password hashing; refresh token in an **httpOnly `SameSite=Strict` cookie** (ADR 003).
+- **Password reset** (revokes sessions), authenticated **change-password** and **change-email**, login throttling — all one-time codes hashed, TTL'd, attempt-capped (ADR 004/005).
+- **Households**: signup creates a single-member household (`OWNER`); the owner **invites** partners/family by email to join and contribute.
+- Email via a provider chain: **Gmail SMTP → Resend → Mailpit** (ADR 004).
 
-## Phase 1 — auth-service, done properly ✅ COMPLETE (+ hardened)
-- Spring Boot 4.1 service: signup, login, refresh (rotation + reuse detection), logout, `/users/me`. ✅
-- Household groundwork: signup auto-creates a single-member household (`OWNER` role); JWT carries `householdId` + `memberId` + `role` claims. ✅
-- Postgres via Docker Compose, Flyway migrations, Argon2id, RS256 JWTs + JWKS endpoint. ✅
-- Bean Validation, RFC 9457 Problem Details (+ traceId), springdoc OpenAPI UI. ✅
-- Tests: unit + Testcontainers + Karate for every endpoint; CI on every PR. ✅
-- **Beyond the original scope** (former stretch items, now built): email verification, password reset, change-password, change-email, login throttling, request correlation IDs, three-provider email (Gmail/Resend/Mailpit). See ADRs 002–005.
+### Money (finance-service)
+- **Accounts & transactions**, every row and query scoped by `householdId` + `memberId`; money as `NUMERIC(19,4)` + currency.
+- **CSV import** — bank statement in, deduplicated transactions out, accounts auto-created from the file (the hero flow).
+- **Dashboard** — KPIs, spend by category, monthly bars, top merchants, recent activity.
+- **Budgets** — household budget (income/expense/savings) with a starter template, rolled up to **budget vs actual** in totals and **per canonical category**.
+- **Canonical category taxonomy** (ADR 008) shared by budget lines and transactions.
+- **AI categorization** (ADR 009) — Claude behind a `TransactionCategorizer` seam, opt-in, rule-based fallback, plus a **recategorize** action for existing rows.
+- **Home loan** + payoff calculator (amortization, interest, extra-repayment savings).
+- **Income & cash flow** — per-member income profiles → household income, surplus, affordability.
+- **Shared commitments** (ADR 006) — personal-by-default, opt-in sharing, equal-split settlement.
 
-**Done ✅:** full signup→verify→login→refresh→logout flow works via Swagger UI and the React UI; token reuse is detected; both Sonar gates green; CI green.
+### Platform
+- **API gateway** (reactive Spring Cloud Gateway, ADR 007) — single entry point, routing, CORS, Redis-backed rate limiting.
+- **Request correlation IDs** (ADR 010) — one `X-Request-Id` across the gateway and services, into logs and every error body.
+- **React 19 SPA** — every flow above, light/dark theme, charts, TanStack Query, react-hook-form + zod.
+- **CI** on every PR: build, tests, coverage gates, secret scan; branch protection.
+- **One-command local stack** (`./dev.sh`): Postgres, Redis, Mailpit, all services, frontend.
 
-## Phase 2 — finance-service + gateway (1–2 weeks)
-- finance-service: accounts/transactions/budgets CRUD, JWT verification via JWKS, ownership checks, pagination/filter/sort.
-- All tables scoped by `householdId` + `memberId` from the first migration; transactions carry a `visibility` flag defaulting to `personal` (ADR 001). One member for now — the columns cost nothing, retrofitting costs everything.
-- Spring Cloud Gateway: routing, CORS, rate limiting; clients now hit only the gateway. **⏳ scaffolded** — `gateway-service` (reactive, `:8080`) with routing + CORS + Redis rate limiting (ADR 007); frontend cut-over to `:8080` pending end-to-end verification.
-- Redis for refresh-token store + login rate limiting. **⏳ in progress** — backs the gateway rate limiter now; refresh-token store next.
-- Compose runs the whole stack with one command. ✅ (`./dev.sh`)
+## Next
 
-**Done when:** you can create/list/delete transactions through the gateway with a JWT from auth-service; a user cannot read another user's data (test proves it).
+### Redis refresh-token store
+- Move refresh tokens off in-process state into Redis (the gateway already uses Redis for rate limiting), so sessions survive restarts and scale horizontally.
 
-## Phase 3 — React UI (partly done, pulled forward)
-- Vite + React 19 + TypeScript + Tailwind/shadcn. **Auth pages done**: signup, verify-email, login, forgot/reset password, profile, account settings (change password/email); light/dark theme; toasts. ✅
-- Auth: access token in memory, refresh via httpOnly cookie; fetch client does one silent refresh on 401. ✅
-- TanStack Query for server state; react-hook-form + zod, mirroring backend rules. ✅
-- **Remaining** (with Phase 2): dashboard, transactions (add/edit/delete), budgets.
+### insight-service (AI)
+- Monthly spending summaries and natural-language Q&A ("how much did I spend on food in June?") via Claude tool use against finance-service, reusing the Anthropic client pattern from ADR 009. Structured JSON output, batching, cost control.
+- Harden categorization: tool-use-enforced structured output and an evaluation set.
 
-**Auth journey ✅** works in the browser against the local stack (Vitest + Playwright mocked & e2e). Finance pages land alongside finance-service.
+### Containerization → Kubernetes
+- Multi-stage Dockerfiles per service (non-root, layered jars); Trivy image scan in CI.
+- Kubernetes manifests in `infra/k8s/`: Deployments, Services, Ingress, ConfigMaps, Secrets, liveness/readiness probes, resource limits; Postgres as a StatefulSet + PVC. Then a Helm chart.
+- Zero-downtime rolling updates and rollbacks.
 
-## Phase 4 — Claude AI + skills (1 week)
-- insight-service with Spring AI + Claude: monthly summary, NL Q&A via tool use.
-- **Auto-categorize transactions ⏳ pulled forward** into finance-service (ADR 009): `TransactionCategorizer` seam, Claude via the Anthropic Messages API (behind a port, since Spring AI trails Boot 4.1), rule-based fallback, off by default. Remaining Phase-4 AI work (summaries, Q&A) still lands in insight-service.
-- Structured JSON outputs; prompt + eval notes in `docs/ai.md`.
-- Build 1–2 custom Claude skills for your dev workflow (endpoint scaffolding, review checklist).
+### Google Cloud
+- Artifact Registry, GKE Autopilot, Cloud SQL (Postgres), Secret Manager, managed TLS + HTTPS load balancer via Ingress.
+- GitHub Actions on tag → build, scan, push, deploy (Workload Identity Federation, no key files).
+- Cost guardrails: billing alerts; tear down when idle.
 
-**Done when:** new transactions get auto-categorized and the dashboard shows an AI monthly summary.
+### Family & richer authorization
+- Policy-based authorization: adults see `shared` household items + aggregate totals; children see only their own. Tests prove every rule.
+- Family dashboard: shared budgets/bills, per-member totals, member switcher.
+- Split rules beyond equal split (income-based, custom weights); a stored `split_agreement`.
 
-## Phase 5 — Docker → Minikube (1–2 weeks)  ← the K8s learning core
-- Multi-stage Dockerfiles per service (non-root, layered jars); Trivy scan in CI.
-- Raw manifests in `infra/k8s/`: Deployments, Services, Ingress (minikube addon), ConfigMaps, Secrets, liveness/readiness probes, resource limits; Postgres as StatefulSet + PVC.
-- Practice ops: `kubectl logs/describe/exec`, rolling updates, rollbacks, scaling, HPA.
-- Then convert manifests to a Helm chart.
+### Production hardening
+- Prometheus + Grafana, structured JSON logging, **OpenTelemetry** distributed tracing (the correlation id from ADR 010 becomes the trace id).
+- Frontend performance (route-level code splitting), surfacing the `traceId` in error UIs.
+- Optional: Kafka events between services, Argo CD GitOps, Keycloak swap-in, k6 load testing, NetworkPolicies.
 
-**Done when:** full app runs on Minikube via `helm install`; you can roll out a new image version with zero downtime and roll it back.
+## Principles
 
-## Phase 6 — Google Cloud (1–2 weeks)
-- Artifact Registry for images; GKE Autopilot cluster; Cloud SQL Postgres; Secret Manager; managed cert + HTTPS Load Balancer via Ingress.
-- GitHub Actions: on tag → build, scan, push, deploy to GKE (Workload Identity Federation, no key files).
-- **Cost guardrails:** billing alerts at $10/$25; tear down with `terraform destroy`/`gcloud` when idle — Autopilot + Cloud SQL idle at roughly $2–4/day.
-
-**Done when:** app is live on a public HTTPS URL, deployed by CI, and you can tear it all down and recreate it from scratch.
-
-## Phase 7 — Family & income (1–2 weeks) — *revisit ADR 001 before starting*
-- Framing: **shared budgets and bills**, not expense transparency. Everything defaults `personal`; members deliberately share mortgage/groceries/bills to the household.
-- Invitation flow: owner invites partner/child by email — signed, expiring, single-use tokens; accept → join household with `ADULT` or `CHILD` role.
-- Income profile per member: salary, super/pension contributions, tax withheld.
-- Policy-based authorization: adults see `household` items + aggregate totals only; children see only their own. Tests prove every rule.
-- UI: member switcher, family dashboard (shared budgets, bills, per-member totals), income profile page.
-- AI extension: family-level monthly summary over shared items; tax estimate as an insight-service feature (clearly labeled as an estimate).
-
-**Done when:** a second real user joins via email invite, both contribute transactions, the family dashboard shows shared budgets + per-member totals, and a test proves an adult cannot read a partner's `personal` transactions.
-
-## Phase 8 — Production polish (ongoing)
-- Prometheus + Grafana dashboards; structured JSON logging; distributed tracing (OpenTelemetry).
-- Pick extensions by interest: Kafka events between services, Argo CD GitOps, Keycloak swap-in for auth, Terraform for all GCP infra, k6 load testing, NetworkPolicies.
-
-## Rules of the road
-1. **Working software every phase** — never more than a few days from something runnable.
-2. **Write tests as you go**, not after. Testcontainers from day one.
-3. **Commit small, push daily**; CI green before moving on.
-4. **Keep a `docs/decisions/` folder** — one short ADR per big choice. Interviewers love this.
-5. When stuck >2h, use Claude to debug — but type the fix yourself and note what you learned in `docs/til.md`.
+1. **Working software at every step** — never far from something runnable.
+2. **Tests ship with the feature** — unit + Testcontainers integration + API/e2e; a feature without tests isn't done.
+3. **Small PRs, green CI before merge.** Every change goes through a PR against `main`.
+4. **One short ADR per significant decision** in `docs/decisions/`.

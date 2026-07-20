@@ -16,7 +16,7 @@ What we are **not** trying to solve here: the gateway is not where authorization
 
 1. **Add `gateway-service` as the only public port (`:8080`).** auth (`:8081`) and finance (`:8082`) become internal — in dev they still bind localhost, in K8s they become `ClusterIP` services with no Ingress. The frontend (Vite proxy in dev, Ingress in prod) targets **only** `:8080`.
 
-2. **Reactive Spring Cloud Gateway**, not the servlet (MVC) gateway. The business services stay Spring MVC; the gateway is a thin routing layer where the reactive model is contained and never leaks into domain code. We pick reactive because its **Redis-backed rate limiter** (`RedisRateLimiter` + `KeyResolver`) is the mature, best-documented path, and learning the canonical gateway is itself a goal of this project.
+2. **Reactive Spring Cloud Gateway**, not the servlet (MVC) gateway. The business services stay Spring MVC; the gateway is a thin routing layer where the reactive model is contained and never leaks into domain code. We pick reactive because its **Redis-backed rate limiter** (`RedisRateLimiter` + `KeyResolver`) is the mature, best-documented path.
    - *Rejected — Spring Cloud Gateway Server MVC:* same servlet model as the rest of the app (tempting), but its rate-limiting story is newer and thinner. The one-programming-model benefit doesn't reach the business services anyway, since the gateway shares no code with them.
 
 3. **Authorization stays at the services — the gateway does not authenticate.** finance-service and auth-service already validate every JWT against auth-service's JWKS (RS256, no shared secret). The gateway **forwards the bearer token untouched** and lets the services remain the single authorization authority.
