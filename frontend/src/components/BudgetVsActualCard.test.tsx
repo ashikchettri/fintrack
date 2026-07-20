@@ -21,6 +21,7 @@ const overview = (over: Partial<Overview>): Overview => ({
   actualMonth: '2026-06',
   planned: { income: 15249, expenses: 9668, savings: 6000, leftover: -419 },
   actual: { income: 15000, expenses: 8500 },
+  byCategory: [],
   ...over,
 });
 
@@ -47,6 +48,33 @@ describe('BudgetVsActualCard', () => {
     await waitFor(() =>
       expect(screen.getByTestId('compare-expenses')).toHaveTextContent(/over budget/i),
     );
+  });
+
+  it('renders a per-category breakdown, skipping empty categories', async () => {
+    mockedApi.getOverview.mockResolvedValue(
+      overview({
+        byCategory: [
+          { category: 'Housing', planned: 2600, actual: 2600 },
+          { category: 'Groceries & Food', planned: 1000, actual: 1240 },
+          { category: 'Health & Wellbeing', planned: 0, actual: 0 }, // filtered out
+        ],
+      }),
+    );
+    renderWithProviders(<BudgetVsActualCard />);
+
+    const breakdown = await screen.findByTestId('category-breakdown');
+    expect(breakdown).toHaveTextContent('Housing');
+    expect(breakdown).toHaveTextContent('Groceries & Food');
+    // a category with no plan and no spend is omitted
+    expect(breakdown).not.toHaveTextContent('Health & Wellbeing');
+  });
+
+  it('omits the breakdown section when there are no categories', async () => {
+    mockedApi.getOverview.mockResolvedValue(overview({ byCategory: [] }));
+    renderWithProviders(<BudgetVsActualCard />);
+
+    await waitFor(() => expect(screen.getByText('Budget vs actual')).toBeInTheDocument());
+    expect(screen.queryByTestId('category-breakdown')).not.toBeInTheDocument();
   });
 
   it('prompts to create a budget when none exists', async () => {

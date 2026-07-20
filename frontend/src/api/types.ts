@@ -129,6 +129,8 @@ export interface Overview {
   actualMonth: string | null;
   planned: { income: number; expenses: number; savings: number; leftover: number };
   actual: { income: number; expenses: number };
+  /** Planned vs actual per canonical expense category, biggest budget first (ADR 008). */
+  byCategory: { category: string; planned: number; actual: number }[];
 }
 
 export type BudgetSection = 'INCOME' | 'EXPENSE' | 'SAVING';
