@@ -22,9 +22,9 @@ Each phase produces something working and deployable. Don't start a phase until 
 ## Phase 2 — finance-service + gateway (1–2 weeks)
 - finance-service: accounts/transactions/budgets CRUD, JWT verification via JWKS, ownership checks, pagination/filter/sort.
 - All tables scoped by `householdId` + `memberId` from the first migration; transactions carry a `visibility` flag defaulting to `personal` (ADR 001). One member for now — the columns cost nothing, retrofitting costs everything.
-- Spring Cloud Gateway: routing, CORS, rate limiting; clients now hit only the gateway.
-- Redis for refresh-token store + login rate limiting.
-- Compose runs the whole stack with one command.
+- Spring Cloud Gateway: routing, CORS, rate limiting; clients now hit only the gateway. **⏳ scaffolded** — `gateway-service` (reactive, `:8080`) with routing + CORS + Redis rate limiting (ADR 007); frontend cut-over to `:8080` pending end-to-end verification.
+- Redis for refresh-token store + login rate limiting. **⏳ in progress** — backs the gateway rate limiter now; refresh-token store next.
+- Compose runs the whole stack with one command. ✅ (`./dev.sh`)
 
 **Done when:** you can create/list/delete transactions through the gateway with a JWT from auth-service; a user cannot read another user's data (test proves it).
 
