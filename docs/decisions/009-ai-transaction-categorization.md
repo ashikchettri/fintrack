@@ -6,7 +6,7 @@
 
 ADR 008 gave us a canonical `SpendingCategory` vocabulary and a rule-based `CategoryMapper.fromBankCategory` that maps a bank export's free-text category onto it. The rules are a decent baseline but brittle: they mis-bucket anything the keyword list doesn't anticipate into `OTHER`, and they lean on the bank having *supplied* a category at all — many statements don't, leaving only a cryptic description (`SQ *THE COFFEE CLUB`, `OSKO PAYMENT 4471`).
 
-The hero flow is "upload CSV → instant dashboard". The multiplier is **instant *and correctly categorized***. That's a classification problem an LLM is good at, and ADR 008 deliberately set up the target: a fixed enum to emit and evaluate against. This is the categorization slice of Phase 4, pulled forward (as the UI was), leaving the rest of Phase 4 — monthly summaries and NL Q&A in a dedicated `insight-service` — still ahead.
+The hero flow is "upload CSV → instant dashboard". The multiplier is **instant *and correctly categorized***. That's a classification problem an LLM is good at, and ADR 008 deliberately set up the target: a fixed enum to emit and evaluate against. This is the transaction-categorization slice of FinTrack's AI work, shipped here; the rest — monthly summaries and NL Q&A in a dedicated `insight-service` — is still ahead.
 
 ## Decision
 
@@ -25,6 +25,6 @@ The hero flow is "upload CSV → instant dashboard". The multiplier is **instant
 
 ## Consequences
 
-- **Positive:** imports get genuinely useful categories, not just whatever the bank guessed; the rule-based floor guarantees the feature can't be *worse* than ADR 008 and can't fail an import; the enum makes results testable and gives Phase 4 a ready eval target; the port keeps Spring AI (or a local model) a drop-in later.
-- **Negative / cost:** a network call + latency on the import path when enabled (bounded by the fallback and a timeout); a small per-import token cost; non-determinism (mitigated by the enum contract + fallback, but categories can shift between runs); a heuristic prompt that needs an eval harness before it's trusted broadly (Phase 4 proper). Transaction descriptions leave the boundary when enabled — documented and opt-in, but real.
+- **Positive:** imports get genuinely useful categories, not just whatever the bank guessed; the rule-based floor guarantees the feature can't be *worse* than ADR 008 and can't fail an import; the enum makes results testable and gives the AI work a ready eval target; the port keeps Spring AI (or a local model) a drop-in later.
+- **Negative / cost:** a network call + latency on the import path when enabled (bounded by the fallback and a timeout); a small per-import token cost; non-determinism (mitigated by the enum contract + fallback, but categories can shift between runs); a heuristic prompt that needs an eval harness before it's trusted broadly. Transaction descriptions leave the boundary when enabled — documented and opt-in, but real.
 - **Revisit** when `insight-service` lands (share the Anthropic client/config), when Spring AI supports Boot 4.1 (swap the port impl), and to harden structured output (tool use) + add an eval set and a re-categorize-existing-rows endpoint.

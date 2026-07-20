@@ -4,7 +4,7 @@
 
 ## Context
 
-Phase 3 (React UI) starts now, ahead of finance-service, to verify the auth API
+The React UI starts now, ahead of finance-service, to verify the auth API
 end-to-end. The browser needs somewhere to keep the refresh token across page
 reloads. Anything readable by JavaScript (localStorage, response JSON held in
 memory and persisted by app code) is exfiltratable by any XSS payload — the

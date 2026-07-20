@@ -4,11 +4,11 @@
 
 ## Context
 
-Phase 2 calls for an API gateway, and we've now hit the reasons the roadmap listed it. Today the browser reaches two services directly and the split lives in the **Vite dev proxy** (`/api/v1/accounts`, `/api/v1/household/**`, … → finance `:8082`; everything else → auth `:8081`). That works for local dev but leaves real gaps:
+The roadmap calls for an API gateway, and we've now hit the reasons for it. Today the browser reaches two services directly and the split lives in the **Vite dev proxy** (`/api/v1/accounts`, `/api/v1/household/**`, … → finance `:8082`; everything else → auth `:8081`). That works for local dev but leaves real gaps:
 
 - **No single entry point.** In prod there is nothing to put one Ingress / one TLS cert / one public hostname in front of. The routing knowledge only exists in a dev-only config that never ships.
 - **Cross-cutting concerns are per-service or absent.** CORS is configured (or will be) in each service; **rate limiting does not exist anywhere** — login and signup have no edge throttle beyond auth-service's own in-process login counter, and a client can hammer any endpoint.
-- **It's the keystone for the rest of the roadmap.** Ingress, GKE, one HTTPS URL, and a coherent rate-limit story all assume a gateway. Building it now unblocks Phase 5/6.
+- **It's the keystone for the rest of the roadmap.** Ingress, GKE, one HTTPS URL, and a coherent rate-limit story all assume a gateway. Building it now unblocks the Kubernetes and cloud-deploy work.
 
 What we are **not** trying to solve here: the gateway is not where authorization moves to (see Decision 3), and it is not a place for business logic. It routes, applies CORS, and rate-limits. Nothing else.
 
@@ -25,7 +25,7 @@ What we are **not** trying to solve here: the gateway is not where authorization
 
 4. **CORS moves to the gateway.** It's the only browser-facing origin, so it owns the single CORS policy: allow the SPA origin, `allowCredentials: true` (the refresh token is an httpOnly cookie — ADR 003 — so credentialed requests must be allowed, which forbids a `*` origin). Downstream services stop needing CORS config.
 
-5. **Rate limiting is Redis-backed (token bucket).** This is the other Phase 2 Redis use (alongside the refresh-token store). v1 keys on **client IP** (honours `X-Forwarded-For` for when a load balancer sits in front), which protects the token-less brute-force surface — login and signup — and abusive clients generally. **Per-user keying by JWT subject** is the next slice, and lands together with edge JWT decoding (Decision 3's future item). Buckets: 20 req/s steady, burst 40, tunable per route.
+5. **Rate limiting is Redis-backed (token bucket).** This is the first Redis use (the refresh-token store is planned). v1 keys on **client IP** (honours `X-Forwarded-For` for when a load balancer sits in front), which protects the token-less brute-force surface — login and signup — and abusive clients generally. **Per-user keying by JWT subject** is the next slice, and lands together with edge JWT decoding (Decision 3's future item). Buckets: 20 req/s steady, burst 40, tunable per route.
 
 6. **Routes mirror today's proxy split**, so nothing about the API surface changes:
    - `/api/v1/accounts/**`, `/api/v1/transactions/**`, `/api/v1/imports/**`, `/api/v1/dashboard/**`, `/api/v1/household/**` (singular) → **finance-service**

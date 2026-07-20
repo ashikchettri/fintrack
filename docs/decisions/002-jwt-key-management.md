@@ -4,7 +4,7 @@
 
 ## Context
 
-auth-service signs access JWTs with RS256 so downstream services (finance-service, phase 2)
+auth-service signs access JWTs with RS256 so downstream services (finance-service, the gateway)
 verify tokens via the public key from a JWKS endpoint without sharing secrets. The private
 key has to come from somewhere in four environments (`local`, `docker`, `k8s`, `gcp`),
 without violating "no secrets in git" and without adding local-dev setup friction.
@@ -36,4 +36,4 @@ without violating "no secrets in git" and without adding local-dev setup frictio
   don't survive restarts.
 - **Production hardening path (not now):** cloud KMS signing (e.g. GCP Cloud KMS),
   where the private key is unexportable and every signing call is audited. Revisit
-  in phase 6/8; would replace the PEM loading path behind the same interface.
+  with the cloud/hardening work; would replace the PEM loading path behind the same interface.

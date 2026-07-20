@@ -10,7 +10,7 @@ FinTrack supports households with multiple members (owner, partner, children). F
 
 1. Every transaction defaults to `visibility = personal`. Sharing to the household is a deliberate, per-transaction (or per-account) opt-in.
 2. Household members see: their own data in full, transactions explicitly marked `household`, and aggregate totals only for other members.
-3. Phase 7 family features are framed around **shared budgets and bills** (mortgage, groceries, utilities, family budget), not full expense transparency.
+3. Family features are framed around **shared budgets and bills** (mortgage, groceries, utilities, family budget), not full expense transparency.
 4. `CHILD` role members see only their own data.
 5. Household schema (`household_id`, `member_id`, `visibility`) still ships in phases 1–2 — the columns are nearly free now and prohibitively expensive to retrofit.
 
@@ -18,4 +18,4 @@ FinTrack supports households with multiple members (owner, partner, children). F
 
 - Positive: honest logging isn't penalized; family value prop ("see our shared finances") survives; the privacy boundary is enforced in the query, not bolted on afterward.
 - Negative: "family total spending" is only as accurate as what members share; aggregate totals partially reveal spending levels (accepted — totals without line items is the standard compromise).
-- Revisit at Phase 7 with real usage experience; dropping family features entirely remains a zero-cost option.
+- Revisit as family features mature with real usage experience; dropping family features entirely remains a zero-cost option.
