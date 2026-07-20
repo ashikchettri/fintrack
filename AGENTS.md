@@ -1,20 +1,27 @@
 # FinTrack — Codex context
 
-Household personal-finance tracker; learning project for Spring Boot 4 microservices → Docker → K8s → GCP. Owner: ashik (senior engineer, finance industry).
+Household personal-finance platform: Spring Boot 4 microservices behind a reactive API gateway, a React 19 SPA, and Claude-powered transaction categorization. Owner: ashik (senior engineer, finance industry).
 
 ## Read first
 
 - `docs/ARCHITECTURE.md` — services, stack, trade-offs
-- `docs/ROADMAP.md` — phases; **check which phase we're in before suggesting work**
+- `docs/ROADMAP.md` — what's shipped vs. next; **check it before suggesting work**
 - `docs/decisions/` — ADRs. ADR 001: transactions default to `personal` visibility; sharing is opt-in.
 
 ## Current state
 
-Phase 1 **complete + hardened**: auth-service has signup with 6-digit email verification (ADR 004), login (RS256 JWT + JWKS), refresh rotation with reuse detection, logout, /users/me, password reset with session revocation (ADR 005), throttling, Swagger UI. Refresh token = httpOnly cookie (ADR 003). Email via provider chain (ADR 004): Gmail SMTP default locally (`./dev.sh`), Mailpit for e2e (`./dev.sh mailpit`), Resend ready pending a domain. React auth UI covers every flow (Vitest + Playwright mocked & e2e); 26 Karate scenarios. finance-service scaffolded with JWKS-verified JWTs. Repo is public with branch protection (7 required checks). Local stack: `./dev.sh`. Next: phase 2 finance-service accounts/transactions/budgets.
+Three services run together via `./dev.sh` (Postgres, Redis, Mailpit, gateway, auth, finance, frontend).
+
+- **auth-service** (:8081): signup + 6-digit email verification (ADR 004), login (RS256 JWT + JWKS), refresh rotation + reuse detection, logout, /users/me, password reset with session revocation (ADR 005), change-password/change-email, throttling, household **email invitations**, correlation IDs, Swagger. Refresh token = httpOnly cookie (ADR 003). Email via provider chain (ADR 004): Gmail / Resend / Mailpit.
+- **finance-service** (:8082): accounts, transactions, **CSV import** (dedup), **dashboard**, **budgets** + budget-vs-actual per canonical category (ADR 008), **AI categorization** (ADR 009, opt-in Claude + rule fallback) + recategorize, **home loan** + payoff calculator, **income**/**cash flow**, **shared commitments** (ADR 006). JWKS-verified JWTs; correlation IDs (ADR 010).
+- **gateway-service** (:8080): reactive Spring Cloud Gateway (ADR 007) — routing, CORS, Redis rate limiting.
+- **React 19 SPA** covers every flow (Vitest + Playwright mocked & e2e); Karate API scenarios.
+
+Public repo with branch protection. Next: see `docs/ROADMAP.md` (Redis refresh-token store, insight-service, containerization → K8s).
 
 ## Stack
 
-Java 25 · Spring Boot 4.1 · Gradle (Kotlin DSL) · Postgres 17 (Docker Compose) · Flyway · Testcontainers. Later: Spring Cloud Gateway, Redis, React 19, Spring AI + Codex, Minikube/GKE.
+Java 25 · Spring Boot 4.1 · Gradle (Kotlin DSL) · Postgres 17 · Redis · Flyway · Testcontainers · reactive Spring Cloud Gateway · Anthropic Messages API (Claude) · React 19 + Vite + TS. **Note: Boot 4.1 uses Jackson 3 (`tools.jackson`).** Ahead: Minikube/GKE, insight-service.
 
 ## Conventions — enforce these in every change
 
@@ -38,6 +45,6 @@ cd services/<service> && ./gradlew test           # tests (needs Docker)
 cd frontend && npm run dev                        # UI (port 5173)
 ```
 
-## Learning mode
+## Ways of working
 
-This is a learning project: when making non-obvious choices, explain the why briefly. Record significant decisions as ADRs in `docs/decisions/`. Owner types the fix when debugging together — suggest, don't just apply, unless asked.
+When making non-obvious choices, explain the why briefly. Record significant decisions as ADRs in `docs/decisions/`. Owner types the fix when debugging together — suggest, don't just apply, unless asked.
