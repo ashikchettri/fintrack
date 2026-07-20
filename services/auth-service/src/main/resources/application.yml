@@ -50,6 +50,8 @@ fintrack:
       # private-key: file:/etc/fintrack/jwt-signing.pem   # PKCS#8 PEM — required outside local (ADR 002)
     refresh-cookie:
       secure: true   # HTTPS-only; application-local.yml turns this off for plain-http dev (ADR 003)
+    refresh-token:
+      store: ${REFRESH_TOKEN_STORE:jpa}   # jpa (Postgres, default) | redis (ADR 011)
     # smtp | resend | mailpit | auto (auto = SMTP creds > Resend key > Mailpit)
     mail-provider: ${MAIL_PROVIDER:auto}
     resend:

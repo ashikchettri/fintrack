@@ -4,7 +4,6 @@ import com.fintrack.auth.config.VerificationProperties;
 import com.fintrack.auth.domain.PasswordResetCode;
 import com.fintrack.auth.domain.User;
 import com.fintrack.auth.repository.PasswordResetCodeRepository;
-import com.fintrack.auth.repository.RefreshTokenRepository;
 import com.fintrack.auth.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,7 +41,7 @@ class PasswordResetServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private RefreshTokenRepository refreshTokenRepository;
+    private RefreshTokenStore refreshTokenStore;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -60,7 +59,7 @@ class PasswordResetServiceTest {
     @BeforeEach
     void setUp() {
         service = new PasswordResetService(codeRepository, userRepository,
-                refreshTokenRepository, passwordEncoder, loginAttemptService,
+                refreshTokenStore, passwordEncoder, loginAttemptService,
                 emailSender, PROPS, Clock.fixed(NOW, ZoneOffset.UTC));
         user = new User("jane@example.com", "<old-hash>");
     }
@@ -116,7 +115,7 @@ class PasswordResetServiceTest {
         assertThat(user.getPasswordHash()).isEqualTo("<new-hash>");
         assertThat(code.isDead(NOW, PROPS.maxAttempts())).isTrue();
         // stolen sessions die with the old password (ADR 005)
-        verify(refreshTokenRepository).revokeAllActiveForUser(eq(user.getId()), any(Instant.class));
+        verify(refreshTokenStore).revokeAllForUser(user.getId());
         // emailed-code entry doubles as mailbox proof
         assertThat(user.isEmailVerified()).isTrue();
         verify(loginAttemptService).recordSuccess("jane@example.com");
@@ -133,7 +132,7 @@ class PasswordResetServiceTest {
 
         assertThat(code.getAttempts()).isEqualTo(1);
         assertThat(user.getPasswordHash()).isEqualTo("<old-hash>");
-        verify(refreshTokenRepository, never()).revokeAllActiveForUser(any(), any());
+        verify(refreshTokenStore, never()).revokeAllForUser(any());
     }
 
     @Test

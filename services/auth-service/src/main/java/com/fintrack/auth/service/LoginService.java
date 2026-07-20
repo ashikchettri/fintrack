@@ -19,6 +19,7 @@ public class LoginService {
     private final HouseholdMemberRepository householdMemberRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
+    private final RefreshTokenStore refreshTokenStore;
     private final LoginAttemptService loginAttemptService;
 
     /**
@@ -32,11 +33,13 @@ public class LoginService {
                         HouseholdMemberRepository householdMemberRepository,
                         PasswordEncoder passwordEncoder,
                         TokenService tokenService,
+                        RefreshTokenStore refreshTokenStore,
                         LoginAttemptService loginAttemptService) {
         this.userRepository = userRepository;
         this.householdMemberRepository = householdMemberRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
+        this.refreshTokenStore = refreshTokenStore;
         this.loginAttemptService = loginAttemptService;
         this.timingEqualizerHash = passwordEncoder.encode(UUID.randomUUID().toString());
     }
@@ -71,6 +74,6 @@ public class LoginService {
 
         return new LoginResult(
                 tokenService.issueAccessToken(member),
-                tokenService.issueRefreshToken(user.get()).rawToken());
+                refreshTokenStore.issue(user.get().getId()));
     }
 }
