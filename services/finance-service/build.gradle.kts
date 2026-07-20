@@ -63,7 +63,11 @@ jacoco {
 }
 
 val coverageExclusions = listOf(
-    "com/fintrack/finance/FinanceServiceApplication.class"
+    "com/fintrack/finance/FinanceServiceApplication.class",
+    // Spring wiring only (bean config + properties) — behaviour is covered by
+    // the categorizer + client tests
+    "com/fintrack/finance/config/AiCategorizationConfig.class",
+    "com/fintrack/finance/config/AiCategorizationProperties.class"
 )
 
 tasks.jacocoTestReport {

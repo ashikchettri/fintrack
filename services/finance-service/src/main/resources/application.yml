@@ -36,6 +36,16 @@ spring:
           # auth-service's public keys — fetched lazily, cached by Nimbus
           jwk-set-uri: ${AUTH_JWKS_URI:http://localhost:8081/.well-known/jwks.json}
 
+# AI transaction categorization (ADR 009). Off by default: the app runs on the
+# rule-based categorizer with no API key. Enable + set a key to use Claude.
+finance:
+  ai:
+    categorization:
+      enabled: ${FINANCE_AI_CATEGORIZATION_ENABLED:false}
+      api-key: ${ANTHROPIC_API_KEY:}
+      model: ${FINANCE_AI_MODEL:claude-haiku-4-5-20251001}
+      batch-size: ${FINANCE_AI_BATCH_SIZE:50}
+
 server:
   port: 8082
 

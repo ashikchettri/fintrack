@@ -7,7 +7,10 @@ import com.fintrack.finance.domain.TransactionSource;
 import com.fintrack.finance.domain.Visibility;
 import com.fintrack.finance.repository.AccountRepository;
 import com.fintrack.finance.repository.TransactionRepository;
+import com.fintrack.finance.domain.SpendingCategory;
 import com.fintrack.finance.security.AuthenticatedMember;
+import com.fintrack.finance.service.ai.TransactionCategorizer;
+import com.fintrack.finance.service.ai.TransactionCategorizer.CategorizationInput;
 import com.fintrack.finance.service.csv.CsvParseResult;
 import com.fintrack.finance.service.csv.CsvTransactionParser;
 import com.fintrack.finance.service.csv.ParsedTransaction;
@@ -45,13 +48,20 @@ public class TransactionImportService {
     private final CsvTransactionParser parser;
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+    private final TransactionCategorizer categorizer;
 
     public TransactionImportService(CsvTransactionParser parser,
                                     AccountRepository accountRepository,
-                                    TransactionRepository transactionRepository) {
+                                    TransactionRepository transactionRepository,
+                                    TransactionCategorizer categorizer) {
         this.parser = parser;
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
+        this.categorizer = categorizer;
+    }
+
+    /** A row that survived dedup, awaiting categorization + persistence. */
+    private record Pending(Account account, ParsedTransaction row, String hash) {
     }
 
     @Transactional
@@ -68,7 +78,7 @@ public class TransactionImportService {
         List<String> accountsCreated = new ArrayList<>();
         Map<String, Integer> occurrences = new HashMap<>();
 
-        List<Transaction> toSave = new ArrayList<>();
+        List<Pending> pending = new ArrayList<>();
         int duplicates = 0;
         for (ParsedTransaction row : parsed.rows()) {
             Account account = resolveAccount(caller, row.accountName(), normalizedCurrency,
@@ -79,7 +89,19 @@ public class TransactionImportService {
                 duplicates++;
                 continue;
             }
-            toSave.add(toEntity(caller, account, row, normalizedCurrency, importId, hash));
+            pending.add(new Pending(account, row, hash));
+        }
+
+        // one batched categorization pass over the surviving rows (ADR 009)
+        List<SpendingCategory> categories = categorizer.categorize(pending.stream()
+                .map(p -> new CategorizationInput(p.row().description(), p.row().category(), p.row().amount()))
+                .toList());
+
+        List<Transaction> toSave = new ArrayList<>(pending.size());
+        for (int i = 0; i < pending.size(); i++) {
+            Pending p = pending.get(i);
+            toSave.add(toEntity(caller, p.account(), p.row(), normalizedCurrency, importId, p.hash(),
+                    categories.get(i)));
         }
         transactionRepository.saveAll(toSave);
 
@@ -111,7 +133,7 @@ public class TransactionImportService {
     }
 
     private Transaction toEntity(AuthenticatedMember caller, Account account, ParsedTransaction row,
-                                 String currency, UUID importId, String hash) {
+                                 String currency, UUID importId, String hash, SpendingCategory canonical) {
         return Transaction.builder()
                 .householdId(caller.householdId())
                 .memberId(caller.memberId())
@@ -120,9 +142,9 @@ public class TransactionImportService {
                 .description(truncate(row.description(), 200))
                 .category(truncate(row.category(), 60))
                 .subcategory(truncate(row.subcategory(), 60))
-                // normalise onto the canonical vocabulary (ADR 008); Phase 4 AI
-                // replaces this rule-based mapping, writing the same column
-                .canonicalCategory(CategoryMapper.fromBankCategory(row.category(), row.description()).name())
+                // canonical vocabulary (ADR 008) via the categorizer seam (ADR 009):
+                // rule-based by default, AI when enabled
+                .canonicalCategory(canonical.name())
                 .amount(row.amount())
                 .currency(currency)
                 .originalDescription(truncate(row.originalDescription(), 300))
