@@ -9,7 +9,7 @@ Household personal-finance platform: Spring Boot 4 microservices behind a reacti
 - `docs/API.md` — endpoint reference (auth + finance)
 - `docs/TEMPLATE.md` — the reusable, domain-agnostic auth starter (what to keep/strip when extracting)
 - `docs/PRODUCT.md` — the FinTrack finance-tracker domain (households, accounts, budgets, privacy)
-- `docs/decisions/` — ADRs. 001 personal-first privacy (product) · 002 JWT keys · 003 refresh cookie · 004 email verification · 005 password reset (002–005 are template-generic) · 006 shared commitments (product) · 007 API gateway · 008 canonical category taxonomy · 009 AI transaction categorization · 010 request correlation IDs.
+- `docs/decisions/` — ADRs. 001 personal-first privacy (product) · 002 JWT keys · 003 refresh cookie · 004 email verification · 005 password reset (002–005 are template-generic) · 006 shared commitments (product) · 007 API gateway · 008 canonical category taxonomy · 009 AI transaction categorization · 010 request correlation IDs · 011 Redis refresh-token store · 012 insight-service.
 
 ## Current state
 
@@ -18,13 +18,14 @@ Three services run together via `./dev.sh` (Postgres, Redis, Mailpit, gateway, a
 - **auth-service** (:8081): signup + 6-digit email verification, login (RS256 JWT + JWKS), refresh rotation with reuse detection, logout, `/users/me`, password reset with session revocation, authenticated change-password/change-email, login throttling, household **email invitations** (multi-member), request correlation IDs, Swagger. Refresh token = httpOnly `SameSite=Strict` cookie (ADR 003). Email via provider chain (ADR 004): Gmail SMTP / Resend / Mailpit.
 - **finance-service** (:8082): accounts, transactions, **CSV import** (dedup, auto-created accounts), **dashboard** (KPIs/category/monthly/merchants), **budgets** + **budget-vs-actual per canonical category** (ADR 008), **AI categorization** (ADR 009, opt-in Claude + rule fallback) with a **recategorize** endpoint, **home loan** + payoff calculator, **income** + **cash flow**/affordability, **shared commitments** (ADR 006, personal-by-default). Verifies auth JWTs via JWKS; correlation IDs (ADR 010).
 - **gateway-service** (:8080): reactive Spring Cloud Gateway (ADR 007) — routing, CORS, Redis rate limiting, edge correlation IDs.
+- **insight-service** (:8083): AI spending insights (ADR 012) — `GET /api/v1/insights/monthly-summary`; calls finance-service service-to-service (forwards the caller's JWT), Claude summary (opt-in) with a deterministic template fallback.
 - **React 19 SPA**: every flow above — Dashboard, Cash flow, Home loan, Income & expenses, Profile (household roster + invites), Settings; charts (donut/bar/payoff); light/dark.
 
 Refresh tokens go through a `RefreshTokenStore` seam (ADR 011): Postgres (`jpa`, default) or **Redis** (`fintrack.auth.refresh-token.store=redis`, Lua-atomic rotation/reuse). ~260 tests (JUnit + Testcontainers + Karate + Vitest + Playwright), coverage gates enforced. Public repo, branch protection. **Next: see `docs/ROADMAP.md` (flip refresh-token store to Redis, insight-service, containerization → K8s).**
 
 ## Stack
 
-Java 25 · Spring Boot 4.1 (Spring Framework 7) · Gradle (Kotlin DSL, shared version catalog `gradle/libs.versions.toml`) · Postgres 17 (schema-per-service) · Redis · Flyway · Testcontainers · Argon2id · Nimbus JOSE (RS256/JWKS) · reactive Spring Cloud Gateway · Anthropic Messages API (Claude, behind a port) · Spring Mail + Resend SDK. **Note: Boot 4.1 uses Jackson 3 (`tools.jackson`), not Jackson 2** — annotations stay `com.fasterxml.jackson.annotation`. Frontend: React 19 · Vite · TypeScript · Tailwind v4 · shadcn-style components · TanStack Query · react-hook-form + zod · Sonner. Ahead: Minikube/GKE, insight-service.
+Java 25 · Spring Boot 4.1 (Spring Framework 7) · Gradle (Kotlin DSL, shared version catalog `gradle/libs.versions.toml`) · Postgres 17 (schema-per-service) · Redis · Flyway · Testcontainers · Argon2id · Nimbus JOSE (RS256/JWKS) · reactive Spring Cloud Gateway · Anthropic Messages API (Claude, behind a port) · Spring Mail + Resend SDK. **Note: Boot 4.1 uses Jackson 3 (`tools.jackson`), not Jackson 2** — annotations stay `com.fasterxml.jackson.annotation`. Frontend: React 19 · Vite · TypeScript · Tailwind v4 · shadcn-style components · TanStack Query · react-hook-form + zod · Sonner. Ahead: Minikube/GKE.
 
 ## Conventions — enforce these in every change
 

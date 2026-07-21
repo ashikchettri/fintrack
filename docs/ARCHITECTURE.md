@@ -20,7 +20,7 @@ FinTrack is a household personal-finance platform built as Spring Boot microserv
 | Migrations | **Flyway** | Versioned, append-only SQL; never `ddl-auto=update` |
 | Auth | **Spring Security + JWT** | RS256 access tokens + JWKS; no shared secrets between services |
 | Gateway | **Spring Cloud Gateway** (reactive) | Single entry point: routing, CORS, Redis-backed rate limiting (ADR 007) |
-| Cache / limits | **Redis** | Gateway rate-limit token buckets (refresh-token store planned) |
+| Cache / limits | **Redis** | Gateway rate-limit token buckets; opt-in refresh-token store (ADR 011) |
 | API docs | **springdoc-openapi** | Swagger UI per service |
 | Frontend | **React 19 + Vite + TypeScript** | TanStack Query for server state; Tailwind v4 + shadcn-style components |
 | AI | **Claude** (Anthropic Messages API) | Transaction categorization behind a pluggable port (Spring AI drops in when it supports Boot 4.1 — ADR 009) |
@@ -44,9 +44,9 @@ FinTrack is a household personal-finance platform built as Spring Boot microserv
               ┌───────────┘       └───────────┐
       ┌───────▼───────┐              ┌─────────▼────────┐        ┌────────────────┐
       │ auth-service  │    JWKS      │ finance-service  │        │ insight-service│
-      │ signup/login/ │◀────────────▶│ accounts, txns,  │        │ (planned):     │
-      │ JWT/refresh,  │   verify     │ import, budgets, │        │ summaries,     │
-      │ households,   │              │ income, home     │        │ NL Q&A         │
+      │ signup/login/ │◀────────────▶│ accounts, txns,  │◀───────│ AI monthly     │
+      │ JWT/refresh,  │   verify     │ import, budgets, │  JWT   │ summary        │
+      │ households,   │              │ income, home     │ fwd    │ (:8083)        │
       │ email (:8081) │              │ loan, AI cats    │        │                │
       └───────┬───────┘              │ (:8082)          │        └────────────────┘
               │                      └────────┬─────────┘
@@ -56,7 +56,7 @@ FinTrack is a household personal-finance platform built as Spring Boot microserv
           └────────────────────────────────┘
 ```
 
-**Built today:** the gateway, auth-service, finance-service, Redis, Postgres, and the React SPA all run together (`./dev.sh`). `insight-service` (AI summaries + natural-language Q&A) is the next planned service; AI *categorization* was pulled forward into finance-service (ADR 009). Async events (Kafka) between services are deliberately deferred. Concrete endpoints: [`docs/API.md`](API.md); design decisions: [`docs/decisions/`](decisions/).
+**Built today:** the gateway, auth-service, finance-service, insight-service, Redis, Postgres, and the React SPA all run together (`./dev.sh`). insight-service ships the monthly spending summary (ADR 012); natural-language Q&A is its next slice. AI *categorization* lives in finance-service (ADR 009). Async events (Kafka) between services are deliberately deferred. Concrete endpoints: [`docs/API.md`](API.md); design decisions: [`docs/decisions/`](decisions/).
 
 ## 4. Service design
 
@@ -87,8 +87,11 @@ FinTrack is a household personal-finance platform built as Spring Boot microserv
 - **Shared commitments** (ADR 006) — transactions are `personal` by default; a member opts specific rows into a `shared` household view. The household sees only shared items and an equal-split settlement; personal rows are structurally unreachable in the shared query.
 - Validates JWTs locally via auth-service JWKS; honors the `X-Request-Id` correlation id; RFC 9457 Problem Details with `traceId`.
 
-### insight-service (AI) — planned
-- Claude via the same Anthropic client pattern as finance-service: monthly spending summaries and natural-language questions ("how much did I spend on food in June?") via tool use against finance-service. Structured JSON output, batching, cost control.
+### insight-service (AI) — ✅ built (v1)
+- AI spending insights over a household's finance data (ADR 012), on `:8083`. v1: the **monthly spending summary** (`GET /api/v1/insights/monthly-summary`).
+- **Reads finance data through finance-service's API, not its database** — on a request it calls `/api/v1/dashboard` service-to-service, forwarding the caller's JWT (so finance-service's household/member scoping applies) and the `X-Request-Id` correlation id.
+- A `SummaryGenerator` seam: a deterministic template (default, no key) or Claude (opt-in) via the same Anthropic client pattern as finance-service, with the template as fallback. Only aggregate figures leave the boundary.
+- Next: natural-language Q&A via Claude tool use against finance-service; an eval set; summary caching.
 
 ## 5. Cross-cutting practices
 

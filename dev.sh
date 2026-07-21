@@ -48,6 +48,7 @@ postgres_up() { docker exec fintrack-postgres pg_isready -U "${POSTGRES_USER:-fi
 mailpit_up()  { curl -sf http://localhost:8025/api/v1/info >/dev/null 2>&1; }
 backend_up()  { curl -sf http://localhost:8081/actuator/health 2>/dev/null | grep -q UP; }
 finance_up()  { curl -sf http://localhost:8082/actuator/health 2>/dev/null | grep -q UP; }
+insight_up()  { curl -sf http://localhost:8083/actuator/health 2>/dev/null | grep -q UP; }
 redis_up()    { docker exec fintrack-redis redis-cli ping 2>/dev/null | grep -q PONG; }
 gateway_up()  { curl -sf http://localhost:8080/actuator/health 2>/dev/null | grep -q UP; }
 frontend_up() { port_in_use 5173; }
@@ -62,6 +63,7 @@ status() {
   redis_up     && ok "Redis         :6379"         || fail "Redis"
   backend_up   && ok "auth-service  http://localhost:8081  (Swagger: /swagger-ui.html)" || fail "auth-service"
   finance_up   && ok "finance-service http://localhost:8082 (Swagger: /swagger-ui.html)" || fail "finance-service"
+  insight_up   && ok "insight-service http://localhost:8083 (AI summaries, ADR 012)" || fail "insight-service"
   gateway_up   && ok "gateway       http://localhost:8080  (single public entry, ADR 007)" || fail "gateway"
   frontend_up  && ok "frontend      http://localhost:5173" || fail "frontend"
   # only reported when running — it's an opt-in quality tool, not part of the app
@@ -142,6 +144,29 @@ stop_finance() {
   fi
   port_in_use 8082 && lsof -nP -iTCP:8082 -sTCP:LISTEN -t | xargs kill 2>/dev/null || true
   for _ in $(seq 1 10); do port_in_use 8082 || break; sleep 1; done
+}
+
+# insight-service (:8083) generates AI spending summaries over finance-service
+# (ADR 012). No DB; verifies auth JWKS. Non-fatal — the AI read-model is optional.
+start_insight() {
+  if insight_up; then ok "insight-service already running on :8083"; return; fi
+  warn "starting insight-service — first compile can take a minute…"
+  (cd "$ROOT/services/insight-service" \
+    && nohup ./gradlew bootRun --console=plain -q \
+       > "$LOG_DIR/insight-service.log" 2>&1 & echo $! > "$LOG_DIR/insight-service.pid")
+  for _ in $(seq 1 60); do insight_up && break; sleep 3; done
+  insight_up && ok "insight-service up on :8083" \
+    || warn "insight-service not up yet — see .dev-logs/insight-service.log"
+}
+
+stop_insight() {
+  if [ -f "$LOG_DIR/insight-service.pid" ]; then
+    pkill -P "$(cat "$LOG_DIR/insight-service.pid")" 2>/dev/null || true
+    kill "$(cat "$LOG_DIR/insight-service.pid")" 2>/dev/null || true
+    rm -f "$LOG_DIR/insight-service.pid"
+  fi
+  port_in_use 8083 && lsof -nP -iTCP:8083 -sTCP:LISTEN -t | xargs kill 2>/dev/null || true
+  for _ in $(seq 1 10); do port_in_use 8083 || break; sleep 1; done
 }
 
 # gateway-service (:8080) is the single public entry point (ADR 007). It routes
@@ -246,6 +271,7 @@ start() {
   fi
 
   start_finance
+  start_insight
   start_gateway
 
   if frontend_up; then
@@ -273,6 +299,7 @@ start() {
   echo "  Gateway      http://localhost:8080  (single public entry — ADR 007)"
   echo "  auth API     http://localhost:8081/swagger-ui.html"
   echo "  finance API  http://localhost:8082/swagger-ui.html"
+  echo "  insight API  http://localhost:8083/swagger-ui.html"
   echo "  Mail inbox   http://localhost:8025"
   sonarqube_up && echo "  SonarQube  http://localhost:9000"
 }
@@ -281,6 +308,7 @@ start() {
 stop() {
   echo "Stopping FinTrack dev stack…"
   stop_gateway
+  stop_insight
   stop_backend
   stop_finance
   if [ -f "$LOG_DIR/frontend.pid" ]; then

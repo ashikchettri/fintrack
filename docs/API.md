@@ -60,3 +60,11 @@ Base path `/api/v1`. All errors are RFC 9457 `ProblemDetail` (`application/probl
 | `GET /api/v1/household/overview` | Dashboard rollup: the monthly budget (plan) vs the caller's latest month of transactions (reality) — income & expense totals, so the dashboard is a position, not just a statement |
 
 **Privacy boundary (ADR 006):** personal queries filter `household_id + member_id`; the household shared view filters `household_id + visibility = 'shared'` across members, so personal rows are structurally unreachable.
+
+## insight-service
+
+`/api/v1/insights/**` requires a Bearer access token (verified against auth-service's JWKS). insight-service holds no data of its own — it calls finance-service service-to-service, **forwarding the caller's token**, so a summary only ever covers data the caller is allowed to see (ADR 012).
+
+| Method & path | Purpose |
+|---|---|
+| `GET /api/v1/insights/monthly-summary[?month=YYYY-MM]` | AI (or template) spending summary for the month → `{month, currency, totals, headline, insights[]}`. Claude when `insight.ai.enabled=true`, else a deterministic template |
