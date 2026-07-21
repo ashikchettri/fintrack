@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import DashboardPage from './DashboardPage';
 import { ApiError, api } from '../api/client';
 import type { DashboardResponse } from '../api/types';
@@ -14,12 +13,10 @@ vi.mock('../api/client', async (importOriginal) => {
       refresh: vi.fn().mockResolvedValue(false),
       me: vi.fn(),
       dashboard: vi.fn(),
-      transactions: vi.fn(),
-      importTransactions: vi.fn(),
-      householdShared: vi.fn(),
-      householdMembers: vi.fn().mockResolvedValue([]),
-      getOverview: vi.fn().mockResolvedValue({ hasBudget: false }),
-      setTransactionVisibility: vi.fn(),
+      getMonthlySummary: vi.fn(),
+      getCashFlow: vi.fn(),
+      getHomeLoan: vi.fn(),
+      getOverview: vi.fn(),
     },
   };
 });
@@ -29,96 +26,68 @@ const mockedApi = vi.mocked(api);
 const POPULATED: DashboardResponse = {
   currency: 'AUD',
   month: null,
-  availableMonths: ['2026-07', '2026-06'],
+  availableMonths: ['2026-07'],
   totals: { income: 3040, expenses: 217.7, net: 2822.3, transactionCount: 6 },
-  byCategory: [
-    { category: 'Transportation', spent: 132.5, share: 0.6086 },
-    { category: 'Food & Drink', spent: 85.2, share: 0.3914 },
-  ],
-  byMonth: [
-    { month: '2026-06', income: 3000, expenses: 0, net: 3000 },
-    { month: '2026-07', income: 0, expenses: 12.5, net: -12.5 },
-  ],
-  topMerchants: [{ description: 'Reddy Express', spent: 120, count: 2 }],
-  recent: [
-    { id: 't1', date: '2026-07-11', description: 'Transport NSW', category: 'Transportation', amount: -12.5, accountId: 'a1', visibility: 'personal' },
-    { id: 't2', date: '2026-06-01', description: 'Salary', category: 'Income', amount: 3000, accountId: 'a2', visibility: 'personal' },
-  ],
-};
-
-const EMPTY_HOUSEHOLD = {
-  currency: null,
-  month: null,
-  availableMonths: [],
-  totalShared: 0,
-  memberCount: 0,
-  fairShare: 0,
-  settlement: { yourContribution: 0, fairShare: 0, balance: 0, status: 'settled' as const, amount: 0 },
-  contributions: [],
-  byCategory: [],
-  transactions: [],
+  byCategory: [], byMonth: [], topMerchants: [], recent: [],
 };
 
 const EMPTY: DashboardResponse = {
-  currency: null,
-  month: null,
-  availableMonths: [],
+  currency: null, month: null, availableMonths: [],
   totals: { income: 0, expenses: 0, net: 0, transactionCount: 0 },
-  byCategory: [],
-  byMonth: [],
-  topMerchants: [],
-  recent: [],
+  byCategory: [], byMonth: [], topMerchants: [], recent: [],
 };
 
 beforeEach(() => {
   vi.clearAllMocks();
   mockedApi.refresh.mockResolvedValue(false);
-  mockedApi.householdShared.mockResolvedValue(EMPTY_HOUSEHOLD);
-  mockedApi.householdMembers.mockResolvedValue([]);
-  mockedApi.getOverview.mockResolvedValue({ hasBudget: false } as never);
+  mockedApi.getMonthlySummary.mockResolvedValue({
+    month: '2026-07', currency: 'AUD',
+    totals: { income: 3040, expenses: 217.7, net: 2822.3, transactionCount: 6 },
+    headline: 'A steady month.', insights: [],
+  });
+  mockedApi.getCashFlow.mockResolvedValue({
+    currency: 'AUD', monthlyIncome: 7500, monthlyLoanRepayment: 2000,
+    monthlyAvgSpending: 3000, monthlySurplus: 2500, monthsOfSpendingData: 3,
+  });
+  mockedApi.getHomeLoan.mockResolvedValue({
+    hasHomeLoan: true, lender: null, loanAmount: 500000, interestRate: 6.25,
+    repaymentFrequency: 'MONTHLY', repaymentAmount: 3079, hasOffset: false,
+    offsetBalance: null, ownership: 'JOINT', currency: 'AUD', notes: null,
+  });
+  mockedApi.getOverview.mockResolvedValue({
+    currency: 'AUD', hasBudget: true, actualMonth: null,
+    planned: { income: 10000, expenses: 6000, savings: 2000, leftover: 2000 },
+    actual: { income: 0, expenses: 0 }, byCategory: [],
+  } as never);
 });
 
-describe('DashboardPage', () => {
-  it('shows the upload call-to-action when there are no transactions', async () => {
-    mockedApi.dashboard.mockResolvedValue(EMPTY);
-    renderWithProviders(<DashboardPage />, ['/dashboard']);
-
-    expect(await screen.findByTestId('csv-dropzone')).toBeInTheDocument();
-    expect(screen.getByText(/upload a csv export/i)).toBeInTheDocument();
-  });
-
-  it('renders KPIs, charts, merchants and recent activity when populated', async () => {
+describe('DashboardPage (overview)', () => {
+  it('shows the headline totals and the summary rollups', async () => {
     mockedApi.dashboard.mockResolvedValue(POPULATED);
     renderWithProviders(<DashboardPage />, ['/dashboard']);
 
     await waitFor(() => expect(screen.getByTestId('kpi-income')).toBeInTheDocument());
     expect(screen.getByTestId('kpi-income')).toHaveTextContent('3,040');
-    expect(screen.getByTestId('kpi-expenses')).toHaveTextContent('217.70');
     expect(screen.getByTestId('kpi-net')).toHaveTextContent('2,822.30');
 
-    // category donut legend (also shown in the recent-table category cell) +
-    // monthly chart + merchants + recent row
-    expect(screen.getAllByText('Transportation').length).toBeGreaterThan(0);
-    // "Jun 2026" now appears in both the trend and the period selector
-    expect(screen.getAllByText('Jun 2026').length).toBeGreaterThan(0);
-    expect(screen.getByText('Reddy Express')).toBeInTheDocument();
-    expect(screen.getByText('Transport NSW')).toBeInTheDocument();
-    expect(screen.getByText('Salary')).toBeInTheDocument();
+    // the AI summary + a way to ask a question
+    expect(await screen.findByText('A steady month.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /ask about your spending/i })).toBeInTheDocument();
 
-    // the differentiator card (self-fetches) + per-row share toggles are present
-    expect(await screen.findByText('Shared with your household')).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /shared with household/i }).length).toBeGreaterThan(0);
+    // the three rollup cards (heading role avoids the nav links of the same name)
+    expect(await screen.findByRole('heading', { name: 'Cash flow' })).toBeInTheDocument();
+    expect(screen.getByText(/2,500/)).toBeInTheDocument();          // surplus
+    expect(screen.getByRole('heading', { name: 'Home loan' })).toBeInTheDocument();
+    expect(screen.getByText(/500,000/)).toBeInTheDocument();        // balance
+    expect(screen.getByRole('heading', { name: 'Income & expenses' })).toBeInTheDocument();
   });
 
-  it('scopes the dashboard to a month via the period selector', async () => {
-    mockedApi.dashboard.mockResolvedValue(POPULATED);
+  it('shows an import banner instead of totals before any statement is imported', async () => {
+    mockedApi.dashboard.mockResolvedValue(EMPTY);
     renderWithProviders(<DashboardPage />, ['/dashboard']);
 
-    await waitFor(() => expect(screen.getByTestId('kpi-income')).toBeInTheDocument());
-    // selector is populated from availableMonths
-    await userEvent.selectOptions(screen.getByLabelText('Period'), '2026-07');
-
-    await waitFor(() => expect(mockedApi.dashboard).toHaveBeenCalledWith('2026-07'));
+    expect(await screen.findByText(/import a bank statement to see your income/i)).toBeInTheDocument();
+    expect(screen.queryByTestId('kpi-income')).not.toBeInTheDocument();
   });
 
   it('surfaces an error when the dashboard cannot load', async () => {
@@ -126,28 +95,5 @@ describe('DashboardPage', () => {
     renderWithProviders(<DashboardPage />, ['/dashboard']);
 
     expect(await screen.findByText(/could not load your dashboard/i)).toBeInTheDocument();
-  });
-
-  it('uploads a chosen CSV with the selected currency', async () => {
-    mockedApi.dashboard.mockResolvedValue(EMPTY);
-    mockedApi.importTransactions.mockResolvedValue({
-      importId: 'i1', fileName: 'statement.csv', currency: 'AUD',
-      rowsParsed: 6, imported: 6, duplicatesSkipped: 0, failedRows: 0,
-      accountsCreated: ['Everyday'], dateFrom: '2025-08-17', dateTo: '2026-07-11',
-      totalIncome: 3040, totalExpenses: 217.7, net: 2822.3, errors: [],
-    });
-    renderWithProviders(<DashboardPage />, ['/dashboard']);
-
-    await screen.findByTestId('csv-dropzone');
-    const file = new File(['Date,Description,Amount\n2026-07-11,Coffee,-4.50\n'], 'statement.csv', {
-      type: 'text/csv',
-    });
-    await userEvent.upload(screen.getByLabelText('Choose a CSV file'), file);
-
-    await waitFor(() => expect(mockedApi.importTransactions).toHaveBeenCalledTimes(1));
-    const [uploaded, currency] = mockedApi.importTransactions.mock.calls[0];
-    expect(uploaded).toBeInstanceOf(File);
-    expect((uploaded as File).name).toBe('statement.csv');
-    expect(currency).toBe('AUD');
   });
 });

@@ -15,7 +15,7 @@ React 19 + Vite + TypeScript SPA for FinTrack — the full app: auth, dashboard,
 ## Pages
 
 **Public:** `/signup` · `/verify-email` · `/login` · `/forgot-password` · `/reset-password` · `/join` (accept a household invite).
-**Protected:** `/dashboard` (CSV import → KPIs, charts, budget-vs-actual) · `/insights` (AI summary + natural-language Q&A) · `/cash-flow` · `/home-loan` (+ payoff calculator) · `/budget` (income & expenses) · `/profile` (household roster + invites) · `/settings` (change password/email).
+**Protected:** `/dashboard` (overview: totals + AI summary + cash-flow/home-loan/budget rollups) · `/bank` (imported statement detail: charts, merchants, recent, import, sharing) · `/insights` (AI summary + Q&A) · `/cash-flow` · `/home-loan` (+ payoff calculator) · `/budget` (income & expenses) · `/profile` (household roster + invites) · `/settings`.
 
 The API client (`src/api/client.ts`) attaches the bearer token, does one silent refresh on a 401, and parses RFC 9457 problem bodies into a typed `ApiError`.
 
