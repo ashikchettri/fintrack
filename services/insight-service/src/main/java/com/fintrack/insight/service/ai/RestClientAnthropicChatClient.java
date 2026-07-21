@@ -3,6 +3,7 @@ package com.fintrack.insight.service.ai;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.springframework.web.client.RestClient;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -42,6 +43,25 @@ public class RestClientAnthropicChatClient implements AnthropicChatClient {
         }
         String text = response.content().get(0).text();
         return text == null ? "" : text;
+    }
+
+    @Override
+    public ClaudeResponse converse(String system, List<Map<String, Object>> tools,
+                                   List<Map<String, Object>> messages) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("model", model);
+        body.put("max_tokens", MAX_TOKENS);
+        body.put("system", system);
+        body.put("tools", tools);
+        body.put("messages", messages);
+
+        ClaudeResponse response = http.post()
+                .uri("/v1/messages")
+                .body(body)
+                .retrieve()
+                .body(ClaudeResponse.class);
+
+        return response == null ? new ClaudeResponse("end_turn", List.of()) : response;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

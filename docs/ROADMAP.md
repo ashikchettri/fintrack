@@ -35,9 +35,9 @@ Each milestone produces something working and deployable. FinTrack is built incr
 ### Redis refresh-token store — ✅ built (opt-in), default-flip pending
 - A `RefreshTokenStore` seam with a Redis implementation (ADR 011): Lua-atomic rotation, single-use, and reuse detection over Redis, with native TTL replacing the purge job. Selected by `fintrack.auth.refresh-token.store=redis`; Postgres (`jpa`) remains the default until the flip is verified in a deployed environment.
 
-### insight-service (AI) — ✅ v1 built
-- `insight-service` (`:8083`, ADR 012): **monthly spending summary** (`GET /api/v1/insights/monthly-summary`) — reads finance-service service-to-service (forwarding the caller's JWT), summarizes with Claude (opt-in) over a deterministic template fallback.
-- Next: **natural-language Q&A** ("how much did I spend on food in June?") via Claude tool use against finance-service; an evaluation set; summary caching.
+### insight-service (AI) — ✅ built
+- `insight-service` (`:8083`): **monthly spending summary** (ADR 012) and **natural-language Q&A** (ADR 013) — `POST /api/v1/insights/ask` grounds answers in real data via a Claude **tool-use loop** against finance-service (forwarding the caller's JWT). Both read finance-service service-to-service.
+- Next: more Q&A tools (budget adherence, "find transactions like…"); an evaluation set; answer/summary caching; a UI surface.
 
 ### Containerization → Kubernetes
 - Multi-stage Dockerfiles per service (non-root, layered jars); Trivy image scan in CI.

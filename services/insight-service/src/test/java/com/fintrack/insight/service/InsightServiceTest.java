@@ -20,8 +20,7 @@ class InsightServiceTest {
 
     @Test
     void reducesTheDashboardToASummary() {
-        when(financeClient.dashboard(eq("bearer"), eq("2026-06"))).thenReturn(new FinanceDashboard(
-                "AUD", "2026-06",
+        when(financeClient.dashboard(eq("bearer"), eq("2026-06"))).thenReturn(new FinanceDashboard("AUD", "2026-06", java.util.List.of("2026-06"),
                 new FinanceDashboard.Totals(new BigDecimal("5000"), new BigDecimal("4120"), new BigDecimal("880"), 78),
                 List.of(new FinanceDashboard.CategorySpend("Groceries & Food", new BigDecimal("1240"), 0.30)),
                 List.of()));
@@ -38,7 +37,7 @@ class InsightServiceTest {
     @Test
     void toleratesAnEmptyDashboard() {
         when(financeClient.dashboard(any(), any()))
-                .thenReturn(new FinanceDashboard(null, null, null, null, null));
+                .thenReturn(new FinanceDashboard(null, null, null, null, null, null));
 
         MonthlySummaryResponse response = service.monthlySummary("bearer", null);
 

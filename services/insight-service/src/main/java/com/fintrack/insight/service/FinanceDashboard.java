@@ -14,6 +14,7 @@ import java.util.List;
 public record FinanceDashboard(
         String currency,
         String month,
+        List<String> availableMonths,
         Totals totals,
         List<CategorySpend> byCategory,
         List<MerchantSpend> topMerchants) {

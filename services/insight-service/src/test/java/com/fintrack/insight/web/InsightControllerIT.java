@@ -19,7 +19,10 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import org.springframework.http.MediaType;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -49,8 +52,7 @@ class InsightControllerIT {
 
     @Test
     void returnsAMonthlySummaryAndEchoesTheCorrelationId() throws Exception {
-        when(financeClient.dashboard(any(), any())).thenReturn(new FinanceDashboard(
-                "AUD", "2026-06",
+        when(financeClient.dashboard(any(), any())).thenReturn(new FinanceDashboard("AUD", "2026-06", java.util.List.of("2026-06"),
                 new FinanceDashboard.Totals(new BigDecimal("5000"), new BigDecimal("4120"), new BigDecimal("880"), 78),
                 List.of(new FinanceDashboard.CategorySpend("Groceries & Food", new BigDecimal("1240"), 0.30)),
                 List.of()));
@@ -68,6 +70,26 @@ class InsightControllerIT {
     @Test
     void requiresAuthentication() throws Exception {
         mockMvc.perform(get("/api/v1/insights/monthly-summary")).andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/v1/insights/ask")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void askReturns503WhenAiIsNotConfigured() throws Exception {
+        // AI is off by default → no Anthropic client bean → Q&A can't run
+        mockMvc.perform(post("/api/v1/insights/ask").with(member())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"question\": \"how much on food in June?\"}"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.title").value("AI not configured"));
+    }
+
+    @Test
+    void askRejectsABlankQuestion() throws Exception {
+        mockMvc.perform(post("/api/v1/insights/ask").with(member())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"question\": \"\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Validation error"));
     }
 
     @Test
