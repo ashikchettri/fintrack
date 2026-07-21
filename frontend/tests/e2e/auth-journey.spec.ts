@@ -64,6 +64,7 @@ test.describe('full auth journey against the real API', () => {
     await page.reload();
     await expect(page.getByTestId('profile-email')).toHaveText(email);
 
+    await page.getByRole('button', { name: 'Account menu' }).click();
     await page.getByRole('button', { name: 'Log out' }).click();
     await expect(page).toHaveURL(/\/login/);
     await page.goto('/profile');

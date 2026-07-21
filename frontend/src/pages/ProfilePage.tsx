@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { Landmark, LogOut, Settings, Wallet } from 'lucide-react';
+import { Landmark, Wallet } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
-import { useAuth } from '../auth/AuthContext';
 import { AppShell } from '@/components/AppShell';
 import { HouseholdSection } from '@/components/HouseholdSection';
 import { Alert } from '@/components/ui/alert';
@@ -11,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
 
   // Server state via TanStack Query: cached, refetched on focus, retried by
   // the client's silent-refresh path if the access token expired meanwhile.
@@ -20,11 +18,6 @@ export default function ProfilePage() {
     queryFn: api.me,
     retry: false,
   });
-
-  async function onLogout() {
-    await logout();
-    navigate('/login');
-  }
 
   if (isPending) {
     return (
@@ -84,14 +77,6 @@ export default function ProfilePage() {
             <Button variant="outline" onClick={() => navigate('/income')} className="w-full">
               <Wallet className="size-4" aria-hidden="true" />
               Income
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/settings')} className="w-full">
-              <Settings className="size-4" aria-hidden="true" />
-              Account settings
-            </Button>
-            <Button variant="outline" onClick={onLogout} className="w-full">
-              <LogOut className="size-4" aria-hidden="true" />
-              Log out
             </Button>
           </CardContent>
         </Card>

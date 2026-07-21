@@ -52,7 +52,8 @@ test.describe('account settings against the real API', () => {
     const newPassword = 'a totally different secret';
     await signupVerifyLogin(page, request, email);
 
-    await page.getByRole('button', { name: 'Account settings' }).click();
+    await page.getByRole('button', { name: 'Account menu' }).click();
+    await page.getByRole('link', { name: 'Account settings' }).click();
     await page.locator('#currentPassword').fill(PASSWORD);
     await page.getByLabel('New password').fill(newPassword);
     await page.getByRole('button', { name: 'Change password' }).click();
@@ -78,7 +79,8 @@ test.describe('account settings against the real API', () => {
     const newEmail = `ui.settings.newaddr.${Date.now()}@example.com`;
     await signupVerifyLogin(page, request, email);
 
-    await page.getByRole('button', { name: 'Account settings' }).click();
+    await page.getByRole('button', { name: 'Account menu' }).click();
+    await page.getByRole('link', { name: 'Account settings' }).click();
     await page.getByLabel('New email').fill(newEmail);
     await page.locator('#emailCurrentPassword').fill(PASSWORD);
     await page.getByRole('button', { name: 'Send code' }).click();

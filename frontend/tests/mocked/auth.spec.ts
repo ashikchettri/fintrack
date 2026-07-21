@@ -199,7 +199,8 @@ test.describe('login', () => {
     await expect(page.getByTestId('profile-email')).toHaveText('jane@example.com');
     await expect(page.getByTestId('profile-role')).toHaveText('OWNER');
 
-    // log out (the profile page's own action)
+    // log out from the account menu
+    await page.getByRole('button', { name: 'Account menu' }).click();
     await page.getByRole('button', { name: 'Log out' }).click();
     await expect(page).toHaveURL(/\/login/);
   });
