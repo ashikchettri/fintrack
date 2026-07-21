@@ -20,7 +20,7 @@ Three services run together via `./dev.sh` (Postgres, Redis, Mailpit, gateway, a
 - **gateway-service** (:8080): reactive Spring Cloud Gateway (ADR 007) — routing, CORS, Redis rate limiting, edge correlation IDs.
 - **React 19 SPA**: every flow above — Dashboard, Cash flow, Home loan, Income & expenses, Profile (household roster + invites), Settings; charts (donut/bar/payoff); light/dark.
 
-~250 tests (JUnit + Testcontainers + Karate + Vitest + Playwright), coverage gates enforced. Public repo, branch protection. **Next: see `docs/ROADMAP.md` (Redis refresh-token store, insight-service, containerization → K8s).**
+Refresh tokens go through a `RefreshTokenStore` seam (ADR 011): Postgres (`jpa`, default) or **Redis** (`fintrack.auth.refresh-token.store=redis`, Lua-atomic rotation/reuse). ~260 tests (JUnit + Testcontainers + Karate + Vitest + Playwright), coverage gates enforced. Public repo, branch protection. **Next: see `docs/ROADMAP.md` (flip refresh-token store to Redis, insight-service, containerization → K8s).**
 
 ## Stack
 
