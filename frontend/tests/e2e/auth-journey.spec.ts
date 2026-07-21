@@ -55,6 +55,7 @@ test.describe('full auth journey against the real API', () => {
 
     // login lands on the dashboard; the profile lives behind its nav link
     await expect(page).toHaveURL(/\/dashboard/);
+    await page.getByRole('button', { name: 'Account menu' }).click();
     await page.getByRole('link', { name: 'Profile' }).click();
     await expect(page.getByTestId('profile-email')).toHaveText(email);
     await expect(page.getByTestId('profile-role')).toHaveText('OWNER');
@@ -120,6 +121,7 @@ test.describe('full auth journey against the real API', () => {
     await page.getByLabel('Password').fill(newPassword);
     await page.getByRole('button', { name: 'Log in' }).click();
     await expect(page).toHaveURL(/\/dashboard/);
+    await page.getByRole('button', { name: 'Account menu' }).click();
     await page.getByRole('link', { name: 'Profile' }).click();
     await expect(page.getByTestId('profile-email')).toHaveText(email);
   });
