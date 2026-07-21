@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { TrendingUp } from 'lucide-react';
+import { RotateCcw, TrendingUp } from 'lucide-react';
 import { api } from '../api/client';
 import type { CashFlow } from '../api/types';
 import { AppShell } from '@/components/AppShell';
 import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -75,12 +76,25 @@ function Summary({ data }: { data: CashFlow }) {
   );
 }
 
+/** Default what-if inputs — Reset restores these after experimenting. */
+const AFFORD_DEFAULTS = { amount: '500000', rate: '6.25', term: '30' };
+
 /** The "can we afford a new loan?" what-if — runs live against the surplus. */
 function Affordability({ data }: { data: CashFlow }) {
   const c = data.currency;
-  const [amount, setAmount] = useState('500000');
-  const [rate, setRate] = useState('6.25');
-  const [term, setTerm] = useState('30');
+  const [amount, setAmount] = useState(AFFORD_DEFAULTS.amount);
+  const [rate, setRate] = useState(AFFORD_DEFAULTS.rate);
+  const [term, setTerm] = useState(AFFORD_DEFAULTS.term);
+
+  const modified =
+    amount !== AFFORD_DEFAULTS.amount ||
+    rate !== AFFORD_DEFAULTS.rate ||
+    term !== AFFORD_DEFAULTS.term;
+  const reset = () => {
+    setAmount(AFFORD_DEFAULTS.amount);
+    setRate(AFFORD_DEFAULTS.rate);
+    setTerm(AFFORD_DEFAULTS.term);
+  };
 
   const repayment = monthlyRepayment(Number(amount) || 0, Number(rate) || 0, Number(term) || 0);
   const surplusAfter = data.monthlySurplus - repayment;
@@ -89,8 +103,23 @@ function Affordability({ data }: { data: CashFlow }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Can we afford it?</CardTitle>
-        <CardDescription>Model a new loan — a property, a car — against what&apos;s left each month.</CardDescription>
+        <div className="flex items-start justify-between gap-2">
+          <div className="space-y-1.5">
+            <CardTitle className="text-base">Can we afford it?</CardTitle>
+            <CardDescription>Model a new loan — a property, a car — against what&apos;s left each month.</CardDescription>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={reset}
+            disabled={!modified}
+            className="shrink-0 text-muted-foreground"
+            data-testid="affordability-reset"
+          >
+            <RotateCcw className="size-3.5" aria-hidden="true" /> Reset
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-3 gap-3">
@@ -116,7 +145,7 @@ function Affordability({ data }: { data: CashFlow }) {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Based on your household income and recent spending. Adjust those on the Income and Home loan screens.
+          Based on your household income and recent spending. Set your income on the Income &amp; expenses screen and your repayments on Home loan.
         </p>
       </CardContent>
     </Card>

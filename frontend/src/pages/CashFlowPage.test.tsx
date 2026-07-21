@@ -56,6 +56,30 @@ describe('CashFlowPage', () => {
     );
   });
 
+  it('resets the affordability inputs after experimenting', async () => {
+    mockedApi.getCashFlow.mockResolvedValue(CF);
+    renderWithProviders(<CashFlowPage />, ['/cash-flow']);
+
+    const reset = await screen.findByTestId('affordability-reset');
+    expect(reset).toBeDisabled(); // nothing changed yet
+
+    const amount = screen.getByLabelText('Loan amount');
+    await userEvent.clear(amount);
+    await userEvent.type(amount, '1000000');
+    await waitFor(() =>
+      expect(screen.getByTestId('affordability-verdict')).toHaveTextContent(/short/i),
+    );
+    expect(reset).toBeEnabled();
+
+    await userEvent.click(reset);
+
+    expect(amount).toHaveValue(500000); // back to the default what-if
+    await waitFor(() =>
+      expect(screen.getByTestId('affordability-verdict')).toHaveTextContent(/looks affordable/i),
+    );
+    expect(reset).toBeDisabled();
+  });
+
   it('says you are over budget when spending exceeds income', async () => {
     mockedApi.getCashFlow.mockResolvedValue({ ...CF, monthlyAvgSpending: 9000, monthlySurplus: -1500 });
     renderWithProviders(<CashFlowPage />, ['/cash-flow']);
