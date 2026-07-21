@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: insight-service
+
+  profiles:
+    default: local
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # auth-service's public keys — verified without a shared secret
+          jwk-set-uri: ${AUTH_JWKS_URI:http://localhost:8081/.well-known/jwks.json}
+
+  mvc:
+    problemdetails:
+      enabled: true
+
+# finance-service base URL for the service-to-service dashboard call (ADR 012)
+insight:
+  finance-uri: ${FINANCE_URI:http://localhost:8082}
+  # AI summaries (ADR 012). Off by default: runs on the template generator, no key.
+  ai:
+    enabled: ${INSIGHT_AI_ENABLED:false}
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${INSIGHT_AI_MODEL:claude-haiku-4-5-20251001}
+
+server:
+  port: 8083
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true

@@ -29,8 +29,15 @@ public class GatewayConfig {
             RedisRateLimiter rateLimiter,
             KeyResolver clientIpKeyResolver,
             @Value("${gateway.auth-uri:http://localhost:8081}") String authUri,
-            @Value("${gateway.finance-uri:http://localhost:8082}") String financeUri) {
+            @Value("${gateway.finance-uri:http://localhost:8082}") String financeUri,
+            @Value("${gateway.insight-uri:http://localhost:8083}") String insightUri) {
         return builder.routes()
+                .route("insight-service", r -> r
+                        .path("/api/v1/insights/**")
+                        .filters(f -> f.requestRateLimiter(c -> c
+                                .setRateLimiter(rateLimiter)
+                                .setKeyResolver(clientIpKeyResolver)))
+                        .uri(insightUri))
                 .route("finance-service", r -> r
                         .path(
                                 "/api/v1/accounts/**",

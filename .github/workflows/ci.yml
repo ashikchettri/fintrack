@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [auth-service, finance-service, gateway-service]
+        service: [auth-service, finance-service, gateway-service, insight-service]
     runs-on: ubuntu-latest
     defaults:
       run:
