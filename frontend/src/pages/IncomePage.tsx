@@ -161,7 +161,7 @@ function HouseholdIncomeCard() {
   const nameById = new Map((members ?? []).map((m) => [m.memberId, m.name]));
 
   return (
-    <Card className="border-primary/30 bg-primary/[0.03]">
+    <Card className="border-primary/30 hero-gradient">
       <CardHeader className="pb-2">
         <CardTitle className="text-base">Household income</CardTitle>
         <CardDescription>Everyone&apos;s income, combined.</CardDescription>

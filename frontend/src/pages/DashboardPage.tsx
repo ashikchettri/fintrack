@@ -79,20 +79,26 @@ function KpiRow({ data }: { data: DashboardResponse }) {
   const currency = data.currency;
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <Kpi label="Income" value={formatMoney(income, currency)} tone="income"
-           icon={<ArrowUpRight className="size-4" aria-hidden="true" />} />
-      <Kpi label="Expenses" value={formatMoney(expenses, currency)} tone="expense"
-           icon={<ArrowDownRight className="size-4" aria-hidden="true" />} />
-      <Kpi label="Net" value={formatMoney(net, currency)} tone={net >= 0 ? 'income' : 'expense'}
-           icon={<Wallet className="size-4" aria-hidden="true" />} />
+      <Kpi label="Income" value={formatMoney(income, currency)} color="emerald"
+           icon={<ArrowUpRight className="size-5" aria-hidden="true" />} />
+      <Kpi label="Expenses" value={formatMoney(expenses, currency)} color="rose"
+           icon={<ArrowDownRight className="size-5" aria-hidden="true" />} />
+      <Kpi label="Net" value={formatMoney(net, currency)} color="indigo"
+           icon={<Wallet className="size-5" aria-hidden="true" />} />
     </div>
   );
 }
 
+const KPI_COLOR = {
+  emerald: { bubble: 'bg-gradient-to-br from-emerald-400 to-emerald-600', card: 'border-emerald-500/20 bg-emerald-500/[0.04]' },
+  rose: { bubble: 'bg-gradient-to-br from-rose-400 to-rose-600', card: 'border-rose-500/20 bg-rose-500/[0.04]' },
+  indigo: { bubble: 'bg-gradient-to-br from-indigo-400 to-violet-600', card: 'border-indigo-500/20 bg-indigo-500/[0.04]' },
+} as const;
+
 /** Shown until the first statement is imported — the totals have nothing to show yet. */
 function ImportBanner() {
   return (
-    <Card className="border-primary/30 bg-primary/[0.03]">
+    <Card className="border-primary/30 hero-gradient">
       <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
         <div className="flex items-center gap-3">
           <span className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -110,22 +116,22 @@ function ImportBanner() {
   );
 }
 
-function Kpi({ label, value, tone, icon }: {
-  label: string; value: string; tone: 'income' | 'expense'; icon: ReactNode;
+function Kpi({ label, value, color, icon }: {
+  label: string; value: string; color: keyof typeof KPI_COLOR; icon: ReactNode;
 }) {
+  const c = KPI_COLOR[color];
   return (
-    <Card>
+    <Card className={cn('transition-shadow hover:shadow-pop', c.card)}>
       <CardContent className="flex items-center gap-3 py-5">
         <span className={cn(
-          'flex size-9 items-center justify-center rounded-full',
-          tone === 'income' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                            : 'bg-red-500/10 text-red-600 dark:text-red-400',
+          'flex size-10 items-center justify-center rounded-xl text-white shadow-sm',
+          c.bubble,
         )}>
           {icon}
         </span>
         <div>
           <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-lg font-semibold tabular-nums" data-testid={`kpi-${label.toLowerCase()}`}>
+          <p className="text-xl font-bold tabular-nums" data-testid={`kpi-${label.toLowerCase()}`}>
             {value}
           </p>
         </div>

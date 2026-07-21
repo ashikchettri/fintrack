@@ -59,7 +59,7 @@ export default function NetWorthPage() {
 function SummaryCard({ data }: { data: NetWorth }) {
   if (data.assets.length === 0 && data.liabilities.length === 0) return null;
   return (
-    <Card className="border-primary/30 bg-primary/[0.03]">
+    <Card className="border-primary/30 hero-gradient">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Landmark className="size-4 text-primary" aria-hidden="true" />

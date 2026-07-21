@@ -22,7 +22,7 @@ export function NetWorthCard() {
   if (data.assets.length === 0 && data.liabilities.length === 0) return null;
 
   return (
-    <Card className="border-primary/30 bg-primary/[0.03]">
+    <Card className="border-primary/30 hero-gradient">
       <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
