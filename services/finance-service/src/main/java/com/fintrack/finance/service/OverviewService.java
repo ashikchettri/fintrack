@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -27,8 +26,6 @@ import java.util.Map;
  */
 @Service
 public class OverviewService {
-
-    private static final BigDecimal TWELVE = BigDecimal.valueOf(12);
 
     private final BudgetLineRepository budgetLineRepository;
     private final TransactionRepository transactionRepository;
@@ -94,7 +91,7 @@ public class OverviewService {
                 continue;
             }
             SpendingCategory category = CategoryMapper.fromBudgetGroup(line.getCategory());
-            planned.merge(category, monthlyOf(line), BigDecimal::add);
+            planned.merge(category, line.monthlyAmount(), BigDecimal::add);
         }
         return planned;
     }
@@ -127,16 +124,7 @@ public class OverviewService {
     private BigDecimal monthlyTotal(List<BudgetLine> lines, BudgetSection section) {
         return lines.stream()
                 .filter(l -> l.getSection() == section)
-                .map(this::monthlyOf)
+                .map(BudgetLine::monthlyAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private BigDecimal monthlyOf(BudgetLine line) {
-        if (line.getAmount() == null || line.getFrequency() == null) {
-            return BigDecimal.ZERO;
-        }
-        return line.getAmount()
-                .multiply(BigDecimal.valueOf(line.getFrequency().perYear()))
-                .divide(TWELVE, 2, RoundingMode.HALF_UP);
     }
 }

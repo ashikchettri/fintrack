@@ -1,12 +1,14 @@
 package com.fintrack.finance.service;
 
+import com.fintrack.finance.domain.BudgetLine;
+import com.fintrack.finance.domain.BudgetSection;
 import com.fintrack.finance.domain.HomeLoan;
 import com.fintrack.finance.domain.Transaction;
+import com.fintrack.finance.repository.BudgetLineRepository;
 import com.fintrack.finance.repository.HomeLoanRepository;
 import com.fintrack.finance.repository.TransactionRepository;
 import com.fintrack.finance.security.AuthenticatedMember;
 import com.fintrack.finance.web.dto.CashFlowResponse;
-import com.fintrack.finance.web.dto.HouseholdIncomeResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,22 +30,28 @@ public class CashFlowService {
 
     private static final BigDecimal TWELVE = BigDecimal.valueOf(12);
 
-    private final IncomeService incomeService;
+    private final BudgetLineRepository budgetLineRepository;
     private final HomeLoanRepository homeLoanRepository;
     private final TransactionRepository transactionRepository;
 
-    public CashFlowService(IncomeService incomeService,
+    public CashFlowService(BudgetLineRepository budgetLineRepository,
                            HomeLoanRepository homeLoanRepository,
                            TransactionRepository transactionRepository) {
-        this.incomeService = incomeService;
+        this.budgetLineRepository = budgetLineRepository;
         this.homeLoanRepository = homeLoanRepository;
         this.transactionRepository = transactionRepository;
     }
 
     @Transactional(readOnly = true)
     public CashFlowResponse summary(AuthenticatedMember caller) {
-        HouseholdIncomeResponse income = incomeService.householdSummary(caller);
-        BigDecimal monthlyIncome = income.annualTotal().divide(TWELVE, 2, RoundingMode.HALF_UP);
+        // Household income is the INCOME section of the budget ("Income & expenses"),
+        // normalized to monthly — the single place a household states what it earns.
+        List<BudgetLine> budget = budgetLineRepository.findByHouseholdIdOrderBySortOrder(caller.householdId());
+        BigDecimal monthlyIncome = budget.stream()
+                .filter(l -> l.getSection() == BudgetSection.INCOME)
+                .map(BudgetLine::monthlyAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        String currency = budget.isEmpty() ? "AUD" : budget.get(0).getCurrency();
 
         BigDecimal monthlyLoan = monthlyLoanRepayment(caller);
 
@@ -63,7 +71,7 @@ public class CashFlowService {
                         .divide(BigDecimal.valueOf(months), 2, RoundingMode.HALF_UP);
 
         BigDecimal surplus = monthlyIncome.subtract(avgSpending);
-        return new CashFlowResponse(income.currency(), monthlyIncome, monthlyLoan, avgSpending, surplus, months);
+        return new CashFlowResponse(currency, monthlyIncome, monthlyLoan, avgSpending, surplus, months);
     }
 
     private BigDecimal monthlyLoanRepayment(AuthenticatedMember caller) {
