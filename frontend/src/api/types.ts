@@ -139,6 +139,21 @@ export interface RecategorizeResult {
   changed: number;
 }
 
+/** AI (or template) spending summary for a month (ADR 012). */
+export interface MonthlySummary {
+  month: string | null;
+  currency: string | null;
+  totals: { income: number; expenses: number; net: number; transactionCount: number };
+  headline: string;
+  insights: string[];
+}
+
+/** A grounded answer to a natural-language spending question (ADR 013). */
+export interface InsightAnswer {
+  question: string;
+  answer: string;
+}
+
 export type BudgetSection = 'INCOME' | 'EXPENSE' | 'SAVING';
 export type BudgetFrequency = 'WEEKLY' | 'FORTNIGHTLY' | 'MONTHLY' | 'QUARTERLY' | 'ANNUALLY';
 

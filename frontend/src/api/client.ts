@@ -8,7 +8,9 @@ import type {
   Income,
   ImportSummary,
   LoginResponse,
+  InsightAnswer,
   MemberResponse,
+  MonthlySummary,
   ProblemDetail,
   RecategorizeResult,
   SharedHouseholdView,
@@ -160,6 +162,20 @@ export const api = {
   recategorizeTransactions(): Promise<RecategorizeResult> {
     return withRefresh(() => request<RecategorizeResult>('/api/v1/transactions/recategorize', {
       method: 'POST',
+    }));
+  },
+
+  /** AI (or template) monthly spending summary (ADR 012). */
+  getMonthlySummary(month?: string): Promise<MonthlySummary> {
+    const query = month ? `?month=${encodeURIComponent(month)}` : '';
+    return withRefresh(() => request<MonthlySummary>(`/api/v1/insights/monthly-summary${query}`));
+  },
+
+  /** Natural-language Q&A over the caller's spending (ADR 013). */
+  askInsight(question: string): Promise<InsightAnswer> {
+    return withRefresh(() => request<InsightAnswer>('/api/v1/insights/ask', {
+      method: 'POST',
+      body: JSON.stringify({ question }),
     }));
   },
 
