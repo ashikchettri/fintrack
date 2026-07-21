@@ -38,26 +38,16 @@ describe('ProfilePage', () => {
     expect(screen.getByTestId('profile-role')).toHaveTextContent('OWNER');
   });
 
-  it('logs out and navigates to login', async () => {
+  // account actions (settings, log out) now live in the top-right account menu
+
+  it('links to the income profile', async () => {
     mockedApi.me.mockResolvedValue(TEST_USER);
-    mockedApi.logout.mockResolvedValue(undefined);
-    renderPageWithDestinations(<ProfilePage />, '/profile', { '/login': 'LOGIN_DEST' });
+    renderPageWithDestinations(<ProfilePage />, '/profile', { '/income': 'INCOME_DEST' });
     await waitFor(() => expect(screen.getByTestId('profile-email')).toBeInTheDocument());
 
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Log out' }));
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Income' }));
 
-    await waitFor(() => expect(screen.getByText('LOGIN_DEST')).toBeInTheDocument());
-    expect(mockedApi.logout).toHaveBeenCalled();
-  });
-
-  it('navigates to account settings', async () => {
-    mockedApi.me.mockResolvedValue(TEST_USER);
-    renderPageWithDestinations(<ProfilePage />, '/profile', { '/settings': 'SETTINGS_DEST' });
-    await waitFor(() => expect(screen.getByTestId('profile-email')).toBeInTheDocument());
-
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Account settings' }));
-
-    await waitFor(() => expect(screen.getByText('SETTINGS_DEST')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('INCOME_DEST')).toBeInTheDocument());
   });
 
   it('shows an error state when the profile cannot load', async () => {

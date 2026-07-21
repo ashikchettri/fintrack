@@ -55,7 +55,7 @@ export function ProfileMenu() {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-11 z-20 w-60 overflow-hidden rounded-xl border bg-card text-card-foreground shadow-pop">
+        <div className="absolute right-0 top-11 z-20 w-60 overflow-hidden rounded-xl border bg-card text-card-foreground shadow-pop">
           <div className="border-b px-3 py-3">
             <p className="truncate text-sm font-medium">{user?.email}</p>
             {user?.householdName && (

@@ -11,8 +11,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-border/60 bg-background/70 backdrop-blur-lg">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4">
-          {/* top-left account menu: profile, household, settings, log out */}
-          <ProfileMenu />
           {/* brand doubles as "home" — click to return to the dashboard */}
           <Link to="/dashboard" aria-label="Go to dashboard" className="rounded-md">
             <Logo />
@@ -24,7 +22,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             <ShellLink to="/net-worth">Net worth</ShellLink>
             <ShellLink to="/budget">Income &amp; expenses</ShellLink>
           </nav>
-          <ThemeToggle className="ml-auto" />
+          {/* top-right: theme toggle + account menu (profile, household, settings, log out) */}
+          <div className="ml-auto flex items-center gap-3">
+            <ThemeToggle />
+            <ProfileMenu />
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-10">{children}</main>
