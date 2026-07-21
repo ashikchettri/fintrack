@@ -30,6 +30,7 @@ export function HomeLoanSummaryCard() {
         icon={<Landmark className="size-4" aria-hidden="true" />}
         title="Home loan"
         to="/home-loan"
+      accent="violet"
         empty={{ prompt: 'Track your mortgage to see how fast you can pay it off.', to: '/home-loan' }}
       />
     );
@@ -45,6 +46,7 @@ export function HomeLoanSummaryCard() {
       icon={<Landmark className="size-4" aria-hidden="true" />}
       title="Home loan"
       to="/home-loan"
+      accent="violet"
       hero={{ label: 'Balance remaining', value: formatMoney(data.loanAmount, data.currency), tone: 'neutral' }}
     >
       <SummaryStat label="Interest rate" value={data.interestRate != null ? `${data.interestRate}% p.a.` : '—'} />

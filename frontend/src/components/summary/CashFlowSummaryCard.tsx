@@ -21,6 +21,7 @@ export function CashFlowSummaryCard() {
       icon={<Waves className="size-4" aria-hidden="true" />}
       title="Cash flow"
       to="/cash-flow"
+      accent="cyan"
       hero={{
         label: 'Monthly surplus',
         value: formatMoney(data.monthlySurplus, data.currency),

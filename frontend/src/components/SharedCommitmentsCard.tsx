@@ -32,7 +32,7 @@ export function SharedCommitmentsCard({ month = null }: { month?: string | null 
   const nameById = new Map((members ?? []).map((m) => [m.memberId, m.name]));
 
   return (
-    <Card className="border-primary/30 bg-primary/[0.03]">
+    <Card className="border-primary/30 hero-gradient">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Users className="size-4 text-primary" aria-hidden="true" />

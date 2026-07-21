@@ -20,6 +20,7 @@ export function BudgetSummaryCard() {
         icon={<Scale className="size-4" aria-hidden="true" />}
         title="Income & expenses"
         to="/budget"
+      accent="amber"
         empty={{ prompt: 'Set a household budget to plan income against spending.', to: '/budget' }}
       />
     );
@@ -32,6 +33,7 @@ export function BudgetSummaryCard() {
       icon={<Scale className="size-4" aria-hidden="true" />}
       title="Income & expenses"
       to="/budget"
+      accent="amber"
       hero={{
         label: 'Planned left over / mo',
         value: formatMoney(leftover, data.currency),

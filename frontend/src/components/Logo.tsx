@@ -26,7 +26,7 @@ export function Logo({
         className={cn('shrink-0 object-cover shadow-sm', box)}
       />
       {withWordmark && (
-        <span className={cn('font-bold tracking-tight', text)}>FinTrack</span>
+        <span className={cn('text-gradient font-bold tracking-tight', text)}>FinTrack</span>
       )}
     </span>
   );

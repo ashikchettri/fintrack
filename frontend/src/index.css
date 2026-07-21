@@ -7,7 +7,7 @@
   --foreground: oklch(0.21 0.03 255);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.21 0.03 255);
-  --primary: oklch(0.52 0.12 195);
+  --primary: oklch(0.55 0.15 192);
   --primary-foreground: oklch(0.985 0.002 247);
   --secondary: oklch(0.965 0.008 220);
   --secondary-foreground: oklch(0.21 0.03 255);
@@ -32,7 +32,7 @@
   --foreground: oklch(0.94 0.005 247);
   --card: oklch(0.21 0.018 255);
   --card-foreground: oklch(0.94 0.005 247);
-  --primary: oklch(0.72 0.13 195);
+  --primary: oklch(0.74 0.15 192);
   --primary-foreground: oklch(0.16 0.015 255);
   --secondary: oklch(0.27 0.02 255);
   --secondary-foreground: oklch(0.94 0.005 247);
@@ -76,9 +76,14 @@
   }
   body {
     background-color: var(--color-background);
-    /* a faint accent glow behind the top of the page for depth */
-    background-image: radial-gradient(70rem 44rem at 50% -22%,
-      color-mix(in oklch, var(--color-primary) 9%, transparent), transparent 60%);
+    /* a multi-hue aurora behind the top of the page — teal + indigo + violet */
+    background-image:
+      radial-gradient(46rem 30rem at 12% -12%,
+        color-mix(in oklch, oklch(0.6 0.19 268) 14%, transparent), transparent 62%),
+      radial-gradient(44rem 30rem at 88% -14%,
+        color-mix(in oklch, oklch(0.64 0.2 330) 11%, transparent), transparent 62%),
+      radial-gradient(64rem 42rem at 50% -22%,
+        color-mix(in oklch, var(--color-primary) 12%, transparent), transparent 62%);
     background-attachment: fixed;
     color: var(--color-foreground);
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -90,6 +95,32 @@
   /* elevated surface for cards — layered, theme-aware shadow */
   .card-surface {
     box-shadow: var(--shadow-card);
+  }
+
+  /* signature brand gradient — teal → indigo → violet. As text (wordmark,
+     headings) or as a filled surface (`.brand-gradient`). */
+  .text-gradient {
+    background-image: linear-gradient(100deg,
+      var(--color-primary), oklch(0.58 0.19 268) 55%, oklch(0.62 0.21 322));
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+
+  .brand-gradient {
+    background-image: linear-gradient(135deg,
+      color-mix(in oklch, var(--color-primary) 90%, white),
+      oklch(0.55 0.19 268) 55%,
+      oklch(0.58 0.21 322));
+    color: white;
+  }
+
+  /* subtle multi-hue wash for hero cards — a colorful lift over plain tints */
+  .hero-gradient {
+    background-image: linear-gradient(135deg,
+      color-mix(in oklch, var(--color-primary) 11%, transparent),
+      color-mix(in oklch, oklch(0.6 0.19 268) 9%, transparent) 55%,
+      color-mix(in oklch, oklch(0.62 0.21 322) 9%, transparent));
   }
 
   /* auth split-screen brand panel: a diagonal teal gradient with depth */

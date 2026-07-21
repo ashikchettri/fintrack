@@ -116,7 +116,7 @@ function BudgetForm({ budget }: { budget: Budget }) {
       </div>
 
       {/* summary */}
-      <Card className="mb-6 border-primary/30 bg-primary/[0.03]">
+      <Card className="mb-6 border-primary/30 hero-gradient">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base"><Table2 className="size-4 text-primary" aria-hidden="true" />Summary</CardTitle>
         </CardHeader>
