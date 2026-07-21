@@ -4,7 +4,6 @@ import com.fintrack.auth.config.VerificationProperties;
 import com.fintrack.auth.domain.PasswordResetCode;
 import com.fintrack.auth.domain.User;
 import com.fintrack.auth.repository.PasswordResetCodeRepository;
-import com.fintrack.auth.repository.RefreshTokenRepository;
 import com.fintrack.auth.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +29,7 @@ public class PasswordResetService {
 
     private final PasswordResetCodeRepository codeRepository;
     private final UserRepository userRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final RefreshTokenStore refreshTokenStore;
     private final PasswordEncoder passwordEncoder;
     private final LoginAttemptService loginAttemptService;
     private final EmailSender emailSender;
@@ -40,7 +39,7 @@ public class PasswordResetService {
 
     public PasswordResetService(PasswordResetCodeRepository codeRepository,
                                 UserRepository userRepository,
-                                RefreshTokenRepository refreshTokenRepository,
+                                RefreshTokenStore refreshTokenStore,
                                 PasswordEncoder passwordEncoder,
                                 LoginAttemptService loginAttemptService,
                                 EmailSender emailSender,
@@ -48,7 +47,7 @@ public class PasswordResetService {
                                 Clock clock) {
         this.codeRepository = codeRepository;
         this.userRepository = userRepository;
-        this.refreshTokenRepository = refreshTokenRepository;
+        this.refreshTokenStore = refreshTokenStore;
         this.passwordEncoder = passwordEncoder;
         this.loginAttemptService = loginAttemptService;
         this.emailSender = emailSender;
@@ -110,7 +109,7 @@ public class PasswordResetService {
         }
 
         // stolen sessions die with the old password (ADR 005)
-        int revoked = refreshTokenRepository.revokeAllActiveForUser(user.getId(), now);
+        int revoked = refreshTokenStore.revokeAllForUser(user.getId());
         log.info("Password reset for user {} — revoked {} active session(s)", user.getId(), revoked);
 
         // stale failures shouldn't lock out the recovered account
