@@ -21,6 +21,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <ShellLink to="/dashboard">Dashboard</ShellLink>
             <ShellLink to="/bank">Bank &amp; statement</ShellLink>
             <ShellLink to="/home-loan">Home loan</ShellLink>
+            <ShellLink to="/net-worth">Net worth</ShellLink>
             <ShellLink to="/budget">Income &amp; expenses</ShellLink>
           </nav>
           <ThemeToggle className="ml-auto" />

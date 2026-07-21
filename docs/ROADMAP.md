@@ -22,6 +22,7 @@ Each milestone produces something working and deployable. FinTrack is built incr
 - **Home loan** + payoff calculator (amortization, interest, extra-repayment savings).
 - **Income & cash flow** — per-member income profiles → household income, surplus, affordability.
 - **Shared commitments** (ADR 006) — personal-by-default, opt-in sharing, equal-split settlement.
+- **Net worth** (ADR 014) — a manual assets/liabilities balance sheet, folding the home loan in for a real net-worth figure.
 
 ### Platform
 - **API gateway** (reactive Spring Cloud Gateway, ADR 007) — single entry point, routing, CORS, Redis-backed rate limiting.

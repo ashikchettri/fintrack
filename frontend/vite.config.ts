@@ -31,6 +31,7 @@ export default defineConfig({
       '/api/v1/household/cash-flow': 'http://localhost:8082',
       '/api/v1/household/budget': 'http://localhost:8082',
       '/api/v1/household/overview': 'http://localhost:8082',
+      '/api/v1/household/net-worth': 'http://localhost:8082',
       '/api/v1/imports': 'http://localhost:8082',
       '/api/v1/accounts': 'http://localhost:8082',
       '/api/v1/insights': 'http://localhost:8083',

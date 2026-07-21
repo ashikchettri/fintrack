@@ -11,6 +11,9 @@ import type {
   InsightAnswer,
   MemberResponse,
   MonthlySummary,
+  NetWorth,
+  NetWorthItem,
+  NetWorthItems,
   ProblemDetail,
   RecategorizeResult,
   SharedHouseholdView,
@@ -162,6 +165,24 @@ export const api = {
   recategorizeTransactions(): Promise<RecategorizeResult> {
     return withRefresh(() => request<RecategorizeResult>('/api/v1/transactions/recategorize', {
       method: 'POST',
+    }));
+  },
+
+  /** Household net-worth summary — manual items folded with the home loan (ADR 014). */
+  getNetWorth(): Promise<NetWorth> {
+    return withRefresh(() => request<NetWorth>('/api/v1/household/net-worth'));
+  },
+
+  /** The editable manual balance sheet. */
+  getNetWorthItems(): Promise<NetWorthItems> {
+    return withRefresh(() => request<NetWorthItems>('/api/v1/household/net-worth/items'));
+  },
+
+  /** Replace the manual balance sheet wholesale. */
+  saveNetWorthItems(items: NetWorthItem[], currency: string): Promise<NetWorthItems> {
+    return withRefresh(() => request<NetWorthItems>('/api/v1/household/net-worth/items', {
+      method: 'PUT',
+      body: JSON.stringify({ currency, items }),
     }));
   },
 
