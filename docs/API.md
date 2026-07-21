@@ -68,3 +68,4 @@ Base path `/api/v1`. All errors are RFC 9457 `ProblemDetail` (`application/probl
 | Method & path | Purpose |
 |---|---|
 | `GET /api/v1/insights/monthly-summary[?month=YYYY-MM]` | AI (or template) spending summary for the month → `{month, currency, totals, headline, insights[]}`. Claude when `insight.ai.enabled=true`, else a deterministic template |
+| `POST /api/v1/insights/ask` (`{"question": "…"}`) | Natural-language Q&A grounded in your data via Claude **tool use** against finance-service → `{question, answer}` (ADR 013). AI-required: **503** `ai-not-configured` when AI is off |

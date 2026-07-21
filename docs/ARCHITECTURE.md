@@ -91,7 +91,8 @@ FinTrack is a household personal-finance platform built as Spring Boot microserv
 - AI spending insights over a household's finance data (ADR 012), on `:8083`. v1: the **monthly spending summary** (`GET /api/v1/insights/monthly-summary`).
 - **Reads finance data through finance-service's API, not its database** — on a request it calls `/api/v1/dashboard` service-to-service, forwarding the caller's JWT (so finance-service's household/member scoping applies) and the `X-Request-Id` correlation id.
 - A `SummaryGenerator` seam: a deterministic template (default, no key) or Claude (opt-in) via the same Anthropic client pattern as finance-service, with the template as fallback. Only aggregate figures leave the boundary.
-- Next: natural-language Q&A via Claude tool use against finance-service; an eval set; summary caching.
+- **Natural-language Q&A** (`POST /api/v1/insights/ask`, ADR 013): a Claude **tool-use loop** — the model calls a `get_spending` tool that insight-service runs against finance-service, grounding the answer in real figures. AI-required (no fallback for arbitrary questions) → 503 when AI is off.
+- Next: more Q&A tools (budget adherence, transaction search); an eval set; caching.
 
 ## 5. Cross-cutting practices
 
