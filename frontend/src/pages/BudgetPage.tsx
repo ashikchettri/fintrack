@@ -80,6 +80,9 @@ function BudgetForm({ budget }: { budget: Budget }) {
       toast.success('Budget saved');
       reset(toForm(saved));
       void queryClient.invalidateQueries({ queryKey: ['budget'] });
+      // budget income + expenses feed the overview rollup and the cash-flow surplus
+      void queryClient.invalidateQueries({ queryKey: ['overview'] });
+      void queryClient.invalidateQueries({ queryKey: ['cash-flow'] });
     },
     onError: (e: unknown) =>
       toast.error(e instanceof ApiError ? (e.problem.detail ?? 'Could not save') : 'Network error'),

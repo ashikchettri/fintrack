@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -69,6 +70,19 @@ public class BudgetLine {
         this.sortOrder = sortOrder;
         this.currency = currency;
         this.createdAt = Instant.now();
+    }
+
+    /**
+     * This line normalized to a monthly figure — {@code amount × frequency/yr ÷ 12}.
+     * Zero when the amount or frequency is blank (an unfilled template row).
+     */
+    public BigDecimal monthlyAmount() {
+        if (amount == null || frequency == null) {
+            return BigDecimal.ZERO;
+        }
+        return amount
+                .multiply(BigDecimal.valueOf(frequency.perYear()))
+                .divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP);
     }
 
     public BudgetSection getSection() {

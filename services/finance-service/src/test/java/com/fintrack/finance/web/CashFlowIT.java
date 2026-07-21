@@ -7,8 +7,8 @@ import com.fintrack.finance.domain.Transaction;
 import com.fintrack.finance.domain.TransactionSource;
 import com.fintrack.finance.domain.Visibility;
 import com.fintrack.finance.repository.AccountRepository;
+import com.fintrack.finance.repository.BudgetLineRepository;
 import com.fintrack.finance.repository.HomeLoanRepository;
-import com.fintrack.finance.repository.IncomeRepository;
 import com.fintrack.finance.repository.TransactionRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -47,7 +47,7 @@ class CashFlowIT {
     @Autowired
     private TransactionRepository transactionRepository;
     @Autowired
-    private IncomeRepository incomeRepository;
+    private BudgetLineRepository budgetLineRepository;
     @Autowired
     private HomeLoanRepository homeLoanRepository;
 
@@ -55,7 +55,7 @@ class CashFlowIT {
     void cleanup() {
         transactionRepository.deleteAll();
         accountRepository.deleteAll();
-        incomeRepository.deleteAll();
+        budgetLineRepository.deleteAll();
         homeLoanRepository.deleteAll();
     }
 
@@ -81,11 +81,13 @@ class CashFlowIT {
         UUID household = UUID.randomUUID();
         UUID me = UUID.randomUUID();
 
-        // income: $90k/yr → $7,500/mo
-        mockMvc.perform(put("/api/v1/household/income").with(member(household, me))
+        // income from the budget's INCOME section: $90k/yr → $7,500/mo
+        mockMvc.perform(put("/api/v1/household/budget").with(member(household, me))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"salaryAmount": 90000, "salaryFrequency": "ANNUALLY"}""")).andExpect(status().isOk());
+                        {"currency": "AUD", "lines": [
+                          {"section": "INCOME", "name": "Salary", "frequency": "ANNUALLY", "amount": 90000}
+                        ]}""")).andExpect(status().isOk());
         // home loan: $3,000/mo repayment (shown as context)
         mockMvc.perform(put("/api/v1/household/home-loan").with(member(household, me))
                 .contentType(MediaType.APPLICATION_JSON)
