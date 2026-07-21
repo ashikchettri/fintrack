@@ -192,12 +192,14 @@ test.describe('login', () => {
     await page.getByLabel('Password').fill('correct horse battery staple');
     await page.getByRole('button', { name: 'Log in' }).click();
 
-    // dashboard is the post-login landing; the profile lives behind its nav link
+    // dashboard is the post-login landing; the profile lives behind the account menu
     await expect(page).toHaveURL(/\/dashboard/);
+    await page.getByRole('button', { name: 'Account menu' }).click();
     await page.getByRole('link', { name: 'Profile' }).click();
     await expect(page.getByTestId('profile-email')).toHaveText('jane@example.com');
     await expect(page.getByTestId('profile-role')).toHaveText('OWNER');
 
+    // log out (the profile page's own action)
     await page.getByRole('button', { name: 'Log out' }).click();
     await expect(page).toHaveURL(/\/login/);
   });
