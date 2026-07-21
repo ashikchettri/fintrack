@@ -302,6 +302,26 @@ describe('insights', () => {
     expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/api/v1/insights/monthly-summary?month=2026-06');
   });
 
+  it('getNetWorth() GETs the summary', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { netWorth: 300000, assets: [], liabilities: [] }));
+
+    const nw = await api.getNetWorth();
+
+    expect(nw.netWorth).toBe(300000);
+    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/api/v1/household/net-worth');
+  });
+
+  it('saveNetWorthItems() PUTs the balance sheet', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { currency: 'AUD', items: [] }));
+
+    await api.saveNetWorthItems([{ kind: 'ASSET', category: 'Property', name: 'Home', value: 800000 }], 'AUD');
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/v1/household/net-worth/items');
+    expect(init.method).toBe('PUT');
+    expect(JSON.parse(init.body as string).items[0].name).toBe('Home');
+  });
+
   it('askInsight() POSTs the question', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(200, { question: 'q', answer: 'a' }));
 

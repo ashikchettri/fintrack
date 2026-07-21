@@ -154,6 +154,40 @@ export interface InsightAnswer {
   answer: string;
 }
 
+export type NetWorthKind = 'ASSET' | 'LIABILITY';
+
+/** One editable balance-sheet row (ADR 014). */
+export interface NetWorthItem {
+  kind: NetWorthKind;
+  category: string | null;
+  name: string;
+  value: number;
+}
+
+/** The editable manual balance sheet. */
+export interface NetWorthItems {
+  currency: string;
+  items: NetWorthItem[];
+}
+
+/** The net-worth summary — manual items folded with the home loan (ADR 014). */
+export interface NetWorth {
+  currency: string;
+  totalAssets: number;
+  totalLiabilities: number;
+  netWorth: number;
+  assets: NetWorthLine[];
+  liabilities: NetWorthLine[];
+}
+
+/** One line in the net-worth breakdown; `source` is MANUAL or HOME_LOAN (derived). */
+export interface NetWorthLine {
+  name: string;
+  category: string | null;
+  value: number;
+  source: 'MANUAL' | 'HOME_LOAN';
+}
+
 export type BudgetSection = 'INCOME' | 'EXPENSE' | 'SAVING';
 export type BudgetFrequency = 'WEEKLY' | 'FORTNIGHTLY' | 'MONTHLY' | 'QUARTERLY' | 'ANNUALLY';
 

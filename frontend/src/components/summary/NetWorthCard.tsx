@@ -1,55 +1,51 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Scale } from 'lucide-react';
+import { Landmark } from 'lucide-react';
 import { api } from '../../api/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 /**
- * The household's tracked net position: offset savings against the home-loan
- * balance — the "where do we stand" number. Hidden until there's a home loan to
- * position against; grows into a fuller net worth as more accounts are tracked.
+ * The household's net worth (ADR 014) as the headline "where do we stand" number
+ * — total assets minus total liabilities, folding in the home loan. Hidden until
+ * there's something on the balance sheet; the /net-worth page fills it in.
  */
-export function NetPositionCard() {
+export function NetWorthCard() {
   const { data, isPending, isError } = useQuery({
-    queryKey: ['home-loan'],
-    queryFn: api.getHomeLoan,
+    queryKey: ['net-worth'],
+    queryFn: api.getNetWorth,
     retry: false,
   });
 
   if (isPending || isError || !data) return null;
-  if (!data.hasHomeLoan || !data.loanAmount) return null;
-
-  const liabilities = data.loanAmount;
-  const assets = data.offsetBalance ?? 0;
-  const net = assets - liabilities;
+  if (data.assets.length === 0 && data.liabilities.length === 0) return null;
 
   return (
     <Card className="border-primary/30 bg-primary/[0.03]">
       <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            <Scale className="size-4 text-primary" aria-hidden="true" />
-            Net position
+            <Landmark className="size-4 text-primary" aria-hidden="true" />
+            Net worth
           </p>
           <p
             className={cn(
               'mt-1 text-3xl font-semibold tabular-nums',
-              net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground',
+              data.netWorth >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground',
             )}
-            data-testid="net-position"
+            data-testid="net-worth"
           >
-            {formatMoney(net, data.currency)}
+            {formatMoney(data.netWorth, data.currency)}
           </p>
-          <p className="text-xs text-muted-foreground">Offset savings against your home loan</p>
+          <p className="text-xs text-muted-foreground">Everything you own minus what you owe</p>
         </div>
 
         <div className="flex gap-6">
-          <Figure label="Offset savings" value={`+${formatMoney(assets, data.currency)}`} tone="good" />
-          <Figure label="Home loan" value={`−${formatMoney(liabilities, data.currency)}`} tone="bad" />
-          <Link to="/home-loan" className="self-center text-sm font-medium text-primary hover:underline">
-            Details →
+          <Figure label="Assets" value={`+${formatMoney(data.totalAssets, data.currency)}`} tone="good" />
+          <Figure label="Liabilities" value={`−${formatMoney(data.totalLiabilities, data.currency)}`} tone="bad" />
+          <Link to="/net-worth" className="self-center text-sm font-medium text-primary hover:underline">
+            Manage →
           </Link>
         </div>
       </CardContent>

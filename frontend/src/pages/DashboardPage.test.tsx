@@ -16,6 +16,7 @@ vi.mock('../api/client', async (importOriginal) => {
       getMonthlySummary: vi.fn(),
       getCashFlow: vi.fn(),
       getHomeLoan: vi.fn(),
+      getNetWorth: vi.fn(),
       getOverview: vi.fn(),
       householdShared: vi.fn(),
     },
@@ -60,6 +61,11 @@ beforeEach(() => {
     planned: { income: 10000, expenses: 6000, savings: 2000, leftover: 2000 },
     actual: { income: 0, expenses: 0 }, byCategory: [],
   } as never);
+  mockedApi.getNetWorth.mockResolvedValue({
+    currency: 'AUD', totalAssets: 120000, totalLiabilities: 500000, netWorth: -380000,
+    assets: [{ name: 'Offset savings', category: 'Savings & cash', value: 120000, source: 'HOME_LOAN' }],
+    liabilities: [{ name: 'Home loan', category: 'Mortgage', value: 500000, source: 'HOME_LOAN' }],
+  });
   // AlertsStrip also reads the shared view — default to "settled" (no alert)
   mockedApi.householdShared.mockResolvedValue({
     currency: 'AUD', month: null, availableMonths: [], totalShared: 0, memberCount: 1, fairShare: 0,
@@ -88,8 +94,8 @@ describe('DashboardPage (overview)', () => {
     expect(screen.getAllByText(/500,000/).length).toBeGreaterThan(0);   // loan balance (rollup + net position)
     expect(screen.getByRole('heading', { name: 'Income & expenses' })).toBeInTheDocument();
 
-    // net position: offset (0) − loan (500,000) = −500,000
-    expect(screen.getByTestId('net-position')).toHaveTextContent(/500,000/);
+    // net worth tile: assets − liabilities
+    expect(screen.getByTestId('net-worth')).toHaveTextContent(/380,000/);
   });
 
   it('shows an import banner instead of totals before any statement is imported', async () => {

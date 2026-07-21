@@ -72,6 +72,11 @@ async function login(page: Page) {
   await page.route('**/api/v1/household/home-loan', (route) =>
     route.fulfill(json({ hasHomeLoan: false, currency: 'AUD' })),
   );
+  await page.route('**/api/v1/household/net-worth', (route) =>
+    route.fulfill(json({
+      currency: 'AUD', totalAssets: 0, totalLiabilities: 0, netWorth: 0, assets: [], liabilities: [],
+    })),
+  );
   await page.route('**/api/v1/insights/monthly-summary*', (route) =>
     route.fulfill(json({
       month: '2026-07', currency: 'AUD',

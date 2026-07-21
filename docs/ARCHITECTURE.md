@@ -85,6 +85,7 @@ FinTrack is a household personal-finance platform built as Spring Boot microserv
 - **Home loan** — mortgage details + a payoff calculator (amortization, total interest, extra-repayment savings).
 - **Income & cash flow** — per-member income profiles roll up to household income, surplus, and affordability.
 - **Shared commitments** (ADR 006) — transactions are `personal` by default; a member opts specific rows into a `shared` household view. The household sees only shared items and an equal-split settlement; personal rows are structurally unreachable in the shared query.
+- **Net worth** (ADR 014) — a manual assets/liabilities balance sheet; the summary folds in the home loan (balance as a liability, offset as an asset) so the mortgage isn't double-entered.
 - Validates JWTs locally via auth-service JWKS; honors the `X-Request-Id` correlation id; RFC 9457 Problem Details with `traceId`.
 
 ### insight-service (AI) — ✅ built (v1)

@@ -9,7 +9,7 @@ import { Alert } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertsStrip } from '@/components/AlertsStrip';
 import { InsightsSummaryCard } from '@/components/InsightsSummaryCard';
-import { NetPositionCard } from '@/components/summary/NetPositionCard';
+import { NetWorthCard } from '@/components/summary/NetWorthCard';
 import { CashFlowSummaryCard } from '@/components/summary/CashFlowSummaryCard';
 import { HomeLoanSummaryCard } from '@/components/summary/HomeLoanSummaryCard';
 import { BudgetSummaryCard } from '@/components/summary/BudgetSummaryCard';
@@ -49,7 +49,7 @@ export default function DashboardPage() {
 
         {hasBankData ? <KpiRow data={data} /> : <ImportBanner />}
 
-        <NetPositionCard />
+        <NetWorthCard />
 
         <section aria-label="Spending insights" className="space-y-2">
           <InsightsSummaryCard />
