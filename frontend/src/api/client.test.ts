@@ -293,6 +293,28 @@ describe('overview', () => {
   });
 });
 
+describe('insights', () => {
+  it('getMonthlySummary() GETs, passing the month when given', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { headline: 'ok', insights: [] }));
+
+    await api.getMonthlySummary('2026-06');
+
+    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/api/v1/insights/monthly-summary?month=2026-06');
+  });
+
+  it('askInsight() POSTs the question', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { question: 'q', answer: 'a' }));
+
+    const result = await api.askInsight('how much on food?');
+
+    expect(result.answer).toBe('a');
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/v1/insights/ask');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body as string)).toEqual({ question: 'how much on food?' });
+  });
+});
+
 describe('cash flow', () => {
   it('getCashFlow() GETs the snapshot', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(200, { monthlySurplus: 4000, monthlyIncome: 7500 }));

@@ -12,6 +12,7 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
 const HomeLoanPage = lazy(() => import('./pages/HomeLoanPage'));
 const IncomePage = lazy(() => import('./pages/IncomePage'));
+const InsightsPage = lazy(() => import('./pages/InsightsPage'));
 const JoinHouseholdPage = lazy(() => import('./pages/JoinHouseholdPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
@@ -82,6 +83,14 @@ export default function App() {
           element={
             <RequireAuth>
               <CashFlowPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/insights"
+          element={
+            <RequireAuth>
+              <InsightsPage />
             </RequireAuth>
           }
         />
