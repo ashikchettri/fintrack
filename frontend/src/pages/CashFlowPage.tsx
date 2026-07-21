@@ -76,7 +76,7 @@ function Summary({ data }: { data: CashFlow }) {
   );
 }
 
-/** Default what-if inputs — Reset restores these after experimenting. */
+/** Starting what-if inputs — a realistic example to play with on first load. */
 const AFFORD_DEFAULTS = { amount: '500000', rate: '6.25', term: '30' };
 
 /** The "can we afford a new loan?" what-if — runs live against the surplus. */
@@ -86,14 +86,12 @@ function Affordability({ data }: { data: CashFlow }) {
   const [rate, setRate] = useState(AFFORD_DEFAULTS.rate);
   const [term, setTerm] = useState(AFFORD_DEFAULTS.term);
 
-  const modified =
-    amount !== AFFORD_DEFAULTS.amount ||
-    rate !== AFFORD_DEFAULTS.rate ||
-    term !== AFFORD_DEFAULTS.term;
+  // Reset clears every field to zero for a fresh experiment; enabled while any holds a value.
+  const canReset = [amount, rate, term].some((v) => v !== '' && Number(v) !== 0);
   const reset = () => {
-    setAmount(AFFORD_DEFAULTS.amount);
-    setRate(AFFORD_DEFAULTS.rate);
-    setTerm(AFFORD_DEFAULTS.term);
+    setAmount('0');
+    setRate('0');
+    setTerm('0');
   };
 
   const repayment = monthlyRepayment(Number(amount) || 0, Number(rate) || 0, Number(term) || 0);
@@ -113,7 +111,7 @@ function Affordability({ data }: { data: CashFlow }) {
             variant="ghost"
             size="sm"
             onClick={reset}
-            disabled={!modified}
+            disabled={!canReset}
             className="shrink-0 text-muted-foreground"
             data-testid="affordability-reset"
           >
