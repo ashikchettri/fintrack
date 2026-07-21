@@ -31,6 +31,8 @@ dependencies {
     // spring-security-crypto, so it must be declared explicitly (not in the Boot BOM)
     implementation(libs.bouncycastle)
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    // Redis-backed refresh-token store (ADR 011), active behind a config flag
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 

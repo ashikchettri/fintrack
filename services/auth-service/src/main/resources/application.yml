@@ -10,6 +10,12 @@ spring:
     username: ${POSTGRES_USER:fintrack}
     password: ${POSTGRES_PASSWORD:fintrack_local}
 
+  # Only used when fintrack.auth.refresh-token.store=redis (ADR 011)
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
   jpa:
     hibernate:
       ddl-auto: validate   # schema is owned by Flyway, never Hibernate
@@ -76,3 +82,6 @@ management:
     health:
       probes:
         enabled: true      # /actuator/health/{liveness,readiness} for K8s later
+  health:
+    redis:
+      enabled: false       # Redis is optional (only the redis token store uses it) — don't fail health on it

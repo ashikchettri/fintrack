@@ -32,8 +32,8 @@ Each milestone produces something working and deployable. FinTrack is built incr
 
 ## Next
 
-### Redis refresh-token store
-- Move refresh tokens off in-process state into Redis (the gateway already uses Redis for rate limiting), so sessions survive restarts and scale horizontally.
+### Redis refresh-token store — ✅ built (opt-in), default-flip pending
+- A `RefreshTokenStore` seam with a Redis implementation (ADR 011): Lua-atomic rotation, single-use, and reuse detection over Redis, with native TTL replacing the purge job. Selected by `fintrack.auth.refresh-token.store=redis`; Postgres (`jpa`) remains the default until the flip is verified in a deployed environment.
 
 ### insight-service (AI)
 - Monthly spending summaries and natural-language Q&A ("how much did I spend on food in June?") via Claude tool use against finance-service, reusing the Anthropic client pattern from ADR 009. Structured JSON output, batching, cost control.
