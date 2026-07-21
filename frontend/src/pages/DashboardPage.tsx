@@ -7,7 +7,9 @@ import type { DashboardResponse } from '../api/types';
 import { AppShell } from '@/components/AppShell';
 import { Alert } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
+import { AlertsStrip } from '@/components/AlertsStrip';
 import { InsightsSummaryCard } from '@/components/InsightsSummaryCard';
+import { NetPositionCard } from '@/components/summary/NetPositionCard';
 import { CashFlowSummaryCard } from '@/components/summary/CashFlowSummaryCard';
 import { HomeLoanSummaryCard } from '@/components/summary/HomeLoanSummaryCard';
 import { BudgetSummaryCard } from '@/components/summary/BudgetSummaryCard';
@@ -43,7 +45,11 @@ export default function DashboardPage() {
       </div>
 
       <div className="space-y-6">
+        <AlertsStrip />
+
         {hasBankData ? <KpiRow data={data} /> : <ImportBanner />}
+
+        <NetPositionCard />
 
         <section aria-label="Spending insights" className="space-y-2">
           <InsightsSummaryCard />
