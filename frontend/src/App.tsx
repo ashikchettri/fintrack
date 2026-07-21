@@ -6,6 +6,7 @@ import { useAuth } from './auth/AuthContext';
 // Route-level code splitting: each page is its own chunk, fetched on first
 // navigation, so the initial load no longer ships every page (charts, forms,
 // the full authenticated app) up front.
+const BankStatementPage = lazy(() => import('./pages/BankStatementPage'));
 const BudgetPage = lazy(() => import('./pages/BudgetPage'));
 const CashFlowPage = lazy(() => import('./pages/CashFlowPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
@@ -57,6 +58,14 @@ export default function App() {
           element={
             <RequireAuth>
               <DashboardPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/bank"
+          element={
+            <RequireAuth>
+              <BankStatementPage />
             </RequireAuth>
           }
         />

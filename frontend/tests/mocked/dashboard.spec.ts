@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-// Dashboard UI against a mocked API: verifies the "upload → dashboard" flow and
-// rendering, not the backend contract (that's the e2e project).
+// Dashboard + Bank & statement UI against a mocked API: verifies the overview
+// rollups and the "upload → statement" flow, not the backend contract.
 
 const PROFILE = {
   userId: '4f2c8a10-0000-0000-0000-000000000001',
@@ -45,13 +45,12 @@ function json(body: unknown, status = 200) {
   return { status, contentType: 'application/json', body: JSON.stringify(body) };
 }
 
-/** Log the app in so RequireAuth admits the dashboard route. */
+/** Log in + stub the self-fetching cards so both pages render cleanly. */
 async function login(page: Page) {
   await page.route('**/api/v1/auth/refresh', (route) =>
     route.fulfill(json({ accessToken: 'jwt-mock', tokenType: 'Bearer', expiresInSeconds: 900 })),
   );
   await page.route('**/api/v1/users/me', (route) => route.fulfill(json(PROFILE)));
-  // the shared-commitments card self-fetches; default to "nothing shared yet"
   await page.route('**/api/v1/household/shared', (route) =>
     route.fulfill(json({
       currency: null, totalShared: 0, memberCount: 0, fairShare: 0,
@@ -59,48 +58,64 @@ async function login(page: Page) {
       contributions: [], byCategory: [], transactions: [],
     })),
   );
-  // the shared card also fetches the roster (to name contributions)
   await page.route('**/api/v1/households/members', (route) =>
     route.fulfill(json([{ memberId: 'm1', name: 'Jane', role: 'OWNER', isYou: true }])),
   );
-  // the budget-vs-actual card self-fetches the rollup; default to "no budget"
   await page.route('**/api/v1/household/overview', (route) => route.fulfill(json({ hasBudget: false })));
+  // dashboard rollup cards + AI summary
+  await page.route('**/api/v1/household/cash-flow', (route) =>
+    route.fulfill(json({
+      currency: 'AUD', monthlyIncome: 7500, monthlyLoanRepayment: 2000,
+      monthlyAvgSpending: 3000, monthlySurplus: 2500, monthsOfSpendingData: 3,
+    })),
+  );
+  await page.route('**/api/v1/household/home-loan', (route) =>
+    route.fulfill(json({ hasHomeLoan: false, currency: 'AUD' })),
+  );
+  await page.route('**/api/v1/insights/monthly-summary*', (route) =>
+    route.fulfill(json({
+      month: '2026-07', currency: 'AUD',
+      totals: { income: 3040, expenses: 217.7, net: 2822.3, transactionCount: 6 },
+      headline: 'A steady month.', insights: [],
+    })),
+  );
 }
 
-test.describe('dashboard', () => {
+test.describe('dashboard overview', () => {
   test.beforeEach(async ({ page }) => login(page));
 
-  test('renders KPIs, category chart and recent activity', async ({ page }) => {
-    await page.route('**/api/v1/dashboard', (route) => route.fulfill(json(POPULATED)));
+  test('shows headline totals, the AI summary and rollup cards', async ({ page }) => {
+    await page.route('**/api/v1/dashboard**', (route) => route.fulfill(json(POPULATED)));
 
     await page.goto('/dashboard');
 
     await expect(page.getByTestId('kpi-income')).toHaveText('$3,040.00');
     await expect(page.getByTestId('kpi-net')).toHaveText('$2,822.30');
-    await expect(page.getByText('Spending by category')).toBeVisible();
-    await expect(page.getByText('Reddy Express')).toBeVisible();
-    await expect(page.getByText('Transport NSW')).toBeVisible();
+    await expect(page.getByText('A steady month.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Cash flow' })).toBeVisible();
+    await expect(page.getByText('$2,500.00')).toBeVisible(); // monthly surplus
   });
+});
 
-  test('empty state → upload a CSV → dashboard populates', async ({ page }) => {
-    // dashboard is empty until the import lands, then populated
+test.describe('bank & statement', () => {
+  test.beforeEach(async ({ page }) => login(page));
+
+  test('empty state → upload a CSV → statement populates', async ({ page }) => {
     let imported = false;
-    await page.route('**/api/v1/dashboard', (route) =>
+    await page.route('**/api/v1/dashboard**', (route) =>
       route.fulfill(json(imported ? POPULATED : EMPTY)),
     );
     await page.route('**/api/v1/imports/transactions', (route) => {
       imported = true;
-      return route.fulfill(
-        json({
-          importId: 'i1', fileName: 'statement.csv', currency: 'AUD',
-          rowsParsed: 6, imported: 6, duplicatesSkipped: 0, failedRows: 0,
-          accountsCreated: ['Everyday'], dateFrom: '2025-08-17', dateTo: '2026-07-11',
-          totalIncome: 3040, totalExpenses: 217.7, net: 2822.3, errors: [],
-        }, 201),
-      );
+      return route.fulfill(json({
+        importId: 'i1', fileName: 'statement.csv', currency: 'AUD',
+        rowsParsed: 6, imported: 6, duplicatesSkipped: 0, failedRows: 0,
+        accountsCreated: ['Everyday'], dateFrom: '2025-08-17', dateTo: '2026-07-11',
+        totalIncome: 3040, totalExpenses: 217.7, net: 2822.3, errors: [],
+      }, 201));
     });
 
-    await page.goto('/dashboard');
+    await page.goto('/bank');
     await expect(page.getByTestId('csv-dropzone')).toBeVisible();
 
     await page.setInputFiles('input[type="file"]', {
@@ -109,8 +124,9 @@ test.describe('dashboard', () => {
       buffer: Buffer.from('Date,Description,Amount\n2026-07-11,Coffee,-4.50\n'),
     });
 
-    // success toast, then the dashboard refetches and fills in
     await expect(page.getByText('Imported 6 transactions')).toBeVisible();
-    await expect(page.getByTestId('kpi-income')).toHaveText('$3,040.00');
+    // the statement detail fills in
+    await expect(page.getByText('Spending by category')).toBeVisible();
+    await expect(page.getByText('Reddy Express')).toBeVisible();
   });
 });

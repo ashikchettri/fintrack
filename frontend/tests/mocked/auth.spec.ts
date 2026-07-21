@@ -339,7 +339,7 @@ test.describe('household invitations', () => {
     await page.getByRole('button', { name: 'Join household' }).click();
 
     await expect(page).toHaveURL(/\/dashboard/);
-    await expect(page.getByText('Start by importing a bank statement.')).toBeVisible();
+    await expect(page.getByText(/import a bank statement to see your income/i)).toBeVisible();
   });
 });
 
