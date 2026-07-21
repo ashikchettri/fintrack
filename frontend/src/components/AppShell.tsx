@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
+import { ProfileMenu } from '@/components/ProfileMenu';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { cn } from '@/lib/utils';
 
@@ -10,6 +11,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-border/60 bg-background/70 backdrop-blur-lg">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4">
+          {/* top-left account menu: profile, household, settings, log out */}
+          <ProfileMenu />
           {/* brand doubles as "home" — click to return to the dashboard */}
           <Link to="/dashboard" aria-label="Go to dashboard" className="rounded-md">
             <Logo />
@@ -19,7 +22,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             <ShellLink to="/bank">Bank &amp; statement</ShellLink>
             <ShellLink to="/home-loan">Home loan</ShellLink>
             <ShellLink to="/budget">Income &amp; expenses</ShellLink>
-            <ShellLink to="/profile">Profile</ShellLink>
           </nav>
           <ThemeToggle className="ml-auto" />
         </div>
