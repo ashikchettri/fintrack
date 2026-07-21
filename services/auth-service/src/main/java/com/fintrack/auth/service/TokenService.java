@@ -2,9 +2,6 @@ package com.fintrack.auth.service;
 
 import com.fintrack.auth.config.JwtProperties;
 import com.fintrack.auth.domain.HouseholdMember;
-import com.fintrack.auth.domain.RefreshToken;
-import com.fintrack.auth.domain.User;
-import com.fintrack.auth.repository.RefreshTokenRepository;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
@@ -13,9 +10,7 @@ import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.HexFormat;
 import java.util.UUID;
 
@@ -24,15 +19,10 @@ public class TokenService {
 
     private final JwtEncoder jwtEncoder;
     private final JwtProperties properties;
-    private final RefreshTokenRepository refreshTokenRepository;
-    private final SecureRandom secureRandom = new SecureRandom();
 
-    public TokenService(JwtEncoder jwtEncoder,
-                        JwtProperties properties,
-                        RefreshTokenRepository refreshTokenRepository) {
+    public TokenService(JwtEncoder jwtEncoder, JwtProperties properties) {
         this.jwtEncoder = jwtEncoder;
         this.properties = properties;
-        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     /**
@@ -53,24 +43,6 @@ public class TokenService {
                 .claim("role", member.getRole().name())
                 .build();
         return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
-    }
-
-    /**
-     * Opaque 256-bit refresh token. The raw value goes to the client exactly
-     * once; only its SHA-256 lands in the DB. The persisted entity is returned
-     * alongside so rotation can link {@code replaced_by}.
-     */
-    public IssuedRefreshToken issueRefreshToken(User user) {
-        byte[] bytes = new byte[32];
-        secureRandom.nextBytes(bytes);
-        String rawToken = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-
-        RefreshToken persisted = refreshTokenRepository.save(new RefreshToken(
-                user, sha256Hex(rawToken), Instant.now().plus(properties.refreshTokenTtl())));
-        return new IssuedRefreshToken(rawToken, persisted);
-    }
-
-    public record IssuedRefreshToken(String rawToken, RefreshToken token) {
     }
 
     public static String sha256Hex(String value) {

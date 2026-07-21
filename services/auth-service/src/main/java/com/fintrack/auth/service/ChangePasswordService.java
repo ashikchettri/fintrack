@@ -1,7 +1,6 @@
 package com.fintrack.auth.service;
 
 import com.fintrack.auth.domain.User;
-import com.fintrack.auth.repository.RefreshTokenRepository;
 import com.fintrack.auth.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +8,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Clock;
 import java.util.UUID;
 
 @Service
@@ -18,18 +16,15 @@ public class ChangePasswordService {
     private static final Logger log = LoggerFactory.getLogger(ChangePasswordService.class);
 
     private final UserRepository userRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final RefreshTokenStore refreshTokenStore;
     private final PasswordEncoder passwordEncoder;
-    private final Clock clock;
 
     public ChangePasswordService(UserRepository userRepository,
-                                 RefreshTokenRepository refreshTokenRepository,
-                                 PasswordEncoder passwordEncoder,
-                                 Clock clock) {
+                                 RefreshTokenStore refreshTokenStore,
+                                 PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
-        this.refreshTokenRepository = refreshTokenRepository;
+        this.refreshTokenStore = refreshTokenStore;
         this.passwordEncoder = passwordEncoder;
-        this.clock = clock;
     }
 
     /**
@@ -49,7 +44,7 @@ public class ChangePasswordService {
         }
 
         user.changePassword(passwordEncoder.encode(newPassword));
-        int revoked = refreshTokenRepository.revokeAllActiveForUser(userId, clock.instant());
+        int revoked = refreshTokenStore.revokeAllForUser(userId);
         log.info("Password changed for user {} — revoked {} active session(s)", userId, revoked);
     }
 }
