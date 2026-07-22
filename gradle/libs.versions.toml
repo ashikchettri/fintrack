@@ -11,11 +11,15 @@ springdoc = "3.0.3"
 karate = "1.5.2"
 resend = "4.13.0"
 commonsCsv = "1.12.0"
+# Pinned ahead of the Boot BOM's 42.7.11 to clear CVE-2026-54291 (SQL injection
+# via crafted ResultSet metadata). Drop the override once the BOM catches up.
+postgresql = "42.7.13"
 
 [libraries]
 spring-boot-dependencies = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "springBoot" }
 spring-cloud-dependencies = { module = "org.springframework.cloud:spring-cloud-dependencies", version.ref = "springCloud" }
 bouncycastle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 springdoc-openapi = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
 resend = { module = "com.resend:resend-java", version.ref = "resend" }
 karate-junit5 = { module = "io.karatelabs:karate-junit5", version.ref = "karate" }
