@@ -136,7 +136,7 @@ jobs:
       fail-fast: false
       matrix:
         # Grows as each service gains a Dockerfile (containerization milestone).
-        service: [auth-service]
+        service: [auth-service, finance-service]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
