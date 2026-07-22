@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: insight-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: insight-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: insight-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+        - name: insight-service
+          image: fintrack/insight-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8083
+          # AUTH_JWKS_URI + FINANCE_URI from the ConfigMap; it calls finance and
+          # verifies JWTs per-request, so no DB and no init-container.
+          envFrom:
+            - configMapRef:
+                name: fintrack-config
+          env:
+            # AI-required for Q&A (ADR 013); empty key → 503 on AI endpoints only.
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef: { name: fintrack-secrets, key: ANTHROPIC_API_KEY }
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          startupProbe:
+            httpGet: { path: /actuator/health/readiness, port: http }
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+            periodSeconds: 15
+          resources:
+            requests: { cpu: 100m, memory: 320Mi }
+            limits: { cpu: "1", memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+      volumes:
+        - name: tmp
+          emptyDir: {}
