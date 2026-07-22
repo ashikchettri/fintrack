@@ -27,7 +27,7 @@ export function CashFlowSummaryCard() {
         value: formatMoney(data.monthlySurplus, data.currency),
         tone: data.monthlySurplus >= 0 ? 'good' : 'bad',
       }}
-      empty={!hasIncome ? { prompt: 'Add your income to see your monthly surplus.', to: '/income' } : undefined}
+      empty={!hasIncome ? { prompt: 'Add your income to see your monthly surplus.', to: '/budget' } : undefined}
     >
       <SummaryStat label="Income / mo" value={formatMoney(data.monthlyIncome, data.currency)} />
       <SummaryStat label="Avg spending / mo" value={formatMoney(data.monthlyAvgSpending, data.currency)} />

@@ -219,27 +219,6 @@ export interface CashFlow {
   monthsOfSpendingData: number;
 }
 
-/** A member's own income. `annualIncome` is the derived spendable figure. */
-export interface Income {
-  salaryAmount: number | null;
-  salaryFrequency: 'WEEKLY' | 'FORTNIGHTLY' | 'MONTHLY' | 'ANNUALLY' | null;
-  superRate: number | null;
-  bonusAnnual: number | null;
-  otherIncomeAnnual: number | null;
-  otherIncomeNote: string | null;
-  annualIncome: number;
-  currency: string;
-  notes: string | null;
-  updatedAt?: string | null;
-}
-
-/** The household's combined income — every member's annual income plus the total. */
-export interface HouseholdIncome {
-  currency: string;
-  annualTotal: number;
-  members: { memberId: string; isYou: boolean; annualIncome: number }[];
-}
-
 /** A household member for the roster (names for the shared-commitments view). */
 export interface MemberResponse {
   memberId: string;
