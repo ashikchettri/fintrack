@@ -8,6 +8,7 @@ import { AppShell } from '@/components/AppShell';
 import { Alert } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertsStrip } from '@/components/AlertsStrip';
+import { ExpenseBreakdownCard } from '@/components/ExpenseBreakdownCard';
 import { InsightsSummaryCard } from '@/components/InsightsSummaryCard';
 import { NetWorthCard } from '@/components/summary/NetWorthCard';
 import { CashFlowSummaryCard } from '@/components/summary/CashFlowSummaryCard';
@@ -63,6 +64,8 @@ export default function DashboardPage() {
             </Link>
           </div>
         </section>
+
+        <ExpenseBreakdownCard />
 
         <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:grid-cols-3">
           <CashFlowSummaryCard />
