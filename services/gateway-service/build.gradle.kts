@@ -5,7 +5,9 @@ plugins {
     // Spring Cloud's release train (2025.1.x) supports Boot 4.0.x, not yet 4.1.0.
     // Spring Cloud always trails Boot; the gateway shares no code with the domain
     // services, so tracking the latest Cloud-supported Boot here costs nothing.
-    id("org.springframework.boot") version "4.0.0"
+    // 4.0.7 pulls patched Netty (4.2.15) + Jackson (3.1.4) and clears the
+    // spring-boot CVE — keep this on the newest 4.0.x the Cloud train supports.
+    id("org.springframework.boot") version "4.0.7"
     alias(libs.plugins.sonarqube)
 }
 
@@ -26,8 +28,16 @@ dependencies {
     // Spring Boot + Spring Cloud BOMs. Boot is pinned to 4.0.x here (see the
     // plugins block) so it matches the Spring Cloud train — hence the literal
     // BOM version rather than the shared catalog's 4.1.0.
-    implementation(platform("org.springframework.boot:spring-boot-dependencies:4.0.0"))
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:4.0.7"))
     implementation(platform(libs.spring.cloud.dependencies))
+
+    // bcprov-jdk18on is dragged in transitively at 1.81 (CVE-2025-14813, CRITICAL)
+    // and the Boot BOM doesn't manage its version — raise it to a patched release.
+    constraints {
+        implementation(libs.bouncycastle) {
+            because("CVE-2025-14813: transitive bcprov-jdk18on 1.81 is vulnerable")
+        }
+    }
 
     // Reactive Spring Cloud Gateway (ADR 007). NOTE: the Boot 4.1-aligned train
     // renamed the reactive starter to `spring-cloud-starter-gateway-server-webflux`;
@@ -37,7 +47,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 
-    testImplementation(platform("org.springframework.boot:spring-boot-dependencies:4.0.0"))
+    testImplementation(platform("org.springframework.boot:spring-boot-dependencies:4.0.7"))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")
     // real Redis in the context-loads test — Testcontainers from day one

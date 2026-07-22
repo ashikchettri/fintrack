@@ -31,6 +31,14 @@ dependencies {
     // interactive API docs at /swagger-ui.html
     implementation(libs.springdoc.openapi)
 
+    // bcprov-jdk18on is dragged in transitively at 1.81 (CVE-2025-14813, CRITICAL)
+    // via the OAuth2 resource server; the Boot BOM doesn't manage its version.
+    constraints {
+        implementation(libs.bouncycastle) {
+            because("CVE-2025-14813: transitive bcprov-jdk18on 1.81 is vulnerable")
+        }
+    }
+
     testImplementation(platform(libs.spring.boot.dependencies))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-webmvc-test")
