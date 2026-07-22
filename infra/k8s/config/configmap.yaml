@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fintrack-config
+data:
+  # Postgres — one instance, schema-per-service. Each service appends its own
+  # ?currentSchema=… to the JDBC URL, so only host/port/db/user live here.
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  POSTGRES_DB: fintrack
+  POSTGRES_USER: fintrack
+  # Redis — auth's refresh-token store (when enabled) and the gateway rate limiter.
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  # Local mail sink (Mailpit). Real environments point MAIL_* at an SMTP provider.
+  MAIL_HOST: mailpit
+  MAIL_PORT: "1025"
+  # Spring — a dedicated profile for in-cluster runs.
+  SPRING_PROFILES_ACTIVE: k8s
+  # Minikube serves plain HTTP, so the refresh cookie can't be Secure-only (ADR 003).
+  # Behind TLS termination (Ingress / GKE) set this to "true".
+  FINTRACK_AUTH_REFRESH_COOKIE_SECURE: "false"

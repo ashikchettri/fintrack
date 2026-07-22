@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Everything lands in one namespace; the Namespace object itself is created too.
+namespace: fintrack
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: fintrack
+    includeSelectors: false   # don't fold into (immutable) pod selectors
+
+resources:
+  - namespace.yaml
+  # shared config + the dev-only secret (real envs override out-of-band)
+  - config/configmap.yaml
+  - config/secret.yaml
+  # backing stores
+  - postgres/schema-init-configmap.yaml
+  - postgres/service.yaml
+  - postgres/statefulset.yaml
+  - redis/deployment.yaml
+  - redis/service.yaml
+  - mailpit/deployment.yaml
+  - mailpit/service.yaml
+  # first application service (the reference Deployment pattern)
+  - auth-service/service.yaml
+  - auth-service/deployment.yaml
