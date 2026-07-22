@@ -1,0 +1,36 @@
+# Build context is the repo root (services need the shared ../../gradle catalog).
+# Keep the context small: send only sources + build scripts to the daemon.
+
+# VCS & IDE
+.git
+.gitignore
+.idea
+*.iml
+
+# Node / frontend
+node_modules
+**/node_modules
+frontend/dist
+frontend/playwright-report
+frontend/test-results
+frontend/coverage
+
+# Gradle / Java build outputs & caches (images build fresh inside)
+**/build
+**/.gradle
+
+# Local runtime artefacts, logs, secrets
+.dev-logs
+*.log
+.env
+.env.*
+!.env.example
+
+# Docs & meta not needed to build an image
+docs
+*.md
+CLAUDE.md
+AGENTS.md
+
+# OS cruft
+.DS_Store

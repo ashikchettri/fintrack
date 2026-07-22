@@ -127,3 +127,40 @@ jobs:
         with:
           name: playwright-report-e2e
           path: frontend/playwright-report/
+
+  image:
+    name: image (${{ matrix.service }})
+    # Only build/scan an image once the service's own build + tests are green.
+    needs: backend
+    strategy:
+      fail-fast: false
+      matrix:
+        # Grows as each service gains a Dockerfile (containerization milestone).
+        service: [auth-service]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: services/${{ matrix.service }}/Dockerfile
+          load: true
+          tags: fintrack/${{ matrix.service }}:${{ github.sha }}
+          # Reuse the Gradle/layer cache across runs, keyed per service.
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+      - name: Scan image for CVEs (Trivy)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: fintrack/${{ matrix.service }}:${{ github.sha }}
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true        # only fail on vulns with a fix available
+          trivyignores: .trivyignore  # documented, time-boxed exceptions
+          exit-code: "1"
+          format: table
