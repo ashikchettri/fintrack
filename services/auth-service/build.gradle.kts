@@ -47,7 +47,8 @@ dependencies {
     // alone on the classpath no longer triggers migrations at startup
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.flywaydb:flyway-database-postgresql")
-    runtimeOnly("org.postgresql:postgresql")
+    // pinned via the catalog (ahead of the Boot BOM) to clear CVE-2026-54291
+    runtimeOnly(libs.postgresql)
 
     testImplementation(platform(libs.spring.boot.dependencies))
     testImplementation("org.springframework.boot:spring-boot-starter-test")

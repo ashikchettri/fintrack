@@ -1,8 +1,6 @@
 # Trivy vulnerability allowlist. Keep this SHORT and time-boxed: each entry is a
 # known HIGH/CRITICAL we've consciously accepted, with a reason and an exit plan.
-
-# pgjdbc (PostgreSQL JDBC driver) — version is pinned by the Spring Boot BOM
-# (currently 42.7.11). The advisory concerns SQL injection via a crafted
-# ResultSet metadata path we don't exercise; the fix is 42.7.12.
-# REMOVE once the Boot BOM ships >=42.7.12, or we pin it across all services.
-CVE-2026-54291
+#
+# Currently empty — pgjdbc CVE-2026-54291 was cleared by pinning postgresql to
+# 42.7.13 (see gradle/libs.versions.toml). Add new exceptions here only with a
+# reason and a removal condition.

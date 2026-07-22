@@ -39,7 +39,8 @@ dependencies {
     // Boot 4: Flyway auto-configuration lives in its own starter
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.flywaydb:flyway-database-postgresql")
-    runtimeOnly("org.postgresql:postgresql")
+    // pinned via the catalog (ahead of the Boot BOM) to clear CVE-2026-54291
+    runtimeOnly(libs.postgresql)
 
     testImplementation(platform(libs.spring.boot.dependencies))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
