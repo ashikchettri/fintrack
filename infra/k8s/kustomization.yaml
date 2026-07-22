@@ -22,6 +22,12 @@ resources:
   - redis/service.yaml
   - mailpit/deployment.yaml
   - mailpit/service.yaml
-  # first application service (the reference Deployment pattern)
+  # application services (auth is the reference Deployment; the rest follow it)
   - auth-service/service.yaml
   - auth-service/deployment.yaml
+  - finance-service/service.yaml
+  - finance-service/deployment.yaml
+  - gateway-service/service.yaml
+  - gateway-service/deployment.yaml
+  - insight-service/service.yaml
+  - insight-service/deployment.yaml

@@ -42,7 +42,7 @@ Each milestone produces something working and deployable. FinTrack is built incr
 
 ### Containerization → Kubernetes
 - Multi-stage Dockerfiles per service (non-root, layered jars); Trivy image scan in CI. **Pattern established on auth-service (ADR 015)** — Alpine JRE, layered Boot jar, non-root, CI `image` job with a Trivy HIGH/CRITICAL gate. Next: the same Dockerfile for finance-, gateway-, insight-service (add each to the CI matrix).
-- Kubernetes manifests in `infra/k8s/`: Deployments, Services, Ingress, ConfigMaps, Secrets, liveness/readiness probes, resource limits; Postgres as a StatefulSet + PVC. Then a Helm chart. **Started (ADR 016):** Kustomize base with namespace, config/secret split, Postgres StatefulSet+PVC, Redis, Mailpit, and auth-service as the reference Deployment (non-root, read-only FS, probes, init-container) — validated end-to-end on Minikube. Next: finance/gateway/insight Deployments + Ingress to the gateway.
+- Kubernetes manifests in `infra/k8s/`: Deployments, Services, Ingress, ConfigMaps, Secrets, liveness/readiness probes, resource limits; Postgres as a StatefulSet + PVC. Then a Helm chart. **In progress (ADR 016):** Kustomize base with namespace, config/secret split, Postgres StatefulSet+PVC, Redis, Mailpit, and **all four service Deployments** (non-root, read-only FS, probes, init-containers) — validated end-to-end on Minikube (services healthy, gateway routing to auth confirmed). Next: an Ingress fronting the gateway, then a Helm chart / GKE overlay.
 - Zero-downtime rolling updates and rollbacks.
 
 ### Google Cloud
