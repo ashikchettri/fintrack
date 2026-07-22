@@ -40,14 +40,14 @@ describe('ProfilePage', () => {
 
   // account actions (settings, log out) now live in the top-right account menu
 
-  it('links to the income profile', async () => {
+  it('links to income & expenses', async () => {
     mockedApi.me.mockResolvedValue(TEST_USER);
-    renderPageWithDestinations(<ProfilePage />, '/profile', { '/income': 'INCOME_DEST' });
+    renderPageWithDestinations(<ProfilePage />, '/profile', { '/budget': 'BUDGET_DEST' });
     await waitFor(() => expect(screen.getByTestId('profile-email')).toBeInTheDocument());
 
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Income' }));
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Income & expenses' }));
 
-    await waitFor(() => expect(screen.getByText('INCOME_DEST')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('BUDGET_DEST')).toBeInTheDocument());
   });
 
   it('shows an error state when the profile cannot load', async () => {
