@@ -9,7 +9,7 @@ Household personal-finance platform: Spring Boot 4 microservices behind a reacti
 - `docs/API.md` — endpoint reference (auth + finance)
 - `docs/TEMPLATE.md` — the reusable, domain-agnostic auth starter (what to keep/strip when extracting)
 - `docs/PRODUCT.md` — the FinTrack finance-tracker domain (households, accounts, budgets, privacy)
-- `docs/decisions/` — ADRs. 001 personal-first privacy (product) · 002 JWT keys · 003 refresh cookie · 004 email verification · 005 password reset (002–005 are template-generic) · 006 shared commitments (product) · 007 API gateway · 008 canonical category taxonomy · 009 AI transaction categorization · 010 request correlation IDs · 011 Redis refresh-token store · 012 insight-service · 013 NL Q&A (tool use) · 014 net worth · 015 containerization.
+- `docs/decisions/` — ADRs. 001 personal-first privacy (product) · 002 JWT keys · 003 refresh cookie · 004 email verification · 005 password reset (002–005 are template-generic) · 006 shared commitments (product) · 007 API gateway · 008 canonical category taxonomy · 009 AI transaction categorization · 010 request correlation IDs · 011 Redis refresh-token store · 012 insight-service · 013 NL Q&A (tool use) · 014 net worth · 015 containerization · 016 kubernetes.
 
 ## Current state
 

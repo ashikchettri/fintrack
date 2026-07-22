@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-schema-init
+data:
+  # Mounted into /docker-entrypoint-initdb.d — runs once on an empty data dir.
+  # Schema-per-service isolation (ARCHITECTURE.md §6); mirrors infra/postgres/init.
+  01-schemas.sql: |
+    CREATE SCHEMA IF NOT EXISTS auth;
+    CREATE SCHEMA IF NOT EXISTS finance;
