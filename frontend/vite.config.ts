@@ -27,7 +27,6 @@ export default defineConfig({
       // path keeps it from swallowing auth's /households/** (plural, :8081)
       '/api/v1/household/shared': 'http://localhost:8082',
       '/api/v1/household/home-loan': 'http://localhost:8082',
-      '/api/v1/household/income': 'http://localhost:8082',
       '/api/v1/household/cash-flow': 'http://localhost:8082',
       '/api/v1/household/budget': 'http://localhost:8082',
       '/api/v1/household/overview': 'http://localhost:8082',

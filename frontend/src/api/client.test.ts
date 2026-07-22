@@ -218,37 +218,6 @@ describe('home loan', () => {
   });
 });
 
-describe('income', () => {
-  it('getIncome() GETs the caller\'s income', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse(200, { annualIncome: 64000 }));
-
-    const income = await api.getIncome();
-
-    expect(income.annualIncome).toBe(64000);
-    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/api/v1/household/income');
-  });
-
-  it('saveIncome() PUTs the income', async () => {
-    tokenStore.set('jwt-held');
-    fetchMock.mockResolvedValueOnce(jsonResponse(200, { annualIncome: 64000 }));
-
-    await api.saveIncome({ salaryAmount: 2000, salaryFrequency: 'FORTNIGHTLY' });
-
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe('/api/v1/household/income');
-    expect(init.method).toBe('PUT');
-  });
-
-  it('householdIncome() GETs the summary', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse(200, { annualTotal: 154000, members: [] }));
-
-    const summary = await api.householdIncome();
-
-    expect(summary.annualTotal).toBe(154000);
-    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/api/v1/household/income/summary');
-  });
-});
-
 describe('budget', () => {
   it('getBudget() GETs the budget', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(200, { currency: 'AUD', lines: [] }));

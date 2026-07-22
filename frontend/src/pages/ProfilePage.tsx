@@ -74,9 +74,9 @@ export default function ProfilePage() {
               <Landmark className="size-4" aria-hidden="true" />
               Home loan
             </Button>
-            <Button variant="outline" onClick={() => navigate('/income')} className="w-full">
+            <Button variant="outline" onClick={() => navigate('/budget')} className="w-full">
               <Wallet className="size-4" aria-hidden="true" />
-              Income
+              Income &amp; expenses
             </Button>
           </CardContent>
         </Card>
