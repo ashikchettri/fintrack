@@ -60,8 +60,16 @@ test.describe('full auth journey against the real API', () => {
     await expect(page.getByTestId('profile-email')).toHaveText(email);
     await expect(page.getByTestId('profile-role')).toHaveText('OWNER');
 
-    // the httpOnly refresh cookie restores the session across a reload (ADR 003)
+    // the httpOnly refresh cookie restores the session across a reload (ADR 003):
+    // refresh → access token → /users/me, two real round-trips. Wait for that
+    // profile fetch to actually land before asserting, so a slow CI hop can't
+    // flake the default 5s assertion timeout.
+    const profileRestored = page.waitForResponse(
+      (r) => r.url().includes('/api/v1/users/me') && r.ok(),
+      { timeout: 20_000 },
+    );
     await page.reload();
+    await profileRestored;
     await expect(page.getByTestId('profile-email')).toHaveText(email);
 
     await page.getByRole('button', { name: 'Account menu' }).click();
