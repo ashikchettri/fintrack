@@ -1,0 +1,8 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is gitignored.
+
+# A DEDICATED FinTrack project — never a shared or production project for
+# something else. Create one:  gcloud projects create fintrack-<suffix>
+project_id  = "fintrack-REPLACE-ME"
+
+region      = "australia-southeast1"
+github_repo = "ashikchettri/fintrack"
