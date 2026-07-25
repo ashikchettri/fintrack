@@ -1,0 +1,30 @@
+# Example GKE overrides:  helm install fintrack infra/helm/fintrack -f values-gke.example.yaml
+#
+# Fill in the registry/project. Secrets come from a real Secret (created out-of-band,
+# e.g. External Secrets / Secret Manager) — never from this file.
+
+image:
+  registry: REGION-docker.pkg.dev/PROJECT_ID/fintrack   # Artifact Registry
+  repository: fintrack
+  tag: "0.0.1"                # immutable release tag, not :latest
+  pullPolicy: IfNotPresent
+
+config:
+  refreshCookieSecure: "true"  # HTTPS via managed TLS on the Ingress
+
+secrets:
+  # Bring your own Secret with POSTGRES_PASSWORD + ANTHROPIC_API_KEY keys.
+  existingSecret: fintrack-secrets
+
+# Use Cloud SQL instead of the in-cluster Postgres. (Point DB_HOST at the Cloud
+# SQL proxy / private IP via a config override or a small values addition.)
+postgres:
+  enabled: false
+
+# Mailpit is a local dev sink — off in the cloud (use a real SMTP provider).
+mailpit:
+  enabled: false
+
+ingress:
+  className: gce               # or nginx, depending on the cluster
+  host: fintrack.example.com
