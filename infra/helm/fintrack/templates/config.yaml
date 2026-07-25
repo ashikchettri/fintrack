@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+  labels:
+    {{- include "fintrack.labels" . | nindent 4 }}
+data:
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  POSTGRES_DB: {{ .Values.config.postgresDb | quote }}
+  POSTGRES_USER: {{ .Values.config.postgresUser | quote }}
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  MAIL_HOST: mailpit
+  MAIL_PORT: "1025"
+  # In-cluster service URLs (follow Service names, which are the service keys).
+  AUTH_URI: http://auth-service:8081
+  AUTH_JWKS_URI: http://auth-service:8081/.well-known/jwks.json
+  FINANCE_URI: http://finance-service:8082
+  SPRING_PROFILES_ACTIVE: {{ .Values.config.springProfile | quote }}
+  FINTRACK_AUTH_REFRESH_COOKIE_SECURE: {{ .Values.config.refreshCookieSecure | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-postgres-schema-init
+  labels:
+    {{- include "fintrack.labels" . | nindent 4 }}
+data:
+  01-schemas.sql: |
+    CREATE SCHEMA IF NOT EXISTS auth;
+    CREATE SCHEMA IF NOT EXISTS finance;
+{{- if not .Values.secrets.existingSecret }}
+---
+# DEV secret — override for real environments (or set secrets.existingSecret).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-secrets
+  labels:
+    {{- include "fintrack.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  POSTGRES_PASSWORD: {{ .Values.secrets.postgresPassword | quote }}
+  ANTHROPIC_API_KEY: {{ .Values.secrets.anthropicApiKey | quote }}
+{{- end }}

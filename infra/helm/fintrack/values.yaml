@@ -1,0 +1,76 @@
+# FinTrack Helm values. Defaults target local Minikube; override for GKE
+# (-f values-gke.yaml or --set). See the chart README.
+
+image:
+  # Local images loaded into Minikube use no registry. For GKE set e.g.
+  #   registry: <region>-docker.pkg.dev/<project>/fintrack
+  registry: ""
+  repository: fintrack        # image is [registry/]repository/<service>:<tag>
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Shared non-secret config → ConfigMap. Service-to-service URLs are derived
+# from the release (templates/configmap.yaml), so they follow renames.
+config:
+  postgresDb: fintrack
+  postgresUser: fintrack
+  springProfile: k8s
+  # plain-HTTP Minikube can't use Secure cookies (ADR 003); set "true" behind TLS.
+  refreshCookieSecure: "false"
+
+# Secrets. DEV defaults for Minikube — override for real environments, or set
+# existingSecret to bring your own (then postgresPassword/anthropicApiKey are ignored).
+secrets:
+  existingSecret: ""
+  postgresPassword: fintrack_local
+  anthropicApiKey: ""          # empty → AI opt-in (rule/template fallback)
+
+# The JWT signing key is created out-of-band (never templated) — see README.
+auth:
+  jwtKeySecret: auth-jwt       # Secret holding jwt-signing.pem
+
+postgres:
+  enabled: true
+  image: postgres:17-alpine
+  storage: 1Gi
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: "1", memory: 512Mi }
+
+redis:
+  enabled: true
+  image: redis:7-alpine
+
+mailpit:
+  enabled: true
+  image: axllent/mailpit:latest
+
+# Default resources for the application services (per-service `resources` overrides).
+resources:
+  requests: { cpu: 100m, memory: 320Mi }
+  limits: { cpu: "1", memory: 512Mi }
+
+# The four services — each renders a Deployment + Service from the shared template.
+services:
+  auth-service:
+    port: 8081
+    waitForPostgres: true      # init-container waits for Postgres (Flyway)
+    jwtKey: true               # mount the auth-jwt secret + point the app at it
+    env:
+      FINTRACK_AUTH_JWT_PRIVATE_KEY: file:/etc/fintrack/jwt-signing.pem
+  finance-service:
+    port: 8082
+    waitForPostgres: true
+    anthropic: true            # inject ANTHROPIC_API_KEY from the secret
+  gateway-service:
+    port: 8080
+  insight-service:
+    port: 8083
+    anthropic: true
+
+ingress:
+  enabled: true
+  className: nginx
+  host: fintrack.local
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"   # CSV statement uploads
