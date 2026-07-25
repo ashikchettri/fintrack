@@ -31,3 +31,5 @@ resources:
   - gateway-service/deployment.yaml
   - insight-service/service.yaml
   - insight-service/deployment.yaml
+  # single public entry — routes all external traffic to the gateway
+  - ingress.yaml

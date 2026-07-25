@@ -30,6 +30,9 @@ dependencies {
     // BOM version rather than the shared catalog's 4.1.0.
     implementation(platform("org.springframework.boot:spring-boot-dependencies:4.0.7"))
     implementation(platform(libs.spring.cloud.dependencies))
+    // Netty BOM ahead of Boot's (4.2.15) to clear CVE-2026-59901 (netty-codec-
+    // compression Bzip2Decoder infinite loop). Drop once Boot ships >= 4.2.16.
+    implementation(platform("io.netty:netty-bom:4.2.16.Final"))
 
     // bcprov-jdk18on is dragged in transitively at 1.81 (CVE-2025-14813, CRITICAL)
     // and the Boot BOM doesn't manage its version — raise it to a patched release.
