@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fintrack
+  annotations:
+    # The gateway owns routing/CORS/rate-limiting (ADR 007); nginx just forwards.
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"   # CSV statement uploads
+spec:
+  ingressClassName: nginx
+  rules:
+    # Add to /etc/hosts:  `echo "$(minikube ip) fintrack.local" | sudo tee -a /etc/hosts`
+    - host: fintrack.local
+      http:
+        paths:
+          # Everything goes to the gateway — the single public entry point.
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-service
+                port:
+                  number: 8080

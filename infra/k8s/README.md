@@ -5,13 +5,14 @@ one namespace (`fintrack`). See **ADR 016** for the design.
 
 ## What's here
 
-Foundation + backing stores + **all four services**. auth-service is the
-reference Deployment; finance/gateway/insight follow the same pattern. Only the
-Ingress (fronting the gateway) is still to come.
+The whole stack: foundation + backing stores + **all four services** + an
+**Ingress** fronting the gateway. auth-service is the reference Deployment;
+finance/gateway/insight follow the same pattern.
 
 ```
 namespace • config (ConfigMap + dev Secret) • postgres (StatefulSet + PVC + schema init)
 • redis • mailpit • auth / finance / gateway / insight (Deployment + Service each)
+• ingress → gateway (single public entry, ADR 007)
 ```
 
 Every workload runs **non-root** with dropped capabilities, resource
@@ -44,12 +45,28 @@ kubectl -n fintrack get pods -w
 
 ### Try it
 
-```bash
-kubectl -n fintrack port-forward svc/auth-service 8081:8081
-curl -s localhost:8081/actuator/health            # {"status":"UP",...}
-curl -s localhost:8081/.well-known/jwks.json      # the public verification key
+Everything enters through the gateway via the Ingress:
 
-kubectl -n fintrack port-forward svc/mailpit 8025:8025   # verification-email inbox
+```bash
+echo "$(minikube ip) fintrack.local" | sudo tee -a /etc/hosts
+curl -s http://fintrack.local/actuator/health                 # gateway health, {"status":"UP"}
+curl -s -XPOST http://fintrack.local/api/v1/auth/login \
+  -H 'Content-Type: application/json' -d '{"email":"x@y.z","password":"bad"}'   # -> 401 via gateway→auth
+```
+
+If the qemu driver's node IP isn't reachable from the host, tunnel the nginx
+controller instead:
+
+```bash
+kubectl -n ingress-nginx port-forward svc/ingress-nginx-controller 8080:80
+curl -s -H 'Host: fintrack.local' http://localhost:8080/actuator/health
+```
+
+Individual services / the mail inbox are still reachable directly if needed:
+
+```bash
+kubectl -n fintrack port-forward svc/auth-service 8081:8081   # /.well-known/jwks.json, /actuator/health
+kubectl -n fintrack port-forward svc/mailpit 8025:8025        # verification-email inbox
 ```
 
 ## Notes / not-yet
@@ -61,5 +78,6 @@ kubectl -n fintrack port-forward svc/mailpit 8025:8025   # verification-email in
   is `false` here (ADR 003). Behind TLS termination set it to `true`.
 - **Images.** `imagePullPolicy: IfNotPresent` + `:latest` for locally-loaded
   images. Registry push + immutable tags come with the GKE work.
-- **Next:** an Ingress routing to the gateway (the single public entry, ADR 007;
-  the ingress addon is already enabled), then a Helm chart / GKE overlay.
+- **Next:** a Helm chart / Kustomize overlays for GKE (Cloud SQL instead of the
+  in-cluster Postgres, Secret Manager + Workload Identity, managed TLS on the
+  Ingress).
