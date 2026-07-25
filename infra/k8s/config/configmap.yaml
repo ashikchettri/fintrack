@@ -15,6 +15,11 @@ data:
   # Local mail sink (Mailpit). Real environments point MAIL_* at an SMTP provider.
   MAIL_HOST: mailpit
   MAIL_PORT: "1025"
+  # Service-to-service URLs (in-cluster DNS). finance/insight verify JWTs against
+  # auth's JWKS; the gateway routes to auth/finance; insight calls finance.
+  AUTH_URI: http://auth-service:8081
+  AUTH_JWKS_URI: http://auth-service:8081/.well-known/jwks.json
+  FINANCE_URI: http://finance-service:8082
   # Spring — a dedicated profile for in-cluster runs.
   SPRING_PROFILES_ACTIVE: k8s
   # Minikube serves plain HTTP, so the refresh cookie can't be Secure-only (ADR 003).

@@ -3,15 +3,15 @@
 Manifests to run FinTrack in-cluster (Minikube today; GKE later). Kustomize-based,
 one namespace (`fintrack`). See **ADR 016** for the design.
 
-## What's here (first slice)
+## What's here
 
-Foundation + backing stores + **auth-service** as the reference application
-Deployment. finance-, gateway- and insight-service, plus the Ingress, follow the
-same pattern and land in follow-up changes.
+Foundation + backing stores + **all four services**. auth-service is the
+reference Deployment; finance/gateway/insight follow the same pattern. Only the
+Ingress (fronting the gateway) is still to come.
 
 ```
 namespace • config (ConfigMap + dev Secret) • postgres (StatefulSet + PVC + schema init)
-• redis • mailpit • auth-service (Deployment + Service)
+• redis • mailpit • auth / finance / gateway / insight (Deployment + Service each)
 ```
 
 Every workload runs **non-root** with dropped capabilities, resource
@@ -23,9 +23,11 @@ liveness/readiness/startup probes on `/actuator/health/*`.
 ```bash
 minikube start                       # any driver; the ingress addon is handy later
 
-# 1. Build the service image and load it into the cluster (no registry yet)
-docker build -f services/auth-service/Dockerfile -t fintrack/auth-service:latest .
-minikube image load fintrack/auth-service:latest
+# 1. Build each service image and load it into the cluster (no registry yet)
+for s in auth-service finance-service gateway-service insight-service; do
+  docker build -f services/$s/Dockerfile -t fintrack/$s:latest .
+  minikube image load fintrack/$s:latest
+done
 
 # 2. Create the JWT signing key secret (a real private key never lives in git).
 #    Outside the `local` profile the app requires it (ADR 002).
@@ -59,5 +61,5 @@ kubectl -n fintrack port-forward svc/mailpit 8025:8025   # verification-email in
   is `false` here (ADR 003). Behind TLS termination set it to `true`.
 - **Images.** `imagePullPolicy: IfNotPresent` + `:latest` for locally-loaded
   images. Registry push + immutable tags come with the GKE work.
-- **Next:** finance/gateway/insight Deployments, an Ingress routing to the
-  gateway, then a Helm chart.
+- **Next:** an Ingress routing to the gateway (the single public entry, ADR 007;
+  the ingress addon is already enabled), then a Helm chart / GKE overlay.
