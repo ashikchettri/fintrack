@@ -1,0 +1,17 @@
+{{- if and .Values.ingress.enabled .Values.ingress.managedCertificate.enabled }}
+# Google-managed TLS certificate (GKE). Provisions automatically once the domain's
+# DNS points at the ingress load balancer's IP; the Ingress references it by name.
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: {{ .Release.Name }}-cert
+  labels:
+    {{- include "fintrack.labels" . | nindent 4 }}
+spec:
+  domains:
+    {{- with .Values.ingress.managedCertificate.domains }}
+    {{- toYaml . | nindent 4 }}
+    {{- else }}
+    - {{ .Values.ingress.host }}
+    {{- end }}
+{{- end }}

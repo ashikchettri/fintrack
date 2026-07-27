@@ -56,4 +56,12 @@ Cloud SQL is reached via a **native-sidecar Cloud SQL Auth Proxy** — set
 the wire. Authentication is via **Workload Identity**: annotate the KSA with the
 app GSA through `serviceAccount.annotations` (`iam.gke.io/gcp-service-account`).
 Provision the cluster, Cloud SQL, registry and IAM with `infra/gke/terraform`
-(ADR 017). Managed TLS on the Ingress is the remaining GKE step.
+(ADR 017).
+
+**Managed TLS.** On GKE the Ingress uses `className: gce`; set
+`ingress.managedCertificate.enabled=true` to render a Google-managed
+`ManagedCertificate` for `ingress.host`, `ingress.staticIpName` to the reserved
+global IP (`terraform output ingress_ip_name`), and `ingress.httpsRedirect=true`
+for a `FrontendConfig` that redirects HTTP → HTTPS. Point the domain's DNS A
+record at `terraform output ingress_ip_address`; the cert provisions once DNS
+resolves.

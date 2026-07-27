@@ -1,11 +1,23 @@
 {{- if .Values.ingress.enabled }}
+{{- /* Merge base annotations with the GKE-only ones (managed cert, static IP,
+       HTTPS redirect) so nginx/Minikube stays clean and GCE gets what it needs. */}}
+{{- $ann := deepCopy (.Values.ingress.annotations | default dict) }}
+{{- if .Values.ingress.managedCertificate.enabled }}
+{{- $_ := set $ann "networking.gke.io/managed-certificates" (printf "%s-cert" .Release.Name) }}
+{{- end }}
+{{- if .Values.ingress.staticIpName }}
+{{- $_ := set $ann "kubernetes.io/ingress.global-static-ip-name" .Values.ingress.staticIpName }}
+{{- end }}
+{{- if .Values.ingress.httpsRedirect }}
+{{- $_ := set $ann "networking.gke.io/v1beta1.FrontendConfig" (printf "%s-frontend" .Release.Name) }}
+{{- end }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Release.Name }}
   labels:
     {{- include "fintrack.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+  {{- with $ann }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
