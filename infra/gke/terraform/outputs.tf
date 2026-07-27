@@ -29,3 +29,13 @@ output "wif_provider" {
   description = "workload_identity_provider for the deploy workflow's google-github-actions/auth."
   value       = google_iam_workload_identity_pool_provider.github.name
 }
+
+output "ingress_ip_name" {
+  description = "Reserved global IP name — set as ingress.staticIpName in the Helm chart."
+  value       = google_compute_global_address.ingress.name
+}
+
+output "ingress_ip_address" {
+  description = "The reserved IP — point the domain's DNS A record here."
+  value       = google_compute_global_address.ingress.address
+}

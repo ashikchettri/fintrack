@@ -49,7 +49,7 @@ Each milestone produces something working and deployable. FinTrack is built incr
 - Artifact Registry, GKE Autopilot, Cloud SQL (Postgres), Secret Manager, managed TLS + HTTPS load balancer via Ingress.
 - GitHub Actions on tag → build, scan, push, deploy (Workload Identity Federation, no key files).
 - Cost guardrails: billing alerts; tear down when idle.
-- **Started (ADR 017):** Terraform foundation in `infra/gke/terraform` — Autopilot cluster, Artifact Registry, Cloud SQL 17, Secret Manager, the app's Workload Identity, and keyless GitHub WIF — `terraform validate`-clean (not yet applied; needs a dedicated project). Next: the Helm Cloud SQL Auth Proxy sidecar + Secret Manager wiring, `values-gke.yaml`, GCE Ingress + managed cert, and the `deploy-gke.yml` workflow.
+- **Started (ADR 017):** Terraform foundation in `infra/gke/terraform` — Autopilot cluster, Artifact Registry, Cloud SQL 17, Secret Manager, the app's Workload Identity, keyless GitHub WIF, and a reserved ingress IP — `terraform validate`-clean (not yet applied; needs a dedicated project). The Helm chart now carries the **Cloud SQL Auth Proxy sidecar** + Workload Identity SA and a **GCE Ingress with a Google-managed TLS cert** (ManagedCertificate + HTTP→HTTPS FrontendConfig), both off by default so Minikube is unaffected. Next: a concrete `values-gke.yaml` and the `deploy-gke.yml` workflow (WIF → build/scan/push → `helm upgrade`).
 
 ### Family & richer authorization
 - Policy-based authorization: adults see `shared` household items + aggregate totals; children see only their own. Tests prove every rule.

@@ -89,3 +89,9 @@ ingress:
   host: fintrack.local
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"   # CSV statement uploads
+  # GKE managed TLS (ignored on nginx/Minikube). On GKE set className: gce.
+  managedCertificate:
+    enabled: false        # true → render a ManagedCertificate + wire the annotation
+    domains: []           # defaults to [host]
+  staticIpName: ""        # reserved global static IP name (stable DNS target)
+  httpsRedirect: false    # true → FrontendConfig redirecting HTTP → HTTPS

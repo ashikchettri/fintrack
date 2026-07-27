@@ -35,5 +35,10 @@ mailpit:
   enabled: false
 
 ingress:
-  className: gce               # or nginx, depending on the cluster
+  className: gce
   host: fintrack.example.com
+  annotations: {}                 # drop the nginx-specific default
+  managedCertificate:
+    enabled: true                 # Google-managed TLS cert for the host above
+  staticIpName: fintrack-ip       # terraform output ingress_ip_name
+  httpsRedirect: true             # FrontendConfig HTTP → HTTPS

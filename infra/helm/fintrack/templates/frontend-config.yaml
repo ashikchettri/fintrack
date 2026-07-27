@@ -1,0 +1,12 @@
+{{- if and .Values.ingress.enabled .Values.ingress.httpsRedirect }}
+# Redirect HTTP → HTTPS at the GKE load balancer (referenced by the Ingress).
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: {{ .Release.Name }}-frontend
+  labels:
+    {{- include "fintrack.labels" . | nindent 4 }}
+spec:
+  redirectToHttps:
+    enabled: true
+{{- end }}
