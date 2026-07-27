@@ -45,7 +45,15 @@ curl -s http://fintrack.local/actuator/health          # {"status":"UP"}
 
 ## GKE
 
-Override with `-f values-gke.example.yaml` (registry-hosted images, managed
-Postgres via `postgres.enabled=false`, a real Secret, TLS-safe cookies). See that
-file. Managed TLS on the Ingress, Cloud SQL, and Secret Manager / Workload
-Identity are the remaining GKE steps.
+Override with `-f values-gke.example.yaml`: registry-hosted images, a real
+Secret (`secrets.existingSecret`), TLS-safe cookies, and **Cloud SQL** instead
+of the in-cluster Postgres.
+
+Cloud SQL is reached via a **native-sidecar Cloud SQL Auth Proxy** — set
+`cloudSqlProxy.enabled=true` + `cloudSqlProxy.connectionName` (and
+`postgres.enabled=false`). For DB services the chart injects the proxy and points
+`DB_HOST` at `127.0.0.1`, so the app connects over localhost with no DB creds on
+the wire. Authentication is via **Workload Identity**: annotate the KSA with the
+app GSA through `serviceAccount.annotations` (`iam.gke.io/gcp-service-account`).
+Provision the cluster, Cloud SQL, registry and IAM with `infra/gke/terraform`
+(ADR 017). Managed TLS on the Ingress is the remaining GKE step.

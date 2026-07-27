@@ -29,6 +29,21 @@ secrets:
 auth:
   jwtKeySecret: auth-jwt       # Secret holding jwt-signing.pem
 
+# Kubernetes ServiceAccount the app pods run as. On GKE, annotate it with the
+# app GSA for Workload Identity (see values-gke.example.yaml). The name must
+# match the Terraform binding (var.app_ksa, default "fintrack").
+serviceAccount:
+  name: fintrack
+  annotations: {}
+
+# Cloud SQL Auth Proxy — on GKE, DB services reach Cloud SQL over localhost via
+# a native-sidecar proxy (IAM-authenticated by the app GSA, no DB creds on the
+# wire). Off by default (Minikube uses the in-cluster Postgres above).
+cloudSqlProxy:
+  enabled: false
+  image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.15.2
+  connectionName: ""           # PROJECT:REGION:INSTANCE (terraform output cloudsql_connection_name)
+
 postgres:
   enabled: true
   image: postgres:17-alpine
