@@ -31,6 +31,7 @@ spec:
         app.kubernetes.io/name: {{ $name }}
         {{- include "fintrack.labels" $ | nindent 8 }}
     spec:
+      serviceAccountName: {{ $.Values.serviceAccount.name }}
       securityContext:
         runAsNonRoot: true
         runAsUser: 1001
@@ -38,6 +39,25 @@ spec:
         fsGroup: 1001
       {{- if $svc.waitForPostgres }}
       initContainers:
+        {{- if $.Values.cloudSqlProxy.enabled }}
+        # Native-sidecar Cloud SQL Auth Proxy: starts before the app and stays
+        # running, exposing Cloud SQL on 127.0.0.1:5432 (DB_HOST override below).
+        - name: cloud-sql-proxy
+          restartPolicy: Always
+          image: {{ $.Values.cloudSqlProxy.image }}
+          args:
+            - "--structured-logs"
+            - "--port=5432"
+            - {{ required "cloudSqlProxy.connectionName is required when cloudSqlProxy.enabled" $.Values.cloudSqlProxy.connectionName | quote }}
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { cpu: 250m, memory: 128Mi }
+        {{- else }}
         - name: wait-for-postgres
           image: {{ $.Values.postgres.image }}
           command: ["sh", "-c", "until pg_isready -h postgres -p 5432 -U {{ $.Values.config.postgresUser }}; do echo 'waiting for postgres'; sleep 2; done"]
@@ -50,6 +70,7 @@ spec:
           resources:
             requests: { cpu: 10m, memory: 16Mi }
             limits: { cpu: 100m, memory: 64Mi }
+        {{- end }}
       {{- end }}
       containers:
         - name: {{ $name }}
@@ -65,6 +86,10 @@ spec:
             {{- if $svc.waitForPostgres }}
             - name: POSTGRES_PASSWORD
               valueFrom: { secretKeyRef: { name: {{ include "fintrack.secretName" $ }}, key: POSTGRES_PASSWORD } }
+            {{- if $.Values.cloudSqlProxy.enabled }}
+            - name: DB_HOST            # reach Cloud SQL via the in-pod proxy, not the postgres Service
+              value: "127.0.0.1"
+            {{- end }}
             {{- end }}
             {{- if $svc.anthropic }}
             - name: ANTHROPIC_API_KEY

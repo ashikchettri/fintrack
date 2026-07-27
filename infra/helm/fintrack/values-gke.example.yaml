@@ -16,10 +16,19 @@ secrets:
   # Bring your own Secret with POSTGRES_PASSWORD + ANTHROPIC_API_KEY keys.
   existingSecret: fintrack-secrets
 
-# Use Cloud SQL instead of the in-cluster Postgres. (Point DB_HOST at the Cloud
-# SQL proxy / private IP via a config override or a small values addition.)
+# Workload Identity: annotate the KSA with the app GSA (terraform output
+# app_service_account) so pods — and the Cloud SQL proxy — auth with no keys.
+serviceAccount:
+  annotations:
+    iam.gke.io/gcp-service-account: fintrack-app@PROJECT_ID.iam.gserviceaccount.com
+
+# Managed Postgres via the Cloud SQL Auth Proxy sidecar (DB_HOST is set to
+# 127.0.0.1 automatically for DB services). No in-cluster Postgres.
 postgres:
   enabled: false
+cloudSqlProxy:
+  enabled: true
+  connectionName: PROJECT_ID:REGION:fintrack-pg   # terraform output cloudsql_connection_name
 
 # Mailpit is a local dev sink — off in the cloud (use a real SMTP provider).
 mailpit:
