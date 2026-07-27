@@ -1,0 +1,31 @@
+# Deployable GKE values. The stable toggles live here; project-specific values
+# (image registry/tag, Cloud SQL connection, ingress host/IP, app GSA) are passed
+# by the deploy-gke.yml workflow via --set, sourced from Terraform outputs stored
+# as GitHub repository variables. See infra/gke/README.md.
+
+image:
+  pullPolicy: IfNotPresent
+
+config:
+  refreshCookieSecure: "true"      # HTTPS via the managed cert
+
+secrets:
+  # Bridge Secret Manager → a k8s Secret named fintrack-secrets (see runbook).
+  existingSecret: fintrack-secrets
+
+# Managed Postgres via the Cloud SQL Auth Proxy sidecar; no in-cluster stores.
+postgres:
+  enabled: false
+mailpit:
+  enabled: false
+cloudSqlProxy:
+  enabled: true
+  # connectionName comes from --set (terraform output cloudsql_connection_name)
+
+ingress:
+  className: gce
+  annotations: {}
+  managedCertificate:
+    enabled: true
+  httpsRedirect: true
+  # host + staticIpName come from --set (terraform outputs)

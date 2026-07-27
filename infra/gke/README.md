@@ -40,19 +40,45 @@ printf '%s' "$ANTHROPIC_API_KEY" | gcloud secrets versions add fintrack-anthropi
 
 ## 3. Wire the deploy (next PRs)
 
-The cluster is ready; deploying the app needs the pieces called out in ADR 017:
+Deploys run from `.github/workflows/deploy-gke.yml` on any `v*` tag (keyless via
+WIF): build → Trivy scan → push to Artifact Registry → `helm upgrade` with
+`values-gke.yaml`.
 
-- a **Cloud SQL Auth Proxy sidecar** + Secret Manager mounting (CSI driver /
-  External Secrets) in the Helm chart, and a concrete `values-gke.yaml`,
-- a **GCE Ingress + managed certificate**,
-- a **`deploy-gke.yml`** workflow: authenticate via WIF
-  (`workload_identity_provider` = the `wif_provider` output, `service_account` =
-  the `deployer_service_account` output), build/scan/push each image to
-  Artifact Registry, then `helm upgrade` with `image.registry` set to the
-  `artifact_registry` output.
+**a. Repository variables** (from `terraform output` → GitHub repo → Settings →
+Variables):
 
-Set these Terraform outputs as GitHub **repository variables** for that workflow:
-`GCP_PROJECT`, `GCP_REGION`, `WIF_PROVIDER`, `DEPLOYER_SA`, `GKE_CLUSTER`.
+```bash
+tf() { terraform -chdir=infra/gke/terraform output -raw "$1"; }
+gh variable set GCP_PROJECT        --body "$(gcloud config get-value project)"
+gh variable set GCP_REGION         --body "australia-southeast1"
+gh variable set WIF_PROVIDER       --body "$(tf wif_provider)"
+gh variable set DEPLOYER_SA        --body "$(tf deployer_service_account)"
+gh variable set GKE_CLUSTER        --body "$(tf cluster_name)"
+gh variable set CLOUDSQL_CONNECTION --body "$(tf cloudsql_connection_name)"
+gh variable set APP_GSA            --body "$(tf app_service_account)"
+gh variable set INGRESS_HOST       --body "fintrack.example.com"
+gh variable set INGRESS_IP_NAME    --body "$(tf ingress_ip_name)"
+```
+
+**b. Kubernetes secrets** (bridge Secret Manager → the k8s Secrets the chart
+mounts; a CSI driver / External Secrets can automate this later):
+
+```bash
+gcloud container clusters get-credentials "$(tf cluster_name)" --region australia-southeast1
+kubectl create namespace fintrack
+kubectl -n fintrack create secret generic fintrack-secrets \
+  --from-literal=POSTGRES_PASSWORD="$(gcloud secrets versions access latest --secret=fintrack-db-password)" \
+  --from-literal=ANTHROPIC_API_KEY="$(gcloud secrets versions access latest --secret=fintrack-anthropic-api-key)"
+gcloud secrets versions access latest --secret=fintrack-jwt-signing-key > jwt-signing.pem
+kubectl -n fintrack create secret generic auth-jwt --from-file=jwt-signing.pem
+```
+
+**c. DNS**: point the `INGRESS_HOST` A record at `terraform output
+ingress_ip_address`. The managed cert provisions once DNS resolves.
+
+**d. Ship it**: `git tag v0.1.0 && git push origin v0.1.0` → the workflow builds,
+scans, pushes and deploys. (Flyway creates the `auth`/`finance` schemas on Cloud
+SQL on first boot — no init SQL needed.)
 
 ## Tear down
 
