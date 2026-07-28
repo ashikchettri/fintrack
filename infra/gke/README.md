@@ -80,6 +80,46 @@ ingress_ip_address`. The managed cert provisions once DNS resolves.
 scans, pushes and deploys. (Flyway creates the `auth`/`finance` schemas on Cloud
 SQL on first boot — no init SQL needed.)
 
+## Reaching it by IP (no domain / no TLS)
+
+To skip the managed cert (no domain yet), deploy with it off and use the
+reserved IP directly. GKE's GCE ingress controller keys off the
+`kubernetes.io/ingress.class: gce` **annotation** (not `ingressClassName`) — the
+chart adds it automatically when `ingress.className=gce`. Overrides:
+
+```bash
+helm upgrade --install fintrack infra/helm/fintrack -n fintrack \
+  -f infra/helm/fintrack/values-gke.yaml \
+  --set image.registry=$(tf artifact_registry | sed 's#/fintrack$##') \
+  --set image.tag=v0.1.0 \
+  --set cloudSqlProxy.connectionName=$(tf cloudsql_connection_name) \
+  --set ingress.staticIpName=$(tf ingress_ip_name) \
+  --set ingress.host=$(tf ingress_ip_address).nip.io \
+  --set ingress.managedCertificate.enabled=false --set ingress.httpsRedirect=false \
+  --set-string 'serviceAccount.annotations.iam\.gke\.io/gcp-service-account'=$(tf app_service_account)
+```
+
+Access (the GCE load balancer takes ~5–10 min to provision after first deploy):
+
+```bash
+IP=$(terraform -chdir=infra/gke/terraform output -raw ingress_ip_address)
+curl http://$IP.nip.io/actuator/health          # gateway health
+curl -XPOST http://$IP.nip.io/api/v1/auth/login -H 'Content-Type: application/json' \
+     -d '{"email":"x@y.z","password":"bad"}'      # -> 401 (auth reached Cloud SQL)
+```
+
+`nip.io` just resolves `<ip>.nip.io` → `<ip>`, satisfying the ingress host rule
+without owning a domain. Before the LB is up (or to stay private), port-forward
+instead: `kubectl -n fintrack port-forward svc/gateway-service 8080:8080`.
+
+> **This is the API, not a web UI** — the React SPA isn't part of the chart
+> (point a local `npm run dev` at the gateway, or serve the built static files
+> separately). And the reserved IP is a **global, public** address: that HTTP
+> endpoint is reachable from anywhere on the internet, unencrypted. Fine for a
+> short demo behind the gateway's rate limiting; add a domain + managed TLS
+> (`ingress.managedCertificate.enabled=true`) before anything real, and tear it
+> down when you're done.
+
 ## Tear down
 
 ```bash

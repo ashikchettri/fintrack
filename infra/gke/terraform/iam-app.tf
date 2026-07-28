@@ -16,9 +16,11 @@ resource "google_project_iam_member" "app" {
   member  = "serviceAccount:${google_service_account.app.email}"
 }
 
-# Bind the in-cluster KSA (namespace/app_ksa) to the app GSA.
+# Bind the in-cluster KSA (namespace/app_ksa) to the app GSA. Depends on the
+# cluster: the *.svc.id.goog identity pool only exists once it's created.
 resource "google_service_account_iam_member" "app_workload_identity" {
   service_account_id = google_service_account.app.name
   role               = "roles/iam.workloadIdentityUser"
   member             = "serviceAccount:${var.project_id}.svc.id.goog[${var.namespace}/${var.app_ksa}]"
+  depends_on         = [google_container_cluster.fintrack]
 }
