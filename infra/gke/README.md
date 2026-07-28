@@ -112,9 +112,9 @@ curl -XPOST http://$IP.nip.io/api/v1/auth/login -H 'Content-Type: application/js
 without owning a domain. Before the LB is up (or to stay private), port-forward
 instead: `kubectl -n fintrack port-forward svc/gateway-service 8080:8080`.
 
-> **This is the API, not a web UI** — the React SPA isn't part of the chart
-> (point a local `npm run dev` at the gateway, or serve the built static files
-> separately). And the reserved IP is a **global, public** address: that HTTP
+> The chart serves the **React SPA** (nginx) at `/` and routes `/api` to the
+> gateway, so the IP loads the full FinTrack UI. The reserved IP is a **global,
+> public** address: that HTTP
 > endpoint is reachable from anywhere on the internet, unencrypted. Fine for a
 > short demo behind the gateway's rate limiting; add a domain + managed TLS
 > (`ingress.managedCertificate.enabled=true`) before anything real, and tear it
