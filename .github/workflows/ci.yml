@@ -136,7 +136,7 @@ jobs:
       fail-fast: false
       matrix:
         # Grows as each service gains a Dockerfile (containerization milestone).
-        service: [auth-service, finance-service, gateway-service, insight-service]
+        service: [auth-service, finance-service, gateway-service, insight-service, frontend]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -147,7 +147,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: services/${{ matrix.service }}/Dockerfile
+          file: ${{ matrix.service == 'frontend' && 'frontend/Dockerfile' || format('services/{0}/Dockerfile', matrix.service) }}
           load: true
           tags: fintrack/${{ matrix.service }}:${{ github.sha }}
           # Reuse the Gradle/layer cache across runs, keyed per service.

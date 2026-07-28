@@ -83,6 +83,16 @@ services:
     port: 8083
     anthropic: true
 
+# The React SPA, served by nginx. When enabled, the ingress routes /api to the
+# gateway and everything else to the frontend.
+frontend:
+  enabled: true
+  port: 8080
+  replicas: 1
+  resources:
+    requests: { cpu: 25m, memory: 32Mi }
+    limits: { cpu: 250m, memory: 128Mi }
+
 ingress:
   enabled: true
   className: nginx

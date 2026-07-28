@@ -31,7 +31,24 @@ spec:
     - host: {{ .Values.ingress.host | quote }}
       http:
         paths:
-          # Everything goes to the gateway — the single public entry (ADR 007).
+          {{- if .Values.frontend.enabled }}
+          # /api → the gateway (single API entry, ADR 007); everything else → the SPA.
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-service
+                port:
+                  number: {{ (index .Values.services "gateway-service").port }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: {{ .Values.frontend.port }}
+          {{- else }}
+          # No SPA deployed — everything to the gateway (API only).
           - path: /
             pathType: Prefix
             backend:
@@ -39,4 +56,5 @@ spec:
                 name: gateway-service
                 port:
                   number: {{ (index .Values.services "gateway-service").port }}
+          {{- end }}
 {{- end }}
