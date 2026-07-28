@@ -80,7 +80,7 @@ jobs:
           cluster_name: ${{ vars.GKE_CLUSTER }}
           location: ${{ vars.GCP_REGION }}
 
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@v5
 
       - name: Helm upgrade
         run: |
