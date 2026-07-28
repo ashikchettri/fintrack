@@ -2,6 +2,10 @@
 {{- /* Merge base annotations with the GKE-only ones (managed cert, static IP,
        HTTPS redirect) so nginx/Minikube stays clean and GCE gets what it needs. */}}
 {{- $ann := deepCopy (.Values.ingress.annotations | default dict) }}
+{{- /* GKE's GCE controller keys off this annotation, not ingressClassName. */}}
+{{- if eq .Values.ingress.className "gce" }}
+{{- $_ := set $ann "kubernetes.io/ingress.class" "gce" }}
+{{- end }}
 {{- if .Values.ingress.managedCertificate.enabled }}
 {{- $_ := set $ann "networking.gke.io/managed-certificates" (printf "%s-cert" .Release.Name) }}
 {{- end }}
