@@ -7,7 +7,10 @@ resource "google_sql_database_instance" "fintrack" {
   region           = var.region
 
   settings {
-    tier              = var.db_tier
+    tier = var.db_tier
+    # ENTERPRISE (not the pricier ENTERPRISE_PLUS default) supports shared-core
+    # tiers like db-f1-micro for cheap dev instances.
+    edition           = "ENTERPRISE"
     availability_type = "ZONAL" # REGIONAL for HA in production
     disk_autoresize   = true
 
