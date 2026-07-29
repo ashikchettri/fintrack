@@ -8,6 +8,7 @@ locals {
     "iamcredentials.googleapis.com",
     "sts.googleapis.com",
     "compute.googleapis.com",
+    "billingbudgets.googleapis.com",
   ]
 }
 

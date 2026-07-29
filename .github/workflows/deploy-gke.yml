@@ -90,6 +90,9 @@ jobs:
             --set image.registry=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT }} \
             --set image.tag=${{ github.ref_name }} \
             --set cloudSqlProxy.connectionName=${{ vars.CLOUDSQL_CONNECTION }} \
+            --set externalSecrets.projectID=${{ vars.GCP_PROJECT }} \
+            --set externalSecrets.clusterLocation=${{ vars.GCP_REGION }} \
+            --set externalSecrets.clusterName=${{ vars.GKE_CLUSTER }} \
             --set ingress.host=${{ vars.INGRESS_HOST }} \
             --set ingress.staticIpName=${{ vars.INGRESS_IP_NAME }} \
             --set-string serviceAccount.annotations."iam\.gke\.io/gcp-service-account"=${{ vars.APP_GSA }} \
