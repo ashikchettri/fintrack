@@ -9,6 +9,17 @@ variable "region" {
   default     = "australia-southeast1"
 }
 
+variable "billing_account" {
+  description = "Billing account ID (0X0000-0X0000-0X0000) for the budget alert."
+  type        = string
+}
+
+variable "monthly_budget" {
+  description = "Monthly budget in USD; alerts email billing admins at 50/90/100%."
+  type        = number
+  default     = 50
+}
+
 variable "cluster_name" {
   description = "GKE Autopilot cluster name."
   type        = string

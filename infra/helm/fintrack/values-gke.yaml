@@ -10,8 +10,14 @@ config:
   refreshCookieSecure: "true"      # HTTPS via the managed cert
 
 secrets:
-  # Bridge Secret Manager → a k8s Secret named fintrack-secrets (see runbook).
+  # ESO syncs Secret Manager → this Secret (below); the services read it.
   existingSecret: fintrack-secrets
+
+# External Secrets Operator syncs GCP Secret Manager → the k8s Secrets, so no
+# manual `kubectl create secret`. projectID/clusterLocation/clusterName come from
+# --set (Terraform outputs). Requires ESO installed in-cluster (see runbook).
+externalSecrets:
+  enabled: true
 
 # Managed Postgres via the Cloud SQL Auth Proxy sidecar; no in-cluster stores.
 postgres:

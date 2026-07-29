@@ -44,6 +44,21 @@ cloudSqlProxy:
   image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.15.2
   connectionName: ""           # PROJECT:REGION:INSTANCE (terraform output cloudsql_connection_name)
 
+# External Secrets Operator — sync GCP Secret Manager → the k8s Secrets the chart
+# mounts (fintrack-secrets, auth-jwt), via the app's Workload Identity. Replaces
+# the manual `kubectl create secret` bridge. Requires ESO installed in-cluster
+# and secrets.existingSecret set to the ExternalSecret target. Off by default.
+externalSecrets:
+  enabled: false
+  refreshInterval: 1h
+  projectID: ""                # GCP project holding the secrets (--set)
+  clusterLocation: ""          # cluster region, for the gcpsm workload-identity auth (--set)
+  clusterName: ""              # cluster name (--set)
+  # Secret Manager secret IDs (created by Terraform).
+  dbPasswordSecret: fintrack-db-password
+  anthropicSecret: fintrack-anthropic-api-key
+  jwtSecret: fintrack-jwt-signing-key
+
 postgres:
   enabled: true
   image: postgres:17-alpine

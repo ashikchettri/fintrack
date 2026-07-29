@@ -6,3 +6,7 @@ project_id  = "fintrack-REPLACE-ME"
 
 region      = "australia-southeast1"
 github_repo = "ashikchettri/fintrack"
+
+# Billing account for the monthly budget alert (gcloud billing accounts list).
+billing_account = "0X0000-0X0000-0X0000"
+# monthly_budget = 50   # USD; alerts at 50/90/100% (default 50)

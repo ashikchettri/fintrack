@@ -60,18 +60,20 @@ gh variable set INGRESS_HOST       --body "fintrack.example.com"
 gh variable set INGRESS_IP_NAME    --body "$(tf ingress_ip_name)"
 ```
 
-**b. Kubernetes secrets** (bridge Secret Manager → the k8s Secrets the chart
-mounts; a CSI driver / External Secrets can automate this later):
+**b. External Secrets Operator** syncs Secret Manager → the k8s Secrets the chart
+mounts (`fintrack-secrets`, `auth-jwt`) — no manual `kubectl create secret`. The
+chart's `SecretStore` + `ExternalSecret`s (enabled by `values-gke.yaml`)
+authenticate via the app's Workload Identity. Install ESO once per cluster:
 
 ```bash
 gcloud container clusters get-credentials "$(tf cluster_name)" --region australia-southeast1
-kubectl create namespace fintrack
-kubectl -n fintrack create secret generic fintrack-secrets \
-  --from-literal=POSTGRES_PASSWORD="$(gcloud secrets versions access latest --secret=fintrack-db-password)" \
-  --from-literal=ANTHROPIC_API_KEY="$(gcloud secrets versions access latest --secret=fintrack-anthropic-api-key)"
-gcloud secrets versions access latest --secret=fintrack-jwt-signing-key > jwt-signing.pem
-kubectl -n fintrack create secret generic auth-jwt --from-file=jwt-signing.pem
+helm repo add external-secrets https://charts.external-secrets.io
+helm install external-secrets external-secrets/external-secrets \
+  -n external-secrets --create-namespace --set installCRDs=true --wait
 ```
+
+The secret *values* already live in Secret Manager (the DB password from
+Terraform, the JWT key + Anthropic key from step 2); ESO pulls them in.
 
 **c. DNS**: point the `INGRESS_HOST` A record at `terraform output
 ingress_ip_address`. The managed cert provisions once DNS resolves.
@@ -119,6 +121,12 @@ instead: `kubectl -n fintrack port-forward svc/gateway-service 8080:8080`.
 > short demo behind the gateway's rate limiting; add a domain + managed TLS
 > (`ingress.managedCertificate.enabled=true`) before anything real, and tear it
 > down when you're done.
+
+## Cost guardrail
+
+`terraform apply` also creates a **monthly budget** (`monthly_budget`, default
+$50 USD) that emails the billing admins at 50/90/100% — a warning, not a hard
+cap. Set `billing_account` in `terraform.tfvars`. Still `destroy` when idle.
 
 ## Tear down
 
