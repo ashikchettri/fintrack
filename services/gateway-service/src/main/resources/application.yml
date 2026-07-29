@@ -16,6 +16,7 @@ spring:
 gateway:
   auth-uri: ${AUTH_URI:http://localhost:8081}
   finance-uri: ${FINANCE_URI:http://localhost:8082}
+  insight-uri: ${INSIGHT_URI:http://localhost:8083}
   cors:
     allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:5173}
   rate-limit:
