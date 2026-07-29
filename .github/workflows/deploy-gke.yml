@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [auth-service, finance-service, gateway-service, insight-service]
+        service: [auth-service, finance-service, gateway-service, insight-service, frontend]
     steps:
       - uses: actions/checkout@v7
 
@@ -43,7 +43,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: services/${{ matrix.service }}/Dockerfile
+          file: ${{ matrix.service == 'frontend' && 'frontend/Dockerfile' || format('services/{0}/Dockerfile', matrix.service) }}
           load: true          # load locally so we scan before pushing
           tags: ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.ref_name }}
           cache-from: type=gha,scope=${{ matrix.service }}
