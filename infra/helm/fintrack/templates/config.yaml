@@ -17,6 +17,7 @@ data:
   AUTH_URI: http://auth-service:8081
   AUTH_JWKS_URI: http://auth-service:8081/.well-known/jwks.json
   FINANCE_URI: http://finance-service:8082
+  INSIGHT_URI: http://insight-service:8083
   SPRING_PROFILES_ACTIVE: {{ .Values.config.springProfile | quote }}
   FINTRACK_AUTH_REFRESH_COOKIE_SECURE: {{ .Values.config.refreshCookieSecure | quote }}
 ---

@@ -20,6 +20,7 @@ data:
   AUTH_URI: http://auth-service:8081
   AUTH_JWKS_URI: http://auth-service:8081/.well-known/jwks.json
   FINANCE_URI: http://finance-service:8082
+  INSIGHT_URI: http://insight-service:8083
   # Spring — a dedicated profile for in-cluster runs.
   SPRING_PROFILES_ACTIVE: k8s
   # Minikube serves plain HTTP, so the refresh cookie can't be Secure-only (ADR 003).
