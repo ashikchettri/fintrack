@@ -24,19 +24,22 @@ FinTrack is a household personal-finance platform built as Spring Boot microserv
 | API docs | **springdoc-openapi** | Swagger UI per service |
 | Frontend | **React 19 + Vite + TypeScript** | TanStack Query for server state; Tailwind v4 + shadcn-style components |
 | AI | **Claude** (Anthropic Messages API) | Transaction categorization behind a pluggable port (Spring AI drops in when it supports Boot 4.1 — ADR 009) |
-| Containers | **Docker** (multi-stage, non-root, layered jars) | Small, secure images |
-| Orchestration | **Docker Compose** now → **Kubernetes** (Minikube → GKE) | Compose for the dev loop; K8s for deployment |
-| Cloud | **GKE Autopilot + Cloud SQL + Artifact Registry + Secret Manager** | The managed-GCP path |
-| CI/CD | **GitHub Actions** → build/test/coverage/secret-scan → deploy | Runs on every PR; branch protection |
-| Observability | Actuator health probes · request correlation IDs (ADR 010) · Prometheus/Grafana + OpenTelemetry planned | |
+| Containers | **Docker** (multi-stage, non-root, Alpine JRE, layered jars) | Small, secure images; **Trivy-scanned** in CI (ADR 015) |
+| Orchestration | **Helm** chart on **Kubernetes** — Docker Compose / Minikube (dev) → **GKE Autopilot** (cloud) | One parameterized chart renders both; Compose for the tightest dev loop (ADR 016) |
+| Cloud | **GKE Autopilot · Cloud SQL · Artifact Registry · Secret Manager**, all **Terraform**-provisioned | Keyless via **Workload Identity + WIF**; Cloud SQL via the Auth Proxy sidecar; secrets synced by **External Secrets Operator** (ADR 017) |
+| CI/CD | **GitHub Actions** → build/test/coverage/secret-scan/**image-scan** on every PR; tag → build/push → `helm upgrade` | Keyless deploy via WIF; branch protection |
+| Observability | Actuator liveness/readiness probes · request correlation IDs (ADR 010) · Prometheus/Grafana + OpenTelemetry planned | |
 | Testing | JUnit 5, **Testcontainers**, Karate, Vitest + RTL, Playwright | Integration tests against real Postgres/Redis |
 
 ## 3. Architecture
 
 ```
-                     React SPA (Vite)
-                            │
-                  ┌─────────▼──────────┐
+                    React SPA (nginx)
+                           │              /api → gateway · else → SPA
+                  ┌────────▼─────────┐
+                  │     Ingress      │  nginx (dev) / GCE + managed TLS (GKE)
+                  └────────┬─────────┘
+                  ┌────────▼───────────┐
                   │   gateway-service  │  reactive Spring Cloud Gateway (:8080)
                   │  routing · CORS ·  │  single public entry point
                   │  rate limiting     │
@@ -44,19 +47,23 @@ FinTrack is a household personal-finance platform built as Spring Boot microserv
               ┌───────────┘       └───────────┐
       ┌───────▼───────┐              ┌─────────▼────────┐        ┌────────────────┐
       │ auth-service  │    JWKS      │ finance-service  │        │ insight-service│
-      │ signup/login/ │◀────────────▶│ accounts, txns,  │◀───────│ AI monthly     │
-      │ JWT/refresh,  │   verify     │ import, budgets, │  JWT   │ summary        │
-      │ households,   │              │ income, home     │ fwd    │ (:8083)        │
-      │ email (:8081) │              │ loan, AI cats    │        │                │
+      │ signup/login/ │◀────────────▶│ accounts, txns,  │◀───────│ AI summary +   │
+      │ JWT/refresh,  │   verify     │ import, budgets, │  JWT   │ NL Q&A (Claude │
+      │ households,   │              │ income, home     │ fwd    │ tool use)      │
+      │ email (:8081) │              │ loan, AI cats    │        │ (:8083)        │
       └───────┬───────┘              │ (:8082)          │        └────────────────┘
               │                      └────────┬─────────┘
               └───────────┬───────────────────┘
           ┌───────────────▼────────────────┐
-          │  PostgreSQL (schema per svc)   │      Redis (rate limiting)
+          │  PostgreSQL (schema per svc)   │   Redis (rate limit)   Claude · Mail
           └────────────────────────────────┘
 ```
 
-**Built today:** the gateway, auth-service, finance-service, insight-service, Redis, Postgres, and the React SPA all run together (`./dev.sh`). insight-service ships the monthly spending summary (ADR 012); natural-language Q&A is its next slice. AI *categorization* lives in finance-service (ADR 009). Async events (Kafka) between services are deliberately deferred. Concrete endpoints: [`docs/API.md`](API.md); design decisions: [`docs/decisions/`](decisions/).
+> **A richer, interactive version** — including the cloud/delivery layer and the
+> full stack per tier — lives in [`docs/architecture.html`](architecture.html)
+> (open it in a browser).
+
+**Built today:** the gateway, auth-service, finance-service, insight-service, Redis, Postgres, and the React SPA all run together (`./dev.sh`), and the **whole stack is deployable to Kubernetes** — a Helm chart runs on Minikube and on **GKE Autopilot** (Cloud SQL, Secret Manager via External Secrets, managed TLS, keyless Workload Identity), proven live end-to-end and Terraform-provisioned (ADR 015–017; see [`infra/`](../infra)). insight-service ships the monthly spending summary (ADR 012) and natural-language Q&A (ADR 013). AI *categorization* lives in finance-service (ADR 009). Async events (Kafka) between services are deliberately deferred. Concrete endpoints: [`docs/API.md`](API.md); design decisions: [`docs/decisions/`](decisions/).
 
 ## 4. Service design
 
@@ -103,7 +110,8 @@ FinTrack is a household personal-finance platform built as Spring Boot microserv
 - **DTOs at the boundary** (Java records), never exposing JPA entities.
 - **Multi-tenant isolation**: every finance query filters by `householdId` (+ `memberId` for member-owned data) drawn from the verified JWT — never from request input. Tests prove a member can't read another's data.
 - **Health probes**: Actuator `/actuator/health/liveness` and `/readiness`, wired to K8s probes.
-- **Containers**: multi-stage build (JDK build → JRE runtime), non-root user, layered jars, Trivy scan in CI (planned).
+- **Containers**: multi-stage build (JDK build → Alpine JRE runtime), non-root user, read-only root filesystem, layered jars, **Trivy HIGH/CRITICAL scan in CI**.
+- **Deployment**: a parameterized **Helm** chart (`infra/helm/fintrack`) deploys the whole stack — Minikube for dev, **GKE Autopilot** in the cloud. On GKE: Cloud SQL via the Auth Proxy sidecar, secrets from Secret Manager via **External Secrets Operator**, TLS via a Google-managed cert, and **keyless** identity end-to-end (Workload Identity for pods, Workload Identity Federation for CI). The cloud footprint is **Terraform** (`infra/gke/terraform`), and `deploy-gke.yml` ships it on a `v*` tag (ADR 015–017).
 - **Git hygiene**: monorepo, conventional commits, PRs for every change, CI green before merge.
 
 ## 6. Key decisions & trade-offs
