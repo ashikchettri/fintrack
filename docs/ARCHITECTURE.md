@@ -25,8 +25,8 @@ FinTrack is a household personal-finance platform built as Spring Boot microserv
 | Frontend | **React 19 + Vite + TypeScript** | TanStack Query for server state; Tailwind v4 + shadcn-style components |
 | AI | **Claude** (Anthropic Messages API) | Transaction categorization behind a pluggable port (Spring AI drops in when it supports Boot 4.1 — ADR 009) |
 | Containers | **Docker** (multi-stage, non-root, Alpine JRE, layered jars) | Small, secure images; **Trivy-scanned** in CI (ADR 015) |
-| Orchestration | **Helm** chart on **Kubernetes** — Docker Compose / Minikube (dev) → **GKE Autopilot** (cloud) | One parameterized chart renders both; Compose for the tightest dev loop (ADR 016) |
-| Cloud | **GKE Autopilot · Cloud SQL · Artifact Registry · Secret Manager**, all **Terraform**-provisioned | Keyless via **Workload Identity + WIF**; Cloud SQL via the Auth Proxy sidecar; secrets synced by **External Secrets Operator** (ADR 017) |
+| Orchestration | **Helm** chart on **Kubernetes** — Docker Compose / Minikube (dev), **GKE Autopilot** targeted | One parameterized chart renders both; Compose for the tightest dev loop (ADR 016) |
+| Cloud *(prepared, not yet applied)* | **GKE Autopilot · Cloud SQL · Artifact Registry · Secret Manager**, defined in **Terraform** | Keyless via **Workload Identity + WIF**; Cloud SQL via the Auth Proxy sidecar; secrets synced by **External Secrets Operator** (ADR 017) |
 | CI/CD | **GitHub Actions** → build/test/coverage/secret-scan/**image-scan** on every PR; tag → build/push → `helm upgrade` | Keyless deploy via WIF; branch protection |
 | Observability | Actuator liveness/readiness probes · request correlation IDs (ADR 010) · Prometheus/Grafana + OpenTelemetry planned | |
 | Testing | JUnit 5, **Testcontainers**, Karate, Vitest + RTL, Playwright | Integration tests against real Postgres/Redis |
@@ -63,7 +63,11 @@ FinTrack is a household personal-finance platform built as Spring Boot microserv
 > full stack per tier — lives in [`docs/architecture.html`](architecture.html)
 > (open it in a browser).
 
-**Built today:** the gateway, auth-service, finance-service, insight-service, Redis, Postgres, and the React SPA all run together (`./dev.sh`), and the **whole stack is deployable to Kubernetes** — a Helm chart runs on Minikube and on **GKE Autopilot** (Cloud SQL, Secret Manager via External Secrets, managed TLS, keyless Workload Identity), proven live end-to-end and Terraform-provisioned (ADR 015–017; see [`infra/`](../infra)). insight-service ships the monthly spending summary (ADR 012) and natural-language Q&A (ADR 013). AI *categorization* lives in finance-service (ADR 009). Async events (Kafka) between services are deliberately deferred. Concrete endpoints: [`docs/API.md`](API.md); design decisions: [`docs/decisions/`](decisions/).
+**Built today:** the gateway, auth-service, finance-service, insight-service, Redis, Postgres, and the React SPA all run together (`./dev.sh`), and the **whole stack is deployable to Kubernetes** — a parameterized Helm chart runs the full stack on **Minikube**, verified live end-to-end (external → ingress → gateway → auth), with every service containerized and Trivy-scanned in CI (ADR 015–016; see [`infra/`](../infra)).
+
+**The GKE path is built but not yet live.** The Terraform footprint (Autopilot, Cloud SQL, Artifact Registry, Secret Manager, Workload Identity, keyless GitHub WIF) is `validate`-clean but **not yet applied** — it needs a dedicated project. The chart carries the Cloud SQL Auth Proxy sidecar and a GCE Ingress with a Google-managed cert, both **off by default** so Minikube is unaffected, and `deploy-gke.yml` ships it on a `v*` tag. What remains is operational: `terraform apply`, the repo variables and cluster secrets, and DNS (ADR 017; runbook in [`infra/gke/README.md`](../infra/gke/README.md)).
+
+insight-service ships the monthly spending summary (ADR 012) and natural-language Q&A (ADR 013). AI *categorization* lives in finance-service (ADR 009). Async events (Kafka) between services are deliberately deferred. Concrete endpoints: [`docs/API.md`](API.md); design decisions: [`docs/decisions/`](decisions/).
 
 ## 4. Service design
 
@@ -111,7 +115,7 @@ FinTrack is a household personal-finance platform built as Spring Boot microserv
 - **Multi-tenant isolation**: every finance query filters by `householdId` (+ `memberId` for member-owned data) drawn from the verified JWT — never from request input. Tests prove a member can't read another's data.
 - **Health probes**: Actuator `/actuator/health/liveness` and `/readiness`, wired to K8s probes.
 - **Containers**: multi-stage build (JDK build → Alpine JRE runtime), non-root user, read-only root filesystem, layered jars, **Trivy HIGH/CRITICAL scan in CI**.
-- **Deployment**: a parameterized **Helm** chart (`infra/helm/fintrack`) deploys the whole stack — Minikube for dev, **GKE Autopilot** in the cloud. On GKE: Cloud SQL via the Auth Proxy sidecar, secrets from Secret Manager via **External Secrets Operator**, TLS via a Google-managed cert, and **keyless** identity end-to-end (Workload Identity for pods, Workload Identity Federation for CI). The cloud footprint is **Terraform** (`infra/gke/terraform`), and `deploy-gke.yml` ships it on a `v*` tag (ADR 015–017).
+- **Deployment**: a parameterized **Helm** chart (`infra/helm/fintrack`) deploys the whole stack, running today on Minikube. The **GKE Autopilot** path is prepared but not yet applied: Cloud SQL via the Auth Proxy sidecar, secrets from Secret Manager via **External Secrets Operator**, TLS via a Google-managed cert, and **keyless** identity end-to-end (Workload Identity for pods, Workload Identity Federation for CI). The cloud footprint is **Terraform** (`infra/gke/terraform`), and `deploy-gke.yml` ships it on a `v*` tag (ADR 015–017).
 - **Git hygiene**: monorepo, conventional commits, PRs for every change, CI green before merge.
 
 ## 6. Key decisions & trade-offs
