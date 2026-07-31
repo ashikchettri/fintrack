@@ -174,7 +174,7 @@
   <header class="head">
     <div class="brand"><span class="dot"></span> FinTrack · household finance platform</div>
     <h1>How it fits together — <span class="accent">UI to services to cloud</span></h1>
-    <p class="lede">A React SPA and four Spring Boot services behind a reactive API gateway, packaged as containers and shipped to Kubernetes on GKE. Requests flow top-to-bottom; identity and correlation IDs travel with them.</p>
+    <p class="lede">A React SPA and four Spring Boot services behind a reactive API gateway, packaged as containers and deployed to Kubernetes — running on Minikube today, with the GKE Autopilot path prepared. Requests flow top-to-bottom; identity and correlation IDs travel with them.</p>
     <div class="legend">
       <span><i></i> request path</span>
       <span><i class="jwks dashed"></i> JWT verify via JWKS</span>
@@ -382,7 +382,7 @@
         <tr><td class="layer">Build / CI</td><td class="tech">Gradle (Kotlin DSL) · GitHub Actions · Trivy</td><td>Shared version catalog; coverage gates; PR-only.</td></tr>
         <tr><td class="layer">Containers</td><td class="tech">Docker (multi-stage, non-root, Alpine JRE)</td><td>Layered jars; per-service image, Trivy-scanned.</td></tr>
         <tr><td class="layer">Orchestration</td><td class="tech">Kubernetes · Helm · Kustomize</td><td>Minikube (dev) → GKE Autopilot (cloud).</td></tr>
-        <tr><td class="layer">Cloud (GCP)</td><td class="tech">GKE · Cloud SQL · Secret Manager · Artifact Registry</td><td>Workload Identity + WIF (keyless); Terraform-provisioned.</td></tr>
+        <tr><td class="layer">Cloud (GCP)</td><td class="tech">GKE · Cloud SQL · Secret Manager · Artifact Registry</td><td>Workload Identity + WIF (keyless); defined in Terraform, not yet applied.</td></tr>
       </tbody>
     </table>
   </div>

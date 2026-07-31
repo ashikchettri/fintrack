@@ -1,14 +1,22 @@
-# API reference — auth-service
+# API reference
 
-Base path `/api/v1`. All errors are RFC 9457 `ProblemDetail` (`application/problem+json`) carrying `type`, `title`, `status`, `detail`, a `traceId`, and — on validation failures — a field→message `errors` map. Every response echoes an `X-Request-Id` correlation header. Interactive docs: `/swagger-ui.html`.
+Clients reach every `/api/v1/**` endpoint below through **gateway-service** (`:8080`), the single public entry point — auth-, finance- and insight-service are internal (ADR 007). The one exception is `/.well-known/jwks.json`, which sits at the auth-service root outside `/api/v1`: it is fetched service-to-service (`AUTH_JWKS_URI`), not by browsers.
 
-## Authentication model
+All errors are RFC 9457 `ProblemDetail` (`application/problem+json`) carrying `type`, `title`, `status`, `detail`, a `traceId`, and — on validation failures — a field→message `errors` map. Every response echoes an `X-Request-Id` correlation header, minted at the gateway (ADR 010). Interactive docs: `/swagger-ui.html` per service.
+
+- [auth-service](#auth-service) — identity, sessions, households
+- [finance-service](#finance-service) — accounts, transactions, budgets, loans, net worth
+- [insight-service](#insight-service) — AI summary and Q&A
+
+## auth-service
+
+### Authentication model
 
 - **Access token**: RS256 JWT, 15-min TTL, returned in the login/refresh body, held in browser memory only. Claims: `sub` (userId), `householdId`, `memberId`, `role`, `iss`.
 - **Refresh token**: opaque, 7-day, rotated on every use with reuse detection; delivered **only** as an httpOnly `SameSite=Strict` cookie scoped to `/api/v1/auth` (ADR 003). Never in a response body.
 - **Verification**: public keys at `GET /.well-known/jwks.json` — downstream services verify JWTs without a shared secret.
 
-## Public endpoints
+### Public endpoints
 
 | Method | Path | Body | Success | Notes |
 |---|---|---|---|---|
@@ -23,7 +31,7 @@ Base path `/api/v1`. All errors are RFC 9457 `ProblemDetail` (`application/probl
 | POST | `/households/invites/accept` | `{email, code, password, name}` | 201 profile | joins the inviting household as ADULT; email pre-verified by the invite; 400 `invalid-invite` |
 | GET | `/.well-known/jwks.json` | — | 200 JWKS | public keys only |
 
-## Authenticated endpoints (Bearer access token)
+### Authenticated endpoints (Bearer access token)
 
 | Method | Path | Body | Success | Notes |
 |---|---|---|---|---|
@@ -34,7 +42,7 @@ Base path `/api/v1`. All errors are RFC 9457 `ProblemDetail` (`application/probl
 | POST | `/households/invites` | `{email}` | 202 | OWNER-only (else **403** `not-household-owner`); emails a 72h invite code; 409 if the email already has an account |
 | GET | `/households/members` | — | 200 `[{memberId, name, role, isYou}]` | the caller's household roster (names for the shared view) |
 
-## Problem types
+### Problem types
 
 `https://fintrack.example/problems/…`: `validation-error` (400), `invalid-credentials` (401), `email-not-verified` (403), `too-many-attempts` (429), `email-already-in-use` (409), `invalid-verification-code` / `invalid-reset-code` / `incorrect-current-password` / `invalid-invite` (400), `not-household-owner` (403).
 
