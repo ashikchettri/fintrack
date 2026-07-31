@@ -28,6 +28,7 @@ Every finance table is scoped by `household_id` + `member_id` from its first mig
 - **Model a home loan** — payoff time, total interest, and how extra repayments change both.
 - **See cash flow & affordability** from per-member income profiles.
 - **Share commitments** — opt specific transactions into a household `shared` view with an equal-split settlement, without exposing personal spending.
+- **Ask about your money** — a monthly AI spending summary, plus natural-language questions answered from your actual figures (ADR 012/013).
 
 ## Authorization
 
@@ -37,7 +38,9 @@ Roles (`OWNER` / `ADULT` / `CHILD`) are carried in the token; finer role-based v
 
 ## AI
 
-**Transaction categorization** ships in finance-service (ADR 009): Claude classifies rows into the canonical taxonomy behind a pluggable port, opt-in, with a deterministic fallback. A dedicated **insight-service** (monthly summaries, natural-language Q&A via tool use, a labeled tax *estimate*) is planned, reusing the same Anthropic client pattern.
+**Transaction categorization** ships in finance-service (ADR 009): Claude classifies rows into the canonical taxonomy behind a pluggable port, opt-in, with a deterministic fallback.
+
+**Insights** ship in a dedicated **insight-service** ([ADR 012](decisions/012-insight-service.md), [ADR 013](decisions/013-nl-qa-tool-use.md)), reusing the same Anthropic client pattern: a **monthly spending summary** (Claude when enabled, a deterministic template otherwise) and **natural-language Q&A** grounded in your real figures via a Claude tool-use loop. It holds no data of its own — it calls finance-service service-to-service, forwarding the caller's token, so an answer only ever covers what the caller may see. A labeled tax *estimate* remains a later addition.
 
 ## More
 
